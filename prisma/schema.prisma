@@ -1,0 +1,162 @@
+// ============================================
+// GENERATOR
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================
+// DATABASE
+// ============================================
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  STOREKEEPER
+  ACCOUNTANT
+  DISTRIBUTOR
+  WORKER
+}
+
+enum PermissionAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+}
+
+enum ModuleName {
+  PRODUCTS
+  INVENTORY
+  PURCHASES
+  SALES
+  CUSTOMERS
+  SUPPLIERS
+  PRODUCTION
+  WORKERS
+  ACCOUNTING
+  REPORTS
+}
+
+// ============================================
+// USERS
+// ============================================
+
+model User {
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  password String
+  phone String?
+  avatar String?
+  role UserRole @default(DISTRIBUTOR)
+  status UserStatus @default(ACTIVE)
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  permissions UserPermission[]
+  locations UserLocation[]
+  auditLogs AuditLog[]
+  syncRecords SyncQueue[]
+
+  @@index([email])
+  @@map("users")
+}
+
+// ============================================
+// ROLE PERMISSIONS
+// ============================================
+
+model Permission {
+  id String @id @default(uuid())
+  role UserRole
+  module ModuleName
+  action PermissionAction
+  createdAt DateTime @default(now())
+  users UserPermission[]
+
+@@unique([role, module, action])
+  @@map("permissions")
+}
+
+model UserPermission {
+  id           String     @id @default(uuid())
+  userId       String
+  permissionId String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@map("user_permissions")
+}
+
+// ============================================
+// GPS TRACKING
+// ============================================
+
+model UserLocation {
+  id        String   @id @default(uuid())
+  userId    String
+  latitude  Float
+  longitude Float
+  accuracy  Float?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_locations")
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  tableName String
+  recordId  String?
+  oldData   Json?
+  newData   Json?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([tableName])
+  @@index([recordId])
+  @@map("audit_logs")
+}
+
+// ============================================
+// OFFLINE SYNC
+// ============================================
+
+model SyncQueue {
+  id        String   @id @default(uuid())
+  userId    String?
+  tableName String
+  recordId  String
+  action    String
+  payload   Json?
+  synced    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([synced])
+  @@map("sync_queue")
+}
