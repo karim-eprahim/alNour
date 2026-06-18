@@ -1,0 +1,1 @@
+import{a as o}from"./DwzMmZRy.js";import{e as a,I as l,o as s,m as n,w as p,p as r}from"./BQWxvU5W.js";const f=a({__name:"default",setup(m){return o({titleTemplate:"%s | Al Nour"}),(e,u)=>{const t=l("AppShell");return s(),n(t,null,{default:p(()=>[r(e.$slots,"default")]),_:3})}}});export{f as default};

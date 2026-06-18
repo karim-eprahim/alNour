@@ -8,6 +8,7 @@ useSeoMeta({
 
 <template>
   <AppShell>
+    <Navbar class="mb-4"/>
     <div class="space-y-6">
       <slot />
     </div>

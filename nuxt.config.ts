@@ -8,7 +8,7 @@ export default defineNuxtConfig({
   },
   modules: ['shadcn-nuxt', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt'],
   pinia: {
-    storesDirs: ['modules/auth'],
+    storesDirs: ['modules/auth', 'modules/users', 'modules/permissions'],
   },
   shadcn: {
     prefix: 'Ui',
