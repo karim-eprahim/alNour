@@ -1,10 +1,14 @@
 <script setup lang="ts">
-const { fetchUser } = useAuth()
+import {useAuthStore} from "@/modules/auth/store"
+
 const { colorMode } = useColorMode()
+const auth = useAuthStore()
 
 onMounted(async () => {
   try {
-    await fetchUser()
+    if (!auth.user) {
+      await auth.fetchUser()
+    }
   } catch {}
 })
 </script>

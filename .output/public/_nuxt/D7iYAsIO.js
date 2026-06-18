@@ -1,1 +1,0 @@
-import{a as o}from"./BF0WMVdD.js";import{d as s,f as t,A as l,O as r,F as n,C as p,P as c}from"./CBPewr9j.js";const d={class:"space-y-6"},i=s({__name:"dashboard",setup(_){return o({titleTemplate:"%s | Dashboard | Al Nour"}),(e,m)=>{const a=t("AppShell");return l(),r(a,null,{default:n(()=>[p("div",d,[c(e.$slots,"default")])]),_:3})}}});export{i as default};

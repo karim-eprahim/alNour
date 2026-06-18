@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useSidebar } from '@/composables/useSidebar'
 import { useColorMode } from '@/composables/useColorMode'
-import { useUser } from '@/composables/useUser'
+import {useAuthStore} from "@/modules/auth/store"
+
 import { cn } from '@/lib/utils'
 import {
   Menu,
@@ -16,7 +17,7 @@ import {
 
 const { openMobile } = useSidebar()
 const { isDark, toggle: toggleColorMode } = useColorMode()
-const { user } = useUser()
+const auth = useAuthStore()
 
 const roles = ['Super Admin', 'Admin', 'Manager', 'Supervisor', 'Operator']
 const currentRole = ref('Super Admin')
@@ -114,14 +115,14 @@ const notifications = ref([
         <UiDropdownMenuTrigger as-child>
           <UiButton variant="ghost" size="sm" class="h-8 gap-2 px-1.5">
             <UiAvatar class="size-7">
-              <UiAvatarImage :src="user?.avatar ?? ''" :alt="user?.name ?? ''" />
+              <UiAvatarImage :src="auth.user?.avatar ?? ''" :alt="auth.user?.name ?? ''" />
               <UiAvatarFallback class="bg-primary text-primary-foreground text-xs">
-                {{ user?.name?.charAt(0) || 'U' }}
+                {{ auth.user?.name?.charAt(0) || 'U' }}
               </UiAvatarFallback>
             </UiAvatar>
-            <div v-if="user" class="hidden text-left md:block">
-              <p class="text-xs font-medium leading-tight">{{ user.name }}</p>
-              <p class="text-[10px] text-muted-foreground leading-tight">{{ user.email }}</p>
+            <div v-if="auth.user" class="hidden text-left md:block">
+              <p class="text-xs font-medium leading-tight">{{ auth.user.name }}</p>
+              <p class="text-[10px] text-muted-foreground leading-tight">{{ auth.user.email }}</p>
             </div>
             <ChevronDown class="hidden size-3 opacity-50 md:block" />
           </UiButton>
@@ -129,8 +130,8 @@ const notifications = ref([
         <UiDropdownMenuContent align="end" class="w-48">
           <UiDropdownMenuLabel>
             <div class="flex flex-col">
-              <span>{{ user?.name || 'User' }}</span>
-              <span class="text-xs font-normal text-muted-foreground">{{ user?.email || 'user@example.com' }}</span>
+              <span>{{ auth.user?.name || 'User' }}</span>
+              <span class="text-xs font-normal text-muted-foreground">{{ auth.user?.email || 'user@example.com' }}</span>
             </div>
           </UiDropdownMenuLabel>
           <UiDropdownMenuSeparator />
@@ -143,7 +144,7 @@ const notifications = ref([
             Settings
           </UiDropdownMenuItem>
           <UiDropdownMenuSeparator />
-          <UiDropdownMenuItem variant="destructive">
+          <UiDropdownMenuItem variant="destructive" @click="auth.logout()">
             <LogOut class="size-4" />
             Sign Out
           </UiDropdownMenuItem>

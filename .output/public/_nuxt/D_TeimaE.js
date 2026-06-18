@@ -1,1 +1,0 @@
-import{a2 as r,X as i,a3 as o,n}from"./CBPewr9j.js";const h=r(async(u,c)=>{let e,t;if(["/auth/login","/auth/register"].includes(u.path))return;const{user:a,fetchUser:s}=i();if(a.value||([e,t]=o(()=>s()),await e,t()),!a.value)return n("/auth/login")});export{h as default};

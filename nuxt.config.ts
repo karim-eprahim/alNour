@@ -6,7 +6,10 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  modules: ['shadcn-nuxt'],
+  modules: ['shadcn-nuxt', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt'],
+  pinia: {
+    storesDirs: ['modules/auth'],
+  },
   shadcn: {
     prefix: 'Ui',
     componentDir: '@/components/ui',

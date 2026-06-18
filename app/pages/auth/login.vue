@@ -1,16 +1,18 @@
 <script setup lang="ts">
+import {useAuthStore} from "@/modules/auth/store"
+
 definePageMeta({
   layout: 'auth',
 })
 
-const { login, loading, error } = useAuth()
+const auth = useAuthStore()
 
 const email = ref('')
 const password = ref('')
 
 async function handleLogin() {
   try {
-    await login({ email: email.value, password: password.value })
+    await auth.login({ email: email.value, password: password.value })
     navigateTo('/')
   } catch {}
 }
@@ -23,8 +25,8 @@ async function handleLogin() {
       <p class="text-sm text-muted-foreground">Enter your credentials to access the system</p>
     </div>
 
-    <div v-if="error" class="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-      {{ error }}
+    <div v-if="auth.error" class="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+      {{ auth.error }}
     </div>
 
     <div class="space-y-2">
@@ -51,8 +53,8 @@ async function handleLogin() {
       />
     </div>
 
-    <UiButton type="submit" class="w-full" :disabled="loading">
-      <div v-if="loading" class="flex items-center gap-2">
+    <UiButton type="submit" class="w-full" :disabled="auth.loading">
+      <div v-if="auth.loading" class="flex items-center gap-2">
         <div class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
         Signing in...
       </div>
