@@ -1,3 +1,17 @@
+<script setup lang="ts">
+const { fetchUser } = useAuth()
+const { colorMode } = useColorMode()
+
+onMounted(async () => {
+  try {
+    await fetchUser()
+  } catch {}
+})
+</script>
+
 <template>
-  <NuxtPage />
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
+  <UiToaster />
 </template>
