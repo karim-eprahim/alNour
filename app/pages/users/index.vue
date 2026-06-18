@@ -1,6 +1,16 @@
 <script setup lang="ts">
-import { MoreHorizontal, Eye, Pencil, Trash2 } from '@lucide/vue'
 import type { User, UserRole, UserStatus } from '@/modules/users/type'
+import type { UserActions } from '@/modules/users/components/column'
+import { getUserColumns } from '@/modules/users/components/column'
+import PageHeader from '~/components/shared/PageHeader.vue';
+
+const userActions: UserActions = {
+  onView: (id) => navigateTo(`/users/${id}`),
+  onEdit: (user) => openEdit(user),
+  onDelete: (user) => openDelete(user),
+}
+
+const userColumns = getUserColumns(userActions)
 
 definePageMeta({
   layout: 'dashboard',
@@ -9,7 +19,6 @@ definePageMeta({
 
 const usersStore = useUsersStore()
 
-const search = ref('')
 const roleFilter = ref<string>('all')
 const statusFilter = ref<string>('all')
 
@@ -22,10 +31,10 @@ const deletingUser = ref<User | null>(null)
 const createForm = reactive({ name: '', email: '', password: '', phone: '', role: 'WORKER' as UserRole })
 const editForm = reactive({ name: '', email: '', phone: '', role: 'WORKER' as UserRole, status: 'ACTIVE' as UserStatus })
 
-watch([search, roleFilter, statusFilter], () => fetchData())
+watch([roleFilter, statusFilter], () => fetchData())
 
 async function fetchData() {
-  await usersStore.fetchUsers({ search: search.value || undefined, role: roleFilter.value === 'all' ? undefined : roleFilter.value, status: statusFilter.value === 'all' ? undefined : statusFilter.value })
+  await usersStore.fetchUsers({ role: roleFilter.value === 'all' ? undefined : roleFilter.value, status: statusFilter.value === 'all' ? undefined : statusFilter.value })
 }
 
 async function handleCreate() {
@@ -77,15 +86,6 @@ async function handleDelete() {
   } catch {}
 }
 
-function roleBadgeVariant(role: string) {
-  const map: Record<string, string> = { ADMIN: 'destructive', MANAGER: 'default', STOREKEEPER: 'secondary', ACCOUNTANT: 'outline', DISTRIBUTOR: 'secondary', WORKER: 'outline' }
-  return map[role] || 'outline'
-}
-
-function statusBadgeVariant(status: string) {
-  return status === 'ACTIVE' ? 'default' : status === 'INACTIVE' ? 'secondary' : 'destructive'
-}
-
 const roles: UserRole[] = ['ADMIN', 'MANAGER', 'STOREKEEPER', 'ACCOUNTANT', 'DISTRIBUTOR', 'WORKER']
 const statuses: UserStatus[] = ['ACTIVE', 'INACTIVE', 'BLOCKED']
 
@@ -96,110 +96,51 @@ onMounted(() => fetchData())
   <div class="space-y-6">
     <PageHeader title="Users" description="Manage system users and their roles">
       <template #actions>
+        <UiButton @click="showCreateDialog = true">Create User</UiButton>
       </template>
     </PageHeader>
     
     <UiCard>
       <UiCardHeader class="pb-3">
-        <UiButton @click="showCreateDialog = true">Create User</UiButton>
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <UiInput v-model="search" placeholder="Search by name or email..." class="max-w-xs" />
-          <div class="flex items-center gap-2">
-            <UiSelect v-model="roleFilter">
-              <UiSelectTrigger class="w-36">
-                <UiSelectValue placeholder="All roles" />
-              </UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem value="all">All roles</UiSelectItem>
-                <UiSelectItem v-for="r in roles" :key="r" :value="r">{{ r }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
-            <UiSelect v-model="statusFilter">
-              <UiSelectTrigger class="w-36">
-                <UiSelectValue placeholder="All statuses" />
-              </UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem value="all">All statuses</UiSelectItem>
-                <UiSelectItem v-for="s in statuses" :key="s" :value="s">{{ s }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
-          </div>
+        <div class="flex items-center gap-2">
+          <UiSelect v-model="roleFilter">
+            <UiSelectTrigger class="w-36">
+              <UiSelectValue placeholder="All roles" />
+            </UiSelectTrigger>
+            <UiSelectContent>
+              <UiSelectItem value="all">All roles</UiSelectItem>
+              <UiSelectItem v-for="r in roles" :key="r" :value="r">{{ r }}</UiSelectItem>
+            </UiSelectContent>
+          </UiSelect>
+          <UiSelect v-model="statusFilter">
+            <UiSelectTrigger class="w-36">
+              <UiSelectValue placeholder="All statuses" />
+            </UiSelectTrigger>
+            <UiSelectContent>
+              <UiSelectItem value="all">All statuses</UiSelectItem>
+              <UiSelectItem v-for="s in statuses" :key="s" :value="s">{{ s }}</UiSelectItem>
+            </UiSelectContent>
+          </UiSelect>
         </div>
       </UiCardHeader>
-      <UiCardContent class="p-0">
-        <UiTable>
-          <UiTableHeader>
-            <UiTableRow>
-              <UiTableHead class="w-[250px]">User</UiTableHead>
-              <UiTableHead>Role</UiTableHead>
-              <UiTableHead>Status</UiTableHead>
-              <UiTableHead>Last Login</UiTableHead>
-              <UiTableHead class="w-[100px] text-right">Actions</UiTableHead>
-            </UiTableRow>
-          </UiTableHeader>
-          <UiTableBody>
-            <UiTableRow v-if="usersStore.loading">
-              <UiTableCell colspan="5"><LoadingState :count="3" /></UiTableCell>
-            </UiTableRow>
-            <UiTableRow v-else-if="usersStore.users.length === 0">
-              <UiTableCell colspan="5">
-                <EmptyState
-                  title="No users found"
-                  :description="search || roleFilter || statusFilter ? 'Try adjusting your filters' : 'Create your first user to get started'"
-                  :action="!search && !roleFilter && !statusFilter ? 'Create User' : undefined"
-                  @action="showCreateDialog = true"
-                />
-              </UiTableCell>
-            </UiTableRow>
-            <UiTableRow v-for="user in usersStore.users" :key="user.id">
-              <UiTableCell>
-                <div class="flex items-center gap-3">
-                  <UiAvatar class="size-8">
-                    <UiAvatarFallback class="bg-primary/10 text-primary text-xs font-medium">
-                      {{ user.name.charAt(0) }}
-                    </UiAvatarFallback>
-                  </UiAvatar>
-                  <div>
-                    <NuxtLink :to="`/users/${user.id}`" class="text-sm font-medium hover:underline">{{ user.name }}</NuxtLink>
-                    <p class="text-xs text-muted-foreground">{{ user.email }}</p>
-                  </div>
-                </div>
-              </UiTableCell>
-              <UiTableCell>
-                <UiBadge :variant="roleBadgeVariant(user.role) as any" class="text-xs">{{ user.role }}</UiBadge>
-              </UiTableCell>
-              <UiTableCell>
-                <UiBadge :variant="statusBadgeVariant(user.status) as any" class="text-xs">{{ user.status }}</UiBadge>
-              </UiTableCell>
-              <UiTableCell class="text-xs text-muted-foreground">
-                {{ user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never' }}
-              </UiTableCell>
-              <UiTableCell class="text-right">
-                <UiDropdownMenu>
-                  <UiDropdownMenuTrigger as-child>
-                    <UiButton variant="ghost" size="icon-sm"><MoreHorizontal class="size-4" /></UiButton>
-                  </UiDropdownMenuTrigger>
-                  <UiDropdownMenuContent align="end" class="w-36">
-                    <UiDropdownMenuItem @click="navigateTo(`/users/${user.id}`)">
-                      <Eye class="size-4" /> View
-                    </UiDropdownMenuItem>
-                    <UiDropdownMenuItem @click="openEdit(user)">
-                      <Pencil class="size-4" /> Edit
-                    </UiDropdownMenuItem>
-                    <UiDropdownMenuSeparator />
-                    <UiDropdownMenuItem variant="destructive" @click="openDelete(user)">
-                      <Trash2 class="size-4" /> Delete
-                    </UiDropdownMenuItem>
-                  </UiDropdownMenuContent>
-                </UiDropdownMenu>
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-        </UiTable>
+      <UiCardContent>
+        <AppTable
+          :data="usersStore.users"
+          :columns="userColumns"
+          :loading="usersStore.loading"
+          :server-total="usersStore.total"
+          search-placeholder="Search by name or email..."
+        >
+          <template #empty>
+            <EmptyState
+              title="No users found"
+              :description="roleFilter !== 'all' || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first user to get started'"
+              :action="roleFilter === 'all' && statusFilter === 'all' ? 'Create User' : undefined"
+              @action="showCreateDialog = true"
+            />
+          </template>
+        </AppTable>
       </UiCardContent>
-      <UiCardFooter v-if="usersStore.total > 0" class="border-t px-4 py-3">
-        <p class="text-xs text-muted-foreground">{{ usersStore.total }} user{{ usersStore.total !== 1 ? 's' : '' }} total</p>
-      </UiCardFooter>
     </UiCard>
 
     <UiDialog :open="showCreateDialog" @update:open="showCreateDialog = $event">

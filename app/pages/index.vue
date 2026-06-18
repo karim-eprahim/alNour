@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageHeader from '~/components/shared/PageHeader.vue';
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',

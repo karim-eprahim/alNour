@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Plus, Trash2, Shield } from '@lucide/vue'
 import type { PermissionAction, ModuleName, Permission } from '@/modules/permissions/type'
+import LoadingState from '~/components/shared/LoadingState.vue'
+import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
   layout: 'dashboard',

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, Shield, ShieldCheck, ShieldX } from '@lucide/vue'
 import type { Permission, UserPermission } from '@/modules/permissions/type'
+import PageHeader from '~/components/shared/PageHeader.vue';
 
 definePageMeta({
   layout: 'dashboard',
