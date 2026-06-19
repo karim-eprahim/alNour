@@ -170,6 +170,7 @@ model Product {
   nameAr       String
   type         ProductType
   sku          String       @unique
+  image        String?
   weight       Decimal?     @db.Decimal(12,3)
   purchaseCost Decimal?     @db.Decimal(12,2)
   sellingPrice Decimal?     @db.Decimal(12,2)

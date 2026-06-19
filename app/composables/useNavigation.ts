@@ -29,15 +29,8 @@ export interface NavItem {
 
 export const useNavigation = () => {
   const navigation: NavItem[] = [
-    { title: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
-    {
-      title: 'Users & Roles',
-      icon: Shield,
-      children: [
-        { title: 'All Users', to: '/users' },
-        { title: 'Roles & Permissions', to: '/users/roles' },
-      ],
-    },
+    { title: 'Dashboard', icon: LayoutDashboard, to: '/' },
+    { title: 'Users & Permissions', icon: Shield, to: '/users' },
     { title: 'Warehouses', icon: Warehouse, to: '/warehouses' },
     {
       title: 'Raw Materials',

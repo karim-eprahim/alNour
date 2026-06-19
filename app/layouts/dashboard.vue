@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import Sidebar from '~/components/layout/Sidebar.vue';
-import Navbar from '~/components/layout/Navbar.vue';
+import AppShell from '~/components/layout/AppShell.vue';
 useSeoMeta({
   titleTemplate: '%s | Dashboard | Al Nour',
 })
@@ -8,7 +7,6 @@ useSeoMeta({
 
 <template>
   <AppShell>
-    <Navbar class="mb-4"/>
     <div class="space-y-6">
       <slot />
     </div>

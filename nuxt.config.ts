@@ -7,7 +7,10 @@ export default defineNuxtConfig({
     plugins: [tailwindcss()],
   },
   modules: ["shadcn-nuxt", "@pinia/nuxt", "pinia-plugin-persistedstate/nuxt"],
-  components: [{ path: "~/components/shared", pathPrefix: false }],
+  components: [
+    { path: "~/components/shared", pathPrefix: false },
+    { path: "~/components/layout", pathPrefix: false }
+  ],
   pinia: {
     storesDirs: ["modules/auth", "modules/users", "modules/permissions"],
   },
