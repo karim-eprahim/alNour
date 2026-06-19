@@ -12,7 +12,7 @@ export default defineNuxtConfig({
     { path: "~/components/layout", pathPrefix: false }
   ],
   pinia: {
-    storesDirs: ["modules/auth", "modules/users", "modules/permissions"],
+    storesDirs: ["modules/auth", "modules/users", "modules/permissions", "modules/products", "modules/warehouses", "modules/stock"],
   },
   shadcn: {
     prefix: "Ui",

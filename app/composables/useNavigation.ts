@@ -30,23 +30,23 @@ export interface NavItem {
 export const useNavigation = () => {
   const navigation: NavItem[] = [
     { title: 'Dashboard', icon: LayoutDashboard, to: '/' },
+    { title: 'Inventory Dashboard', icon: BarChart3, to: '/inventory' },
     { title: 'Users & Permissions', icon: Shield, to: '/users' },
+    {
+      title: 'Products',
+      icon: ShoppingBag,
+      children: [
+        { title: 'All Products', to: '/products' },
+        { title: 'Add Product', to: '/products' },
+      ],
+    },
     { title: 'Warehouses', icon: Warehouse, to: '/warehouses' },
     {
       title: 'Raw Materials',
       icon: Package,
       children: [
         { title: 'Charcoal Inventory', to: '/raw-materials' },
-        { title: 'Stock Movements', to: '/raw-materials/movements' },
-      ],
-    },
-    {
-      title: 'Products',
-      icon: ShoppingBag,
-      children: [
-        { title: 'Categories', to: '/products/categories' },
-        { title: 'All Products', to: '/products' },
-        { title: 'Variants', to: '/products/variants' },
+        { title: 'Stock Movements', to: '/stock/movements' },
       ],
     },
     {
@@ -72,6 +72,7 @@ export const useNavigation = () => {
       icon: ArrowRightLeft,
       children: [
         { title: 'Stock Overview', to: '/stock' },
+        { title: 'Stock Movements', to: '/stock/movements' },
         { title: 'Transfers', to: '/stock/transfers' },
       ],
     },
