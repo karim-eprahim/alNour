@@ -35,10 +35,11 @@ export const useNavigation = () => {
     {
       title: 'Products',
       icon: ShoppingBag,
-      children: [
-        { title: 'All Products', to: '/products' },
-        { title: 'Add Product', to: '/products' },
-      ],
+      to:'/products',
+      // children: [
+      //   { title: 'All Products', to: '/products' },
+      //   { title: 'Add Product', to: '/products' },
+      // ],
     },
     { title: 'Warehouses', icon: Warehouse, to: '/warehouses' },
     {
@@ -56,6 +57,7 @@ export const useNavigation = () => {
         { title: 'Suppliers', to: '/suppliers' },
         { title: 'Purchases', to: '/purchases' },
         { title: 'Weight Tickets', to: '/purchases/weight-tickets' },
+        { title: 'Purchases Report', to: '/purchases/report' },
       ],
     },
     {

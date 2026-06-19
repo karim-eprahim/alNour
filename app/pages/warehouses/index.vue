@@ -79,7 +79,7 @@ const columns: ColumnDef<Warehouse>[] = [
     header: 'Warehouse',
     cell: ({ row }) => h('div', { class: 'flex items-center gap-3' }, [
       h('div', { class: 'size-8 flex items-center justify-center rounded-lg bg-muted' }, [
-        h(Pencil, { class: 'size-4 text-muted-foreground' }),
+        h(Package, { class: 'size-4 text-muted-foreground' }),
       ]),
       h(NuxtLink, { to: `/warehouses/${row.original.id}`, class: 'text-sm font-medium hover:underline' }, row.original.name),
     ]),
