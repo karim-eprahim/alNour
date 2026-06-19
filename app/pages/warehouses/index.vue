@@ -5,6 +5,7 @@ import type { ColumnDef } from '@tanstack/vue-table'
 import type { Warehouse } from '@/modules/warehouses/type'
 import { NuxtLink, UiBadge, UiButton, UiDropdownMenu, UiDropdownMenuTrigger, UiDropdownMenuContent, UiDropdownMenuItem, UiDropdownMenuSeparator } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'dashboard',
@@ -13,7 +14,11 @@ definePageMeta({
 
 const warehousesStore = useWarehousesStore()
 const search = ref('')
-const debouncedSearch = refDebounced(search, 300)
+const debouncedSearch = ref('')
+watch(search, (val, _old, onCleanup) => {
+  const timer = setTimeout(() => { debouncedSearch.value = val }, 300)
+  onCleanup(() => clearTimeout(timer))
+})
 
 const showCreateDialog = ref(false)
 const showEditDialog = ref(false)
@@ -44,7 +49,7 @@ async function handleCreate() {
     showCreateDialog.value = false
     createForm.name = ''
     createForm.location = ''
-    useSonner().success('Warehouse created')
+    toast.success('Warehouse created')
   } catch {}
 }
 
@@ -54,7 +59,7 @@ async function handleEdit() {
     await warehousesStore.updateWarehouse(editingWarehouse.value.id, editForm)
     showEditDialog.value = false
     editingWarehouse.value = null
-    useSonner().success('Warehouse updated')
+    toast.success('Warehouse updated')
   } catch {}
 }
 
@@ -64,7 +69,7 @@ async function handleDelete() {
     await warehousesStore.deleteWarehouse(deletingWarehouse.value.id)
     showDeleteDialog.value = false
     deletingWarehouse.value = null
-    useSonner().success('Warehouse deleted')
+    toast.success('Warehouse deleted')
   } catch {}
 }
 
@@ -74,7 +79,7 @@ const columns: ColumnDef<Warehouse>[] = [
     header: 'Warehouse',
     cell: ({ row }) => h('div', { class: 'flex items-center gap-3' }, [
       h('div', { class: 'size-8 flex items-center justify-center rounded-lg bg-muted' }, [
-        h(Warehouse, { class: 'size-4 text-muted-foreground' }),
+        h(Pencil, { class: 'size-4 text-muted-foreground' }),
       ]),
       h(NuxtLink, { to: `/warehouses/${row.original.id}`, class: 'text-sm font-medium hover:underline' }, row.original.name),
     ]),

@@ -51,7 +51,11 @@ const editForm = reactive({
   sellingPrice: null as number | null,
 })
 
-const debouncedSearch = refDebounced(search, 300)
+const debouncedSearch = ref('')
+watch(search, (val, _old, onCleanup) => {
+  const timer = setTimeout(() => { debouncedSearch.value = val }, 300)
+  onCleanup(() => clearTimeout(timer))
+})
 
 watch(debouncedSearch, () => fetchData())
 watch([typeFilter, warehouseFilter], () => fetchData())

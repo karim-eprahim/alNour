@@ -3,6 +3,7 @@ import { ArrowLeft, Package, Warehouse, ArrowRightLeft, History } from '@lucide/
 import type { StockMovement, MovementType } from '@/modules/stock/type'
 import { MOVEMENT_TYPES } from '@/modules/stock/type'
 import PageHeader from '~/components/shared/PageHeader.vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'dashboard',
@@ -45,7 +46,7 @@ async function handleMovement() {
     movementForm.warehouseId = ''
     movementForm.type = 'ADJUSTMENT'
     movementForm.quantity = null
-    useSonner().success('Stock movement recorded')
+    toast.success('Stock movement recorded')
     fetchProduct()
   } catch {}
 }
@@ -248,7 +249,7 @@ onMounted(fetchProduct)
           </div>
           <div class="space-y-2">
             <UiLabel for="mov-qty">Quantity</UiLabel>
-            <UiInput id="mov-qty" v-model="movementForm.quantity" type="number" step="0.001" placeholder="0.000" required />
+            <UiInput id="mov-qty" v-model="movementForm.quantity as number" type="number" step="0.001" placeholder="0.000" required />
           </div>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showMovementDialog = false">Cancel</UiButton>

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Upload, X, ImageOff } from '@lucide/vue'
+import { toast } from 'vue-sonner'
+
 
 const props = withDefaults(defineProps<{
   modelValue?: string | null
@@ -26,7 +28,7 @@ async function handleFileSelect(event: Event) {
   if (!file) return
 
   if (file.size > 5 * 1024 * 1024) {
-    useSonner().error('Image must be less than 5MB')
+    toast.error('Image must be less than 5MB')
     return
   }
 
@@ -47,7 +49,7 @@ async function handleFileSelect(event: Event) {
     preview.value = url
     emit('update:modelValue', url)
   } catch (err) {
-    useSonner().error('Failed to upload image')
+    toast.error('Failed to upload image')
   } finally {
     uploading.value = false
   }

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import AppShell from '~/components/layout/AppShell.vue';
+import 'vue-sonner/style.css'
+import { Toaster } from '@/components/ui/sonner'
 useSeoMeta({
   titleTemplate: '%s | Dashboard | Al Nour',
 })

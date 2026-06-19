@@ -3,6 +3,7 @@ import { ArrowLeftRight, Warehouse, Check, X } from '@lucide/vue'
 import { MOVEMENT_TYPES } from '@/modules/stock/type'
 import { createTransferApi, completeTransferApi } from '@/modules/stock/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'dashboard',
@@ -52,7 +53,7 @@ async function handleCreate() {
     createForm.fromWarehouseId = ''
     createForm.toWarehouseId = ''
     createForm.items = []
-    useSonner().success('Transfer created')
+    toast.success('Transfer created')
     fetchTransfers()
   } catch {}
 }
@@ -60,7 +61,7 @@ async function handleCreate() {
 async function handleComplete(id: string) {
   try {
     await completeTransferApi(id)
-    useSonner().success('Transfer completed')
+    toast.success('Transfer completed')
     fetchTransfers()
   } catch {}
 }
@@ -171,7 +172,7 @@ onMounted(async () => {
                   <UiSelectItem v-for="p in productsStore.products" :key="p.id" :value="p.id">{{ p.name }} ({{ p.sku }})</UiSelectItem>
                 </UiSelectContent>
               </UiSelect>
-              <UiInput v-model="item.quantity" type="number" step="0.001" placeholder="Qty" class="w-24" />
+              <UiInput v-model="item.quantity as number" type="number" step="0.001" placeholder="Qty" class="w-24" />
               <UiButton type="button" variant="ghost" size="icon-xs" class="text-destructive shrink-0" @click="removeItem(i)">
                 <X class="size-3.5" />
               </UiButton>

@@ -19,7 +19,11 @@ const page = ref(1)
 const limit = 30
 
 watch([typeFilter, warehouseFilter, page], () => fetchData())
-const debouncedSearch = refDebounced(productSearch, 300)
+const debouncedSearch = ref('')
+watch(productSearch, (val, _old, onCleanup) => {
+  const timer = setTimeout(() => { debouncedSearch.value = val }, 300)
+  onCleanup(() => clearTimeout(timer))
+})
 watch(debouncedSearch, () => { page.value = 1; fetchData() })
 
 async function fetchData() {
