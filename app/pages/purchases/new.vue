@@ -66,6 +66,8 @@ async function handleSubmit() {
       })),
     })
 
+    console.log("thi ersdofe",invoice)
+
     if (form.weightTickets.length > 0) {
       for (const wt of form.weightTickets) {
         if (wt.ticketNumber && wt.grossWeight && wt.tareWeight) {

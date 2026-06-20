@@ -2,6 +2,7 @@
 import { Package, Warehouse, AlertTriangle, History, ArrowUp, ArrowDown } from '@lucide/vue'
 import { MOVEMENT_TYPES } from '@/modules/stock/type'
 import PageHeader from '~/components/shared/PageHeader.vue'
+import {useStockStore} from '@/modules/stock/store'
 
 definePageMeta({
   layout: 'dashboard',
@@ -24,6 +25,7 @@ const totalStockValue = computed(() => {
   }
   return total
 })
+console.log("toatalStock",stockStore)
 
 const lowStockItems = computed(() =>
   stockStore.stocks.filter((s) => Number(s.quantity) <= 0)

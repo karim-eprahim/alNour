@@ -4,6 +4,8 @@ import type { ProductActions } from '@/modules/products/components/column'
 import { getProductColumns } from '@/modules/products/components/column'
 import { PRODUCT_TYPES } from '@/modules/products/type'
 import PageHeader from '~/components/shared/PageHeader.vue'
+import { toast } from 'vue-sonner'
+
 
 const productActions: ProductActions = {
   onView: (id) => navigateTo(`/products/${id}`),
@@ -73,7 +75,7 @@ async function handleCreate() {
     await productsStore.createProduct(createForm as any)
     showCreateDialog.value = false
     resetCreateForm()
-    useSonner().success('Product created successfully')
+    toast.success('Product created successfully')
   } catch {}
 }
 
@@ -105,7 +107,7 @@ async function handleEdit() {
     await productsStore.updateProduct(editingProduct.value.id, editForm)
     showEditDialog.value = false
     editingProduct.value = null
-    useSonner().success('Product updated successfully')
+    toast.success('Product updated successfully')
   } catch {}
 }
 
@@ -120,7 +122,7 @@ async function handleDelete() {
     await productsStore.deleteProduct(deletingProduct.value.id)
     showDeleteDialog.value = false
     deletingProduct.value = null
-    useSonner().success('Product deleted successfully')
+    toast.success('Product deleted successfully')
   } catch {}
 }
 
@@ -213,17 +215,17 @@ onMounted(() => {
             </div>
             <div class="space-y-2">
               <UiLabel for="create-weight">Weight (tons/kg)</UiLabel>
-              <UiInput id="create-weight" v-model="createForm.weight" type="number" step="0.001" placeholder="0.000" />
+              <UiInput id="create-weight" v-model="createForm.weight as number" step="0.001" placeholder="0.000" />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
               <UiLabel for="create-cost">Purchase Cost</UiLabel>
-              <UiInput id="create-cost" v-model="createForm.purchaseCost" type="number" step="0.01" placeholder="0.00" />
+              <UiInput id="create-cost" v-model="createForm.purchaseCost as number" step="0.01" placeholder="0.00" />
             </div>
             <div class="space-y-2">
               <UiLabel for="create-price">Selling Price</UiLabel>
-              <UiInput id="create-price" v-model="createForm.sellingPrice" type="number" step="0.01" placeholder="0.00" />
+              <UiInput id="create-price" v-model="createForm.sellingPrice as number" step="0.01" placeholder="0.00" />
             </div>
           </div>
           <div class="space-y-2">
@@ -268,17 +270,17 @@ onMounted(() => {
             </div>
             <div class="space-y-2">
               <UiLabel for="edit-weight">Weight (tons/kg)</UiLabel>
-              <UiInput id="edit-weight" v-model="editForm.weight" type="number" step="0.001" />
+              <UiInput id="edit-weight" v-model="editForm.weight as number" step="0.001" />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
               <UiLabel for="edit-cost">Purchase Cost</UiLabel>
-              <UiInput id="edit-cost" v-model="editForm.purchaseCost" type="number" step="0.01" />
+              <UiInput id="edit-cost" v-model="editForm.purchaseCost as number" step="0.01" />
             </div>
             <div class="space-y-2">
               <UiLabel for="edit-price">Selling Price</UiLabel>
-              <UiInput id="edit-price" v-model="editForm.sellingPrice" type="number" step="0.01" />
+              <UiInput id="edit-price" v-model="editForm.sellingPrice as number" step="0.01" />
             </div>
           </div>
           <div class="space-y-2">

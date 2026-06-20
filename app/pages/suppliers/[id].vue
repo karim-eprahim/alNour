@@ -255,7 +255,7 @@ onMounted(fetchSupplier)
           </div>
           <div class="space-y-2">
             <UiLabel for="ledger-amount">Amount</UiLabel>
-            <UiInput id="ledger-amount" v-model="ledgerForm.amount" type="number" step="0.01" placeholder="0.00" required />
+            <UiInput id="ledger-amount" v-model="ledgerForm.amount as number" type="number" step="0.01" placeholder="0.00" required />
           </div>
           <div class="space-y-2">
             <UiLabel for="ledger-desc">Description</UiLabel>
@@ -278,7 +278,7 @@ onMounted(fetchSupplier)
         <form class="space-y-4" @submit.prevent="handlePay">
           <div class="space-y-2">
             <UiLabel for="pay-amount">Amount</UiLabel>
-            <UiInput id="pay-amount" v-model="payForm.amount" type="number" step="0.01" placeholder="0.00" required />
+            <UiInput id="pay-amount" v-model="payForm.amount as number" type="number" step="0.01" placeholder="0.00" required />
           </div>
           <div class="space-y-2">
             <UiLabel for="pay-desc">Description</UiLabel>

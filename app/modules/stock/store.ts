@@ -20,6 +20,7 @@ export const useStockStore = defineStore('stock', () => {
       const data = await fetchStockApi(params)
       stocks.value = data.stocks
       totalStocks.value = data.total
+      console.log(data)
     } catch (err: any) {
       throw err
     } finally {
