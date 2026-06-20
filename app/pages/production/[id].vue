@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { Factory, Scale, Package, DollarSign, ArrowLeft, TrendingUp, TrendingDown } from '@lucide/vue'
+import { h } from 'vue'
+import { Scale, Package, DollarSign, ArrowLeft, TrendingUp } from '@lucide/vue'
+import type { ColumnDef } from '@tanstack/vue-table'
+import type { ProductionConsumption, ProductionOutput, WorkerProductivity } from '@/modules/production/type'
+import { NuxtLink, UiBadge } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
-import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'dashboard',
@@ -39,6 +42,78 @@ const costPerUnit = computed(() => {
   if (totalOutput.value === 0) return 0
   return Number(batch.value?.totalBatchCost || 0) / totalOutput.value
 })
+
+const consumptionColumns: ColumnDef<ProductionConsumption>[] = [
+  {
+    accessorKey: 'product.name',
+    header: 'Product',
+    cell: ({ row }) => h('span', { class: 'text-sm' }, `${row.original.product?.name || '—'} (${row.original.product?.sku || ''})`),
+  },
+  {
+    accessorKey: 'quantity',
+    header: 'Qty',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
+  },
+  {
+    accessorKey: 'unitCost',
+    header: 'Unit Cost',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.unitCost).toFixed(2)),
+  },
+  {
+    accessorKey: 'totalCost',
+    header: 'Total',
+    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalCost).toFixed(2)),
+  },
+]
+
+const outputColumns: ColumnDef<ProductionOutput>[] = [
+  {
+    accessorKey: 'product.name',
+    header: 'Product',
+    cell: ({ row }) => {
+      const p = row.original.product
+      return h(NuxtLink, { to: `/products/${row.original.productId}`, class: 'hover:underline text-sm' }, `${p?.name || '—'} (${p?.sku || ''})`)
+    },
+  },
+  {
+    accessorKey: 'quantity',
+    header: 'Qty',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
+  },
+  {
+    accessorKey: 'waste',
+    header: 'Waste',
+    cell: ({ row }) => h('span', { class: 'tabular-nums text-destructive block' }, Number(row.original.waste).toFixed(3)),
+  },
+  {
+    accessorKey: 'costPerUnit',
+    header: 'Cost/Unit',
+    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.costPerUnit).toFixed(2)),
+  },
+]
+
+const productivityColumns: ColumnDef<WorkerProductivity>[] = [
+  {
+    accessorKey: 'worker.name',
+    header: 'Worker',
+    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.worker?.name || '—'),
+  },
+  {
+    accessorKey: 'bagsPacked',
+    header: 'Bags Packed',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original.bagsPacked)),
+  },
+  {
+    accessorKey: 'rewardPerBag',
+    header: 'Reward/Bag',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.rewardPerBag).toFixed(2)),
+  },
+  {
+    accessorKey: 'totalReward',
+    header: 'Total Reward',
+    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalReward).toFixed(2)),
+  },
+]
 
 async function load() {
   await productionStore.fetchBatch(route.params.id as string)
@@ -117,27 +192,17 @@ onMounted(load)
             <UiCardDescription>Input products used in this batch</UiCardDescription>
           </UiCardHeader>
           <UiCardContent>
-            <div v-if="!batch.consumptions?.length" class="py-4">
-              <EmptyState title="No consumptions" description="No raw materials recorded" />
-            </div>
-            <UiTable v-else>
-              <UiTableHeader>
-                <UiTableRow>
-                  <UiTableHead>Product</UiTableHead>
-                  <UiTableHead class="text-right">Qty</UiTableHead>
-                  <UiTableHead class="text-right">Unit Cost</UiTableHead>
-                  <UiTableHead class="text-right">Total</UiTableHead>
-                </UiTableRow>
-              </UiTableHeader>
-              <UiTableBody>
-                <UiTableRow v-for="c in batch.consumptions" :key="c.id">
-                  <UiTableCell>{{ c.product?.name }} ({{ c.product?.sku }})</UiTableCell>
-                  <UiTableCell class="text-right tabular-nums">{{ Number(c.quantity).toFixed(3) }}</UiTableCell>
-                  <UiTableCell class="text-right tabular-nums">{{ Number(c.unitCost).toFixed(2) }}</UiTableCell>
-                  <UiTableCell class="text-right tabular-nums font-medium">{{ Number(c.totalCost).toFixed(2) }}</UiTableCell>
-                </UiTableRow>
-              </UiTableBody>
-            </UiTable>
+            <AppTable
+              :data="batch.consumptions || []"
+              :columns="consumptionColumns"
+              :show-search="false"
+              :show-column-toggle="false"
+              :show-pagination="false"
+            >
+              <template #empty>
+                <EmptyState title="No consumptions" description="No raw materials recorded" />
+              </template>
+            </AppTable>
           </UiCardContent>
         </UiCard>
 
@@ -147,31 +212,17 @@ onMounted(load)
             <UiCardDescription>Packaged items produced</UiCardDescription>
           </UiCardHeader>
           <UiCardContent>
-            <div v-if="!batch.outputs?.length" class="py-4">
-              <EmptyState title="No outputs" description="No finished products recorded" />
-            </div>
-            <UiTable v-else>
-              <UiTableHeader>
-                <UiTableRow>
-                  <UiTableHead>Product</UiTableHead>
-                  <UiTableHead class="text-right">Qty</UiTableHead>
-                  <UiTableHead class="text-right">Waste</UiTableHead>
-                  <UiTableHead class="text-right">Cost/Unit</UiTableHead>
-                </UiTableRow>
-              </UiTableHeader>
-              <UiTableBody>
-                <UiTableRow v-for="o in batch.outputs" :key="o.id">
-                  <UiTableCell>
-                    <NuxtLink :to="`/products/${o.productId}`" class="hover:underline">
-                      {{ o.product?.name }} ({{ o.product?.sku }})
-                    </NuxtLink>
-                  </UiTableCell>
-                  <UiTableCell class="text-right tabular-nums">{{ Number(o.quantity).toFixed(3) }}</UiTableCell>
-                  <UiTableCell class="text-right tabular-nums text-destructive">{{ Number(o.waste).toFixed(3) }}</UiTableCell>
-                  <UiTableCell class="text-right tabular-nums font-medium">{{ Number(o.costPerUnit).toFixed(2) }}</UiTableCell>
-                </UiTableRow>
-              </UiTableBody>
-            </UiTable>
+            <AppTable
+              :data="batch.outputs || []"
+              :columns="outputColumns"
+              :show-search="false"
+              :show-column-toggle="false"
+              :show-pagination="false"
+            >
+              <template #empty>
+                <EmptyState title="No outputs" description="No finished products recorded" />
+              </template>
+            </AppTable>
           </UiCardContent>
         </UiCard>
       </div>
@@ -182,27 +233,17 @@ onMounted(load)
           <UiCardDescription>Workers assigned to this batch</UiCardDescription>
         </UiCardHeader>
         <UiCardContent>
-          <div v-if="!batch.productivities?.length" class="py-4">
-            <EmptyState title="No workers recorded" description="Worker productivity not yet linked to this batch" />
-          </div>
-          <UiTable v-else>
-            <UiTableHeader>
-              <UiTableRow>
-                <UiTableHead>Worker</UiTableHead>
-                <UiTableHead class="text-right">Bags Packed</UiTableHead>
-                <UiTableHead class="text-right">Reward/Bag</UiTableHead>
-                <UiTableHead class="text-right">Total Reward</UiTableHead>
-              </UiTableRow>
-            </UiTableHeader>
-            <UiTableBody>
-              <UiTableRow v-for="p in batch.productivities" :key="p.id">
-                <UiTableCell>{{ p.worker?.name }}</UiTableCell>
-                <UiTableCell class="text-right tabular-nums">{{ p.bagsPacked }}</UiTableCell>
-                <UiTableCell class="text-right tabular-nums">{{ Number(p.rewardPerBag).toFixed(2) }}</UiTableCell>
-                <UiTableCell class="text-right tabular-nums font-medium">{{ Number(p.totalReward).toFixed(2) }}</UiTableCell>
-              </UiTableRow>
-            </UiTableBody>
-          </UiTable>
+          <AppTable
+            :data="batch.productivities || []"
+            :columns="productivityColumns"
+            :show-search="false"
+            :show-column-toggle="false"
+            :show-pagination="false"
+          >
+            <template #empty>
+              <EmptyState title="No workers recorded" description="Worker productivity not yet linked to this batch" />
+            </template>
+          </AppTable>
         </UiCardContent>
       </UiCard>
     </template>

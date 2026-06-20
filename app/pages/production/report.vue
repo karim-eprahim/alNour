@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { Factory, Package, Scale, TrendingUp, AlertTriangle, DollarSign, ArrowUp, ArrowDown } from '@lucide/vue'
+import { h } from 'vue'
+import { Factory, Package, Scale, TrendingUp, AlertTriangle, DollarSign } from '@lucide/vue'
+import type { ColumnDef } from '@tanstack/vue-table'
+import type { ProductionBatch } from '@/modules/production/type'
+import { NuxtLink } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
@@ -15,7 +19,64 @@ const startDate = ref('')
 const endDate = ref('')
 
 const summary = computed(() => productionStore.reportSummary)
-const batches = computed(() => productionStore.reportBatches)
+
+const batchColumns: ColumnDef<ProductionBatch>[] = [
+  {
+    accessorKey: 'batchNumber',
+    header: 'Batch #',
+    cell: ({ row }) => h(NuxtLink, { to: `/production/${row.original.id}`, class: 'font-medium hover:underline' }, row.original.batchNumber),
+  },
+  {
+    accessorKey: 'warehouse.name',
+    header: 'Warehouse',
+    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.warehouse?.name || '—'),
+  },
+  {
+    id: 'inputs',
+    header: 'Inputs',
+    cell: ({ row }) => {
+      const total = row.original.consumptions?.reduce((s, c) => s + Number(c.quantity), 0) || 0
+      return h('span', { class: 'tabular-nums block' }, total.toFixed(3))
+    },
+  },
+  {
+    id: 'output',
+    header: 'Output',
+    cell: ({ row }) => {
+      const total = row.original.outputs?.reduce((s, o) => s + Number(o.quantity), 0) || 0
+      return h('span', { class: 'tabular-nums block' }, total.toFixed(3))
+    },
+  },
+  {
+    id: 'waste',
+    header: 'Waste',
+    cell: ({ row }) => {
+      const total = row.original.outputs?.reduce((s, o) => s + Number(o.waste), 0) || 0
+      return h('span', { class: 'tabular-nums text-destructive block' }, total.toFixed(3))
+    },
+  },
+  {
+    id: 'efficiency',
+    header: 'Efficiency',
+    cell: ({ row }) => {
+      const out = row.original.outputs?.reduce((s, o) => s + Number(o.quantity), 0) || 0
+      const waste = row.original.outputs?.reduce((s, o) => s + Number(o.waste), 0) || 0
+      const total = out + waste
+      const pct = total > 0 ? (out / total) * 100 : 0
+      return h('span', { class: 'tabular-nums block' }, `${pct.toFixed(1)}%`)
+    },
+  },
+  {
+    accessorKey: 'totalBatchCost',
+    header: 'Cost',
+    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalBatchCost).toFixed(2)),
+  },
+  {
+    accessorKey: 'createdAt',
+    header: 'Date',
+    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
+  },
+]
 
 async function load() {
   await Promise.all([
@@ -188,51 +249,17 @@ onMounted(load)
           <UiCardDescription>All completed batches in this period</UiCardDescription>
         </UiCardHeader>
         <UiCardContent class="p-0">
-          <UiTable>
-            <UiTableHeader>
-              <UiTableRow>
-                <UiTableHead>Batch #</UiTableHead>
-                <UiTableHead>Warehouse</UiTableHead>
-                <UiTableHead class="text-right">Inputs</UiTableHead>
-                <UiTableHead class="text-right">Output</UiTableHead>
-                <UiTableHead class="text-right">Waste</UiTableHead>
-                <UiTableHead class="text-right">Efficiency</UiTableHead>
-                <UiTableHead class="text-right">Cost</UiTableHead>
-                <UiTableHead>Date</UiTableHead>
-              </UiTableRow>
-            </UiTableHeader>
-            <UiTableBody>
-              <UiTableRow v-for="b in batches" :key="b.id">
-                <UiTableCell>
-                  <NuxtLink :to="`/production/${b.id}`" class="font-medium hover:underline">
-                    {{ b.batchNumber }}
-                  </NuxtLink>
-                </UiTableCell>
-                <UiTableCell>{{ b.warehouse?.name }}</UiTableCell>
-                <UiTableCell class="text-right tabular-nums">
-                  {{ b.consumptions?.reduce((s, c) => s + Number(c.quantity), 0).toFixed(3) }}
-                </UiTableCell>
-                <UiTableCell class="text-right tabular-nums">
-                  {{ b.outputs?.reduce((s, o) => s + Number(o.quantity), 0).toFixed(3) }}
-                </UiTableCell>
-                <UiTableCell class="text-right tabular-nums text-destructive">
-                  {{ b.outputs?.reduce((s, o) => s + Number(o.waste), 0).toFixed(3) }}
-                </UiTableCell>
-                <UiTableCell class="text-right tabular-nums">
-                  <template v-if="b.outputs?.length">
-                    {{ (Number(b.outputs.reduce((s, o) => s + Number(o.quantity), 0)) / (Number(b.outputs.reduce((s, o) => s + Number(o.quantity), 0)) + Number(b.outputs.reduce((s, o) => s + Number(o.waste), 0))) * 100).toFixed(1) }}%
-                  </template>
-                </UiTableCell>
-                <UiTableCell class="text-right tabular-nums font-medium">{{ Number(b.totalBatchCost).toFixed(2) }}</UiTableCell>
-                <UiTableCell class="text-sm text-muted-foreground">{{ new Date(b.createdAt).toLocaleDateString() }}</UiTableCell>
-              </UiTableRow>
-              <UiTableRow v-if="batches.length === 0">
-                <UiTableCell colspan="8">
-                  <EmptyState title="No batches found" description="Complete some production batches to see reports" />
-                </UiTableCell>
-              </UiTableRow>
-            </UiTableBody>
-          </UiTable>
+          <AppTable
+            :data="productionStore.reportBatches"
+            :columns="batchColumns"
+            :show-search="false"
+            :show-column-toggle="false"
+            :show-pagination="false"
+          >
+            <template #empty>
+              <EmptyState title="No batches found" description="Complete some production batches to see reports" />
+            </template>
+          </AppTable>
         </UiCardContent>
       </UiCard>
     </template>

@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ArrowLeft, User, FileText, DollarSign, BookOpen, Phone, MapPin } from '@lucide/vue'
+import { h } from 'vue'
+import { ArrowLeft, FileText, Phone, MapPin } from '@lucide/vue'
+import type { ColumnDef } from '@tanstack/vue-table'
+import { UiBadge } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
@@ -11,6 +14,35 @@ const route = useRoute()
 const customersStore = useCustomersStore()
 
 const customer = computed(() => customersStore.currentCustomer)
+
+const ledgerColumns: ColumnDef<any>[] = [
+  {
+    accessorKey: 'createdAt',
+    header: 'Date',
+    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
+  },
+  {
+    accessorKey: 'description',
+    header: 'Description',
+    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.description || '—'),
+  },
+  {
+    id: 'debit',
+    header: 'Debit',
+    cell: ({ row }) => {
+      const amt = row.original.type === 'DEBIT' ? Number(row.original.amount).toFixed(2) : '—'
+      return h('span', { class: 'tabular-nums text-destructive block' }, amt)
+    },
+  },
+  {
+    id: 'credit',
+    header: 'Credit',
+    cell: ({ row }) => {
+      const amt = row.original.type === 'CREDIT' ? Number(row.original.amount).toFixed(2) : '—'
+      return h('span', { class: 'tabular-nums text-green-600 block' }, amt)
+    },
+  },
+]
 
 onMounted(async () => {
   await customersStore.fetchCustomer(route.params.id as string)
@@ -68,30 +100,18 @@ onMounted(async () => {
           <UiCardTitle>Ledger Entries</UiCardTitle>
           <UiCardDescription>Financial transactions history</UiCardDescription>
         </UiCardHeader>
-        <UiCardContent class="p-0">
-          <UiTable>
-            <UiTableHeader>
-              <UiTableRow>
-                <UiTableHead>Date</UiTableHead>
-                <UiTableHead>Description</UiTableHead>
-                <UiTableHead class="text-right">Debit</UiTableHead>
-                <UiTableHead class="text-right">Credit</UiTableHead>
-              </UiTableRow>
-            </UiTableHeader>
-            <UiTableBody>
-              <UiTableRow v-for="e in customer.ledgerEntries" :key="e.id">
-                <UiTableCell class="text-sm text-muted-foreground">{{ new Date(e.createdAt).toLocaleDateString() }}</UiTableCell>
-                <UiTableCell>{{ e.description || '—' }}</UiTableCell>
-                <UiTableCell class="text-right tabular-nums text-destructive">{{ e.type === 'DEBIT' ? Number(e.amount).toFixed(2) : '—' }}</UiTableCell>
-                <UiTableCell class="text-right tabular-nums text-green-600">{{ e.type === 'CREDIT' ? Number(e.amount).toFixed(2) : '—' }}</UiTableCell>
-              </UiTableRow>
-              <UiTableRow v-if="!customer.ledgerEntries?.length">
-                <UiTableCell colspan="4">
-                  <EmptyState title="No transactions" description="No ledger entries recorded" />
-                </UiTableCell>
-              </UiTableRow>
-            </UiTableBody>
-          </UiTable>
+        <UiCardContent>
+          <AppTable
+            :data="customer.ledgerEntries || []"
+            :columns="ledgerColumns"
+            :show-search="false"
+            :show-column-toggle="false"
+            :show-pagination="false"
+          >
+            <template #empty>
+              <EmptyState title="No transactions" description="No ledger entries recorded" />
+            </template>
+          </AppTable>
         </UiCardContent>
       </UiCard>
     </template>

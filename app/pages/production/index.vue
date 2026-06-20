@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { Package, Plus, Factory, Eye, Trash2 } from '@lucide/vue'
+import { h } from 'vue'
+import { Plus, Factory, Eye, Trash2, MoreHorizontal } from '@lucide/vue'
+import type { ColumnDef } from '@tanstack/vue-table'
+import type { ProductionBatch } from '@/modules/production/type'
+import { NuxtLink, UiBadge, UiButton, UiDropdownMenu, UiDropdownMenuTrigger, UiDropdownMenuContent, UiDropdownMenuItem, UiDropdownMenuSeparator } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -13,29 +17,63 @@ const warehousesStore = useWarehousesStore()
 
 const warehouseFilter = ref('__all__')
 const statusFilter = ref('__all__')
-const search = ref('')
 const page = ref(1)
 const limit = 20
 
-const totalPages = computed(() => Math.ceil(productionStore.total / limit))
-
-const filteredBatches = computed(() => {
-  let list = productionStore.batches
-  if (warehouseFilter.value !== '__all__') {
-    list = list.filter((b) => b.warehouseId === warehouseFilter.value)
-  }
-  if (statusFilter.value !== '__all__') {
-    list = list.filter((b) => b.status === statusFilter.value)
-  }
-  return list
-})
-
-async function load() {
-  await Promise.all([
-    productionStore.fetchBatches({ page: page.value, limit }),
-    warehousesStore.fetchWarehouses(),
-  ])
+function statusBadgeVariant(s: string) {
+  const map: Record<string, string> = { PENDING: 'secondary', PROCESSING: 'warning', COMPLETED: 'success', CANCELLED: 'destructive' }
+  return map[s] || 'secondary'
 }
+
+const columns: ColumnDef<ProductionBatch>[] = [
+  {
+    accessorKey: 'batchNumber',
+    header: 'Batch #',
+    cell: ({ row }) => h(NuxtLink, { to: `/production/${row.original.id}`, class: 'font-medium hover:underline' }, row.original.batchNumber),
+  },
+  {
+    accessorKey: 'warehouse.name',
+    header: 'Warehouse',
+    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.warehouse?.name || '—'),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => h(UiBadge, { variant: statusBadgeVariant(row.original.status) as any, class: 'text-xs' }, row.original.status),
+  },
+  {
+    id: 'inputs',
+    header: 'Inputs',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.consumptions ?? 0)),
+  },
+  {
+    id: 'outputs',
+    header: 'Outputs',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.outputs ?? 0)),
+  },
+  {
+    accessorKey: 'totalBatchCost',
+    header: 'Total Cost',
+    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalBatchCost).toFixed(2)),
+  },
+  {
+    accessorKey: 'createdAt',
+    header: 'Date',
+    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    enableSorting: false,
+    cell: ({ row }) => {
+      const b = row.original
+      return h('div', { class: 'flex gap-1' }, [
+        h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => navigateTo(`/production/${b.id}`) }, () => h(Eye, { class: 'size-3.5' })),
+        h(UiButton, { variant: 'ghost', size: 'icon-xs', class: 'text-destructive', onClick: () => remove(b.id) }, () => h(Trash2, { class: 'size-3.5' })),
+      ])
+    },
+  },
+]
 
 async function remove(id: string) {
   if (!confirm('Delete this production batch?')) return
@@ -47,19 +85,15 @@ async function remove(id: string) {
   }
 }
 
-const statusBadge = (status: string) => {
-  const map: Record<string, string> = {
-    PENDING: 'secondary',
-    PROCESSING: 'warning',
-    COMPLETED: 'success',
-    CANCELLED: 'destructive',
-  }
-  return map[status] || 'secondary'
+async function load() {
+  await Promise.all([
+    productionStore.fetchBatches({ page: page.value, limit }),
+    warehousesStore.fetchWarehouses(),
+  ])
 }
 
 onMounted(load)
-
-watch([warehouseFilter, statusFilter], () => { page.value = 1 })
+watch([warehouseFilter, statusFilter], () => { page.value = 1; load() })
 watch(page, load)
 </script>
 
@@ -74,7 +108,6 @@ watch(page, load)
     </PageHeader>
 
     <div class="flex flex-wrap gap-3">
-      <UiInput v-model="search" placeholder="Search batches..." class="w-64" />
       <UiSelect v-model="warehouseFilter">
         <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Warehouses" /></UiSelectTrigger>
         <UiSelectContent>
@@ -94,64 +127,19 @@ watch(page, load)
       </UiSelect>
     </div>
 
-    <UiCard>
-      <UiCardContent class="p-0">
-        <UiTable>
-          <UiTableHeader>
-            <UiTableRow>
-              <UiTableHead>Batch #</UiTableHead>
-              <UiTableHead>Warehouse</UiTableHead>
-              <UiTableHead>Status</UiTableHead>
-              <UiTableHead class="text-right">Inputs</UiTableHead>
-              <UiTableHead class="text-right">Outputs</UiTableHead>
-              <UiTableHead class="text-right">Total Cost</UiTableHead>
-              <UiTableHead>Date</UiTableHead>
-              <UiTableHead class="w-20" />
-            </UiTableRow>
-          </UiTableHeader>
-          <UiTableBody>
-            <UiTableRow v-for="b in filteredBatches" :key="b.id">
-              <UiTableCell>
-                <NuxtLink :to="`/production/${b.id}`" class="font-medium hover:underline">
-                  {{ b.batchNumber }}
-                </NuxtLink>
-              </UiTableCell>
-              <UiTableCell>{{ b.warehouse?.name }}</UiTableCell>
-              <UiTableCell>
-                <UiBadge :variant="statusBadge(b.status) as any">{{ b.status }}</UiBadge>
-              </UiTableCell>
-              <UiTableCell class="text-right tabular-nums">{{ b._count?.consumptions || 0 }}</UiTableCell>
-              <UiTableCell class="text-right tabular-nums">{{ b._count?.outputs || 0 }}</UiTableCell>
-              <UiTableCell class="text-right tabular-nums">{{ Number(b.totalBatchCost).toFixed(2) }}</UiTableCell>
-              <UiTableCell class="text-sm text-muted-foreground">{{ new Date(b.createdAt).toLocaleDateString() }}</UiTableCell>
-              <UiTableCell>
-                <div class="flex gap-1">
-                  <UiButton variant="ghost" size="icon-xs" @click="navigateTo(`/production/${b.id}`)">
-                    <Eye class="size-3.5" />
-                  </UiButton>
-                  <UiButton variant="ghost" size="icon-xs" class="text-destructive" @click="remove(b.id)">
-                    <Trash2 class="size-3.5" />
-                  </UiButton>
-                </div>
-              </UiTableCell>
-            </UiTableRow>
-            <UiTableRow v-if="filteredBatches.length === 0">
-              <UiTableCell colspan="8">
-                <EmptyState title="No batches found" description="Create your first production batch" action="New Batch" @action="navigateTo('/production/new')" />
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-        </UiTable>
-      </UiCardContent>
-      <UiCardFooter v-if="totalPages > 1" class="border-t px-4 py-3">
-        <div class="flex items-center justify-between w-full">
-          <p class="text-sm text-muted-foreground">Page {{ page }} of {{ totalPages }} ({{ productionStore.total }} total)</p>
-          <div class="flex gap-2">
-            <UiButton variant="outline" size="sm" :disabled="page <= 1" @click="page--">Previous</UiButton>
-            <UiButton variant="outline" size="sm" :disabled="page >= totalPages" @click="page++">Next</UiButton>
-          </div>
-        </div>
-      </UiCardFooter>
-    </UiCard>
+    <AppTable
+      :data="productionStore.batches"
+      :columns="columns"
+      :loading="productionStore.loading"
+      :server-total="productionStore.total"
+      :show-search="false"
+      :show-column-toggle="false"
+      :show-pagination="false"
+      search-placeholder="Search batches..."
+    >
+      <template #empty>
+        <EmptyState title="No batches found" description="Create your first production batch" action="New Batch" @action="navigateTo('/production/new')" />
+      </template>
+    </AppTable>
   </div>
 </template>

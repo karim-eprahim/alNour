@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { ArrowLeft, ShoppingCart, FileText, DollarSign, Package, User, Building } from '@lucide/vue'
+import { h } from 'vue'
+import { ArrowLeft, DollarSign, Package, User, Building } from '@lucide/vue'
+import type { ColumnDef } from '@tanstack/vue-table'
+import type { SalesOrderItem } from '@/modules/sales/type'
+import { NuxtLink, UiBadge, UiButton } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -21,6 +25,32 @@ const invoiceStatusBadge = (s: string) => {
   const map: Record<string, string> = { UNPAID: 'destructive', PARTIAL: 'warning', PAID: 'success', CANCELLED: 'secondary' }
   return map[s] || 'secondary'
 }
+
+const itemColumns: ColumnDef<SalesOrderItem>[] = [
+  {
+    accessorKey: 'product.name',
+    header: 'Product',
+    cell: ({ row }) => {
+      const item = row.original
+      return h(NuxtLink, { to: `/products/${item.productId}`, class: 'hover:underline' }, `${item.product?.name || '—'} (${item.product?.sku || ''})`)
+    },
+  },
+  {
+    accessorKey: 'quantity',
+    header: 'Qty',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
+  },
+  {
+    accessorKey: 'unitPrice',
+    header: 'Unit Price',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.unitPrice).toFixed(2)),
+  },
+  {
+    accessorKey: 'totalPrice',
+    header: 'Total',
+    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalPrice).toFixed(2)),
+  },
+]
 
 const showPayDialog = ref(false)
 const payForm = reactive({ amount: 0, paymentMethod: 'CASH' as string, notes: '' })
@@ -115,27 +145,18 @@ onMounted(async () => {
             <UiCardTitle>Order Items</UiCardTitle>
             <UiCardDescription>Products in this order</UiCardDescription>
           </UiCardHeader>
-          <UiCardContent class="p-0">
-            <UiTable>
-              <UiTableHeader>
-                <UiTableRow>
-                  <UiTableHead>Product</UiTableHead>
-                  <UiTableHead class="text-right">Qty</UiTableHead>
-                  <UiTableHead class="text-right">Unit Price</UiTableHead>
-                  <UiTableHead class="text-right">Total</UiTableHead>
-                </UiTableRow>
-              </UiTableHeader>
-              <UiTableBody>
-                <UiTableRow v-for="item in order.items" :key="item.id">
-                  <UiTableCell>
-                    <NuxtLink :to="`/products/${item.productId}`" class="hover:underline">{{ item.product?.name }} ({{ item.product?.sku }})</NuxtLink>
-                  </UiTableCell>
-                  <UiTableCell class="text-right tabular-nums">{{ Number(item.quantity).toFixed(3) }}</UiTableCell>
-                  <UiTableCell class="text-right tabular-nums">{{ Number(item.unitPrice).toFixed(2) }}</UiTableCell>
-                  <UiTableCell class="text-right tabular-nums font-medium">{{ Number(item.totalPrice).toFixed(2) }}</UiTableCell>
-                </UiTableRow>
-              </UiTableBody>
-            </UiTable>
+          <UiCardContent>
+            <AppTable
+              :data="order.items || []"
+              :columns="itemColumns"
+              :show-search="false"
+              :show-column-toggle="false"
+              :show-pagination="false"
+            >
+              <template #empty>
+                <EmptyState title="No items" description="No products in this order" />
+              </template>
+            </AppTable>
           </UiCardContent>
         </UiCard>
 

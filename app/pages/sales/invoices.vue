@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { FileText, Eye, DollarSign } from '@lucide/vue'
+import { h } from 'vue'
+import { Eye, DollarSign } from '@lucide/vue'
+import type { ColumnDef } from '@tanstack/vue-table'
+import type { Invoice } from '@/modules/sales/type'
+import { UiBadge, UiButton } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -11,15 +15,12 @@ definePageMeta({
 const salesStore = useSalesStore()
 const customersStore = useCustomersStore()
 
-const search = ref('')
 const statusFilter = ref('__all__')
 const customerFilter = ref('__all__')
 const page = ref(1)
 const limit = 20
 
-const totalPages = computed(() => Math.ceil(salesStore.totalInvoices / limit))
-
-const statusBadge = (s: string) => {
+function statusBadgeVariant(s: string) {
   const map: Record<string, string> = { UNPAID: 'destructive', PARTIAL: 'warning', PAID: 'success', CANCELLED: 'secondary' }
   return map[s] || 'secondary'
 }
@@ -29,7 +30,7 @@ const payForm = reactive({ amount: 0, paymentMethod: 'CASH' as string, notes: ''
 const paying = ref(false)
 const selectedInvoiceId = ref('')
 
-function openPay(invoice: any) {
+function openPay(invoice: Invoice) {
   const due = Number(invoice.totalAmount) - Number(invoice.paidAmount)
   if (due <= 0) { toast.error('Invoice is already paid'); return }
   selectedInvoiceId.value = invoice.id
@@ -55,10 +56,73 @@ async function submitPayment() {
   finally { paying.value = false }
 }
 
+const columns: ColumnDef<Invoice>[] = [
+  {
+    accessorKey: 'invoiceNumber',
+    header: 'Invoice #',
+    cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.invoiceNumber),
+  },
+  {
+    accessorKey: 'customer.name',
+    header: 'Customer',
+    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.customer?.name || '—'),
+  },
+  {
+    accessorKey: 'salesOrder.orderNumber',
+    header: 'Order',
+    cell: ({ row }) => h('span', { class: 'text-muted-foreground text-sm' }, row.original.salesOrder?.orderNumber || '—'),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => h(UiBadge, { variant: statusBadgeVariant(row.original.status) as any, class: 'text-xs' }, row.original.status),
+  },
+  {
+    accessorKey: 'totalAmount',
+    header: 'Total',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.totalAmount).toFixed(2)),
+  },
+  {
+    accessorKey: 'paidAmount',
+    header: 'Paid',
+    cell: ({ row }) => h('span', { class: 'tabular-nums text-green-600 block' }, Number(row.original.paidAmount).toFixed(2)),
+  },
+  {
+    id: 'due',
+    header: 'Due',
+    cell: ({ row }) => {
+      const due = Number(row.original.totalAmount) - Number(row.original.paidAmount)
+      return h('span', { class: 'tabular-nums font-medium text-destructive block' }, due.toFixed(2))
+    },
+  },
+  {
+    id: 'payments',
+    header: 'Payments',
+    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.payments ?? 0)),
+  },
+  {
+    accessorKey: 'createdAt',
+    header: 'Date',
+    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    enableSorting: false,
+    cell: ({ row }) => {
+      const inv = row.original
+      const due = Number(inv.totalAmount) - Number(inv.paidAmount)
+      return h('div', { class: 'flex gap-1' }, [
+        h(UiButton, { variant: 'ghost', size: 'icon-xs', disabled: due <= 0, onClick: () => openPay(inv) }, () => h(DollarSign, { class: 'size-3.5' })),
+        h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => navigateTo(`/sales/${inv.salesOrderId}`) }, () => h(Eye, { class: 'size-3.5' })),
+      ])
+    },
+  },
+]
+
 async function load() {
   await Promise.all([
     salesStore.fetchInvoices({
-      search: search.value || undefined,
       status: statusFilter.value !== '__all__' ? statusFilter.value : undefined,
       customerId: customerFilter.value !== '__all__' ? customerFilter.value : undefined,
       page: page.value,
@@ -68,11 +132,6 @@ async function load() {
   ])
 }
 
-let debounce: ReturnType<typeof setTimeout>
-watch(search, () => {
-  clearTimeout(debounce)
-  debounce = setTimeout(() => { page.value = 1; load() }, 300)
-})
 watch([statusFilter, customerFilter], () => { page.value = 1; load() })
 watch(page, load)
 onMounted(load)
@@ -87,7 +146,6 @@ onMounted(load)
     </PageHeader>
 
     <div class="flex flex-wrap gap-3">
-      <UiInput v-model="search" placeholder="Search invoices..." class="w-64" />
       <UiSelect v-model="customerFilter">
         <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Customers" /></UiSelectTrigger>
         <UiSelectContent>
@@ -107,63 +165,19 @@ onMounted(load)
       </UiSelect>
     </div>
 
-    <UiCard>
-      <UiCardContent class="p-0">
-        <UiTable>
-          <UiTableHeader>
-            <UiTableRow>
-              <UiTableHead>Invoice #</UiTableHead>
-              <UiTableHead>Customer</UiTableHead>
-              <UiTableHead>Order</UiTableHead>
-              <UiTableHead>Status</UiTableHead>
-              <UiTableHead class="text-right">Total</UiTableHead>
-              <UiTableHead class="text-right">Paid</UiTableHead>
-              <UiTableHead class="text-right">Due</UiTableHead>
-              <UiTableHead class="text-right">Payments</UiTableHead>
-              <UiTableHead>Date</UiTableHead>
-              <UiTableHead class="w-24" />
-            </UiTableRow>
-          </UiTableHeader>
-          <UiTableBody>
-            <UiTableRow v-for="inv in salesStore.invoices" :key="inv.id">
-              <UiTableCell class="font-medium">{{ inv.invoiceNumber }}</UiTableCell>
-              <UiTableCell>{{ inv.customer?.name }}</UiTableCell>
-              <UiTableCell class="text-muted-foreground">{{ inv.salesOrder?.orderNumber }}</UiTableCell>
-              <UiTableCell><UiBadge :variant="statusBadge(inv.status) as any">{{ inv.status }}</UiBadge></UiTableCell>
-              <UiTableCell class="text-right tabular-nums">{{ Number(inv.totalAmount).toFixed(2) }}</UiTableCell>
-              <UiTableCell class="text-right tabular-nums text-green-600">{{ Number(inv.paidAmount).toFixed(2) }}</UiTableCell>
-              <UiTableCell class="text-right tabular-nums font-medium text-destructive">{{ (Number(inv.totalAmount) - Number(inv.paidAmount)).toFixed(2) }}</UiTableCell>
-              <UiTableCell class="text-right tabular-nums">{{ inv._count?.payments || 0 }}</UiTableCell>
-              <UiTableCell class="text-sm text-muted-foreground">{{ new Date(inv.createdAt).toLocaleDateString() }}</UiTableCell>
-              <UiTableCell>
-                <div class="flex gap-1">
-                  <UiButton variant="ghost" size="icon-xs" :disabled="Number(inv.totalAmount) - Number(inv.paidAmount) <= 0" @click="openPay(inv)">
-                    <DollarSign class="size-3.5" />
-                  </UiButton>
-                  <UiButton variant="ghost" size="icon-xs" @click="navigateTo(`/sales/${inv.salesOrderId}`)">
-                    <Eye class="size-3.5" />
-                  </UiButton>
-                </div>
-              </UiTableCell>
-            </UiTableRow>
-            <UiTableRow v-if="salesStore.invoices.length === 0">
-              <UiTableCell colspan="10">
-                <EmptyState title="No invoices found" description="Invoices appear when sales orders are created" />
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-        </UiTable>
-      </UiCardContent>
-      <UiCardFooter v-if="totalPages > 1" class="border-t px-4 py-3">
-        <div class="flex items-center justify-between w-full">
-          <p class="text-sm text-muted-foreground">Page {{ page }} of {{ totalPages }}</p>
-          <div class="flex gap-2">
-            <UiButton variant="outline" size="sm" :disabled="page <= 1" @click="page--">Previous</UiButton>
-            <UiButton variant="outline" size="sm" :disabled="page >= totalPages" @click="page++">Next</UiButton>
-          </div>
-        </div>
-      </UiCardFooter>
-    </UiCard>
+    <AppTable
+      :data="salesStore.invoices"
+      :columns="columns"
+      :loading="salesStore.loading"
+      :server-total="salesStore.totalInvoices"
+      :show-search="false"
+      :show-column-toggle="false"
+      search-placeholder="Search invoices..."
+    >
+      <template #empty>
+        <EmptyState title="No invoices found" description="Invoices appear when sales orders are created" />
+      </template>
+    </AppTable>
 
     <UiDialog :open="showPayDialog" @update:open="showPayDialog = $event">
       <UiDialogContent>
