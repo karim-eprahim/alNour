@@ -54,7 +54,7 @@ async function handleSubmit() {
 
   saving.value = true
   try {
-    const { invoice } = await purchasesStore.createPurchase({
+    const invoice = await purchasesStore.createPurchase({
       supplierId: form.supplierId,
       warehouseId: form.warehouseId,
       invoiceDate: form.invoiceDate || undefined,
