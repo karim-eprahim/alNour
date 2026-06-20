@@ -64,9 +64,9 @@ export const useNavigation = () => {
       title: 'Production',
       icon: Factory,
       children: [
-        { title: 'Batches', to: '/production/batches' },
-        { title: 'Consumption', to: '/production/consumption' },
-        { title: 'Output', to: '/production/output' },
+        { title: 'Batches', to: '/production' },
+        { title: 'New Batch', to: '/production/new' },
+        { title: 'Reports', to: '/production/report' },
       ],
     },
     {
