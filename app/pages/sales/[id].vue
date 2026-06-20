@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { h } from 'vue'
 import { ArrowLeft, DollarSign, Package, User, Building } from '@lucide/vue'
-import type { ColumnDef } from '@tanstack/vue-table'
-import type { SalesOrderItem } from '@/modules/sales/type'
-import { NuxtLink, UiBadge, UiButton } from '#components'
+import type { InvoiceActions } from '@/modules/sales/components/column'
+import { getInvoiceColumns, getOrderItemColumns } from '@/modules/sales/components/column'
+import { UiBadge, UiButton } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -21,36 +20,20 @@ const statusBadge = (s: string) => {
   const map: Record<string, string> = { PENDING: 'secondary', CONFIRMED: 'warning', COMPLETED: 'success', CANCELLED: 'destructive' }
   return map[s] || 'secondary'
 }
+
 const invoiceStatusBadge = (s: string) => {
   const map: Record<string, string> = { UNPAID: 'destructive', PARTIAL: 'warning', PAID: 'success', CANCELLED: 'secondary' }
   return map[s] || 'secondary'
 }
 
-const itemColumns: ColumnDef<SalesOrderItem>[] = [
-  {
-    accessorKey: 'product.name',
-    header: 'Product',
-    cell: ({ row }) => {
-      const item = row.original
-      return h(NuxtLink, { to: `/products/${item.productId}`, class: 'hover:underline' }, `${item.product?.name || '—'} (${item.product?.sku || ''})`)
-    },
-  },
-  {
-    accessorKey: 'quantity',
-    header: 'Qty',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
-  },
-  {
-    accessorKey: 'unitPrice',
-    header: 'Unit Price',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.unitPrice).toFixed(2)),
-  },
-  {
-    accessorKey: 'totalPrice',
-    header: 'Total',
-    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalPrice).toFixed(2)),
-  },
-]
+const itemColumns = getOrderItemColumns()
+
+const invoiceActions: InvoiceActions = {
+  onPay: (invoice) => openPay(invoice.id, Number(invoice.totalAmount) - Number(invoice.paidAmount)),
+  onViewOrder: (orderId) => navigateTo(`/sales/${orderId}`),
+}
+
+const invoiceColumns = getInvoiceColumns(invoiceActions)
 
 const showPayDialog = ref(false)
 const payForm = reactive({ amount: 0, paymentMethod: 'CASH' as string, notes: '' })

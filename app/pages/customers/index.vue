@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { h } from 'vue'
-import { Plus, Trash2, Pencil, FileText, MoreHorizontal } from '@lucide/vue'
-import type { ColumnDef } from '@tanstack/vue-table'
+import { Plus } from '@lucide/vue'
+import type { CustomerActions } from '@/modules/customers/components/column'
 import type { Customer } from '@/modules/customers/type'
-import { UiButton, UiDropdownMenu, UiDropdownMenuTrigger, UiDropdownMenuContent, UiDropdownMenuItem, UiDropdownMenuSeparator } from '#components'
+import { getCustomerColumns } from '@/modules/customers/components/column'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -21,69 +20,17 @@ const editing = ref(false)
 const form = reactive({ name: '', phone: '', address: '' })
 const currentId = ref('')
 
-const columns: ColumnDef<Customer>[] = [
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name),
+const customerActions: CustomerActions = {
+  onView: (id) => navigateTo(`/customers/${id}`),
+  onEdit: (customer) => { currentId.value = customer.id; openEdit(customer) },
+  onDelete: async (id) => {
+    if (!confirm('Delete this customer?')) return
+    try { await customersStore.deleteCustomer(id); toast.success('Customer deleted') }
+    catch { toast.error('Failed to delete') }
   },
-  {
-    accessorKey: 'phone',
-    header: 'Phone',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.phone || '—'),
-  },
-  {
-    accessorKey: 'address',
-    header: 'Address',
-    cell: ({ row }) => {
-      const addr = row.original.address
-      return h('span', { class: 'text-muted-foreground max-w-40 truncate block' }, addr || '—')
-    },
-  },
-  {
-    id: 'orders',
-    header: 'Orders',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.salesOrders ?? 0)),
-  },
-  {
-    id: 'invoices',
-    header: 'Invoices',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.invoices ?? 0)),
-  },
-  {
-    id: 'balance',
-    header: 'Balance',
-    cell: ({ row }) => {
-      const bal = row.original.balance || 0
-      return h('span', { class: `tabular-nums font-medium block ${bal > 0 ? 'text-destructive' : 'text-green-600'}` }, bal.toFixed(2))
-    },
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    enableSorting: false,
-    cell: ({ row }) => {
-      const c = row.original
-      return h('div', [
-        h(UiDropdownMenu, null, {
-          default: () => [
-            h(UiDropdownMenuTrigger, { 'as-child': true }, {
-              default: () => h(UiButton, { variant: 'ghost', size: 'icon-sm' }, {
-                default: () => h(MoreHorizontal, { class: 'size-4' }),
-              }),
-            }),
-            h(UiDropdownMenuContent, { align: 'end', class: 'w-36' }, [
-              h(UiDropdownMenuItem, { onClick: () => navigateTo(`/customers/${c.id}`) }, [h(FileText, { class: 'size-4' }), ' View']),
-              h(UiDropdownMenuItem, { onClick: () => { currentId = c.id; openEdit(c) } }, [h(Pencil, { class: 'size-4' }), ' Edit']),
-              h(UiDropdownMenuSeparator),
-              h(UiDropdownMenuItem, { variant: 'destructive', onClick: () => remove(c.id) }, [h(Trash2, { class: 'size-4' }), ' Delete']),
-            ]),
-          ],
-        }),
-      ])
-    },
-  },
-]
+}
+
+const columns = getCustomerColumns(customerActions)
 
 function openCreate() {
   editing.value = false
@@ -100,23 +47,10 @@ function openEdit(customer: Customer) {
 async function save() {
   if (!form.name) { toast.error('Name is required'); return }
   try {
-    if (editing.value) {
-      await customersStore.updateCustomer(currentId.value, { ...form })
-      toast.success('Customer updated')
-    } else {
-      await customersStore.createCustomer({ ...form })
-      toast.success('Customer created')
-    }
+    if (editing.value) { await customersStore.updateCustomer(currentId.value, { ...form }); toast.success('Customer updated') }
+    else { await customersStore.createCustomer({ ...form }); toast.success('Customer created') }
     showDialog.value = false
   } catch { toast.error('Failed to save customer') }
-}
-
-async function remove(id: string) {
-  if (!confirm('Delete this customer?')) return
-  try {
-    await customersStore.deleteCustomer(id)
-    toast.success('Customer deleted')
-  } catch { toast.error('Failed to delete') }
 }
 
 async function load() {

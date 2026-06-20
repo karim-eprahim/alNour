@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { h } from 'vue'
-import { Plus, Factory, Eye, Trash2, MoreHorizontal } from '@lucide/vue'
-import type { ColumnDef } from '@tanstack/vue-table'
-import type { ProductionBatch } from '@/modules/production/type'
-import { NuxtLink, UiBadge, UiButton, UiDropdownMenu, UiDropdownMenuTrigger, UiDropdownMenuContent, UiDropdownMenuItem, UiDropdownMenuSeparator } from '#components'
+import { Plus } from '@lucide/vue'
+import type { BatchActions } from '@/modules/production/components/column'
+import { getBatchColumns } from '@/modules/production/components/column'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -20,70 +18,18 @@ const statusFilter = ref('__all__')
 const page = ref(1)
 const limit = 20
 
-function statusBadgeVariant(s: string) {
-  const map: Record<string, string> = { PENDING: 'secondary', PROCESSING: 'warning', COMPLETED: 'success', CANCELLED: 'destructive' }
-  return map[s] || 'secondary'
+const batchActions: BatchActions = {
+  onView: (id) => navigateTo(`/production/${id}`),
+  onDelete: async (id) => {
+    if (!confirm('Delete this production batch?')) return
+    try {
+      await productionStore.deleteBatch(id)
+      toast.success('Batch deleted')
+    } catch { toast.error('Failed to delete batch') }
+  },
 }
 
-const columns: ColumnDef<ProductionBatch>[] = [
-  {
-    accessorKey: 'batchNumber',
-    header: 'Batch #',
-    cell: ({ row }) => h(NuxtLink, { to: `/production/${row.original.id}`, class: 'font-medium hover:underline' }, row.original.batchNumber),
-  },
-  {
-    accessorKey: 'warehouse.name',
-    header: 'Warehouse',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.warehouse?.name || '—'),
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => h(UiBadge, { variant: statusBadgeVariant(row.original.status) as any, class: 'text-xs' }, row.original.status),
-  },
-  {
-    id: 'inputs',
-    header: 'Inputs',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.consumptions ?? 0)),
-  },
-  {
-    id: 'outputs',
-    header: 'Outputs',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.outputs ?? 0)),
-  },
-  {
-    accessorKey: 'totalBatchCost',
-    header: 'Total Cost',
-    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalBatchCost).toFixed(2)),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: 'Date',
-    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    enableSorting: false,
-    cell: ({ row }) => {
-      const b = row.original
-      return h('div', { class: 'flex gap-1' }, [
-        h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => navigateTo(`/production/${b.id}`) }, () => h(Eye, { class: 'size-3.5' })),
-        h(UiButton, { variant: 'ghost', size: 'icon-xs', class: 'text-destructive', onClick: () => remove(b.id) }, () => h(Trash2, { class: 'size-3.5' })),
-      ])
-    },
-  },
-]
-
-async function remove(id: string) {
-  if (!confirm('Delete this production batch?')) return
-  try {
-    await productionStore.deleteBatch(id)
-    toast.success('Batch deleted')
-  } catch {
-    toast.error('Failed to delete batch')
-  }
-}
+const columns = getBatchColumns(batchActions)
 
 async function load() {
   await Promise.all([

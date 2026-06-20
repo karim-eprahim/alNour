@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { h } from 'vue'
-import { Scale, Package, DollarSign, ArrowLeft, TrendingUp } from '@lucide/vue'
-import type { ColumnDef } from '@tanstack/vue-table'
-import type { ProductionConsumption, ProductionOutput, WorkerProductivity } from '@/modules/production/type'
-import { NuxtLink, UiBadge } from '#components'
+import { ArrowLeft, DollarSign, Package, TrendingUp, Scale } from '@lucide/vue'
+import { getConsumptionColumns, getOutputColumns, getProductivityColumns } from '@/modules/production/components/column'
+import { UiBadge } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
@@ -43,77 +41,9 @@ const costPerUnit = computed(() => {
   return Number(batch.value?.totalBatchCost || 0) / totalOutput.value
 })
 
-const consumptionColumns: ColumnDef<ProductionConsumption>[] = [
-  {
-    accessorKey: 'product.name',
-    header: 'Product',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, `${row.original.product?.name || '—'} (${row.original.product?.sku || ''})`),
-  },
-  {
-    accessorKey: 'quantity',
-    header: 'Qty',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
-  },
-  {
-    accessorKey: 'unitCost',
-    header: 'Unit Cost',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.unitCost).toFixed(2)),
-  },
-  {
-    accessorKey: 'totalCost',
-    header: 'Total',
-    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalCost).toFixed(2)),
-  },
-]
-
-const outputColumns: ColumnDef<ProductionOutput>[] = [
-  {
-    accessorKey: 'product.name',
-    header: 'Product',
-    cell: ({ row }) => {
-      const p = row.original.product
-      return h(NuxtLink, { to: `/products/${row.original.productId}`, class: 'hover:underline text-sm' }, `${p?.name || '—'} (${p?.sku || ''})`)
-    },
-  },
-  {
-    accessorKey: 'quantity',
-    header: 'Qty',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
-  },
-  {
-    accessorKey: 'waste',
-    header: 'Waste',
-    cell: ({ row }) => h('span', { class: 'tabular-nums text-destructive block' }, Number(row.original.waste).toFixed(3)),
-  },
-  {
-    accessorKey: 'costPerUnit',
-    header: 'Cost/Unit',
-    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.costPerUnit).toFixed(2)),
-  },
-]
-
-const productivityColumns: ColumnDef<WorkerProductivity>[] = [
-  {
-    accessorKey: 'worker.name',
-    header: 'Worker',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.worker?.name || '—'),
-  },
-  {
-    accessorKey: 'bagsPacked',
-    header: 'Bags Packed',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original.bagsPacked)),
-  },
-  {
-    accessorKey: 'rewardPerBag',
-    header: 'Reward/Bag',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.rewardPerBag).toFixed(2)),
-  },
-  {
-    accessorKey: 'totalReward',
-    header: 'Total Reward',
-    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalReward).toFixed(2)),
-  },
-]
+const consumptionColumns = getConsumptionColumns()
+const outputColumns = getOutputColumns()
+const productivityColumns = getProductivityColumns()
 
 async function load() {
   await productionStore.fetchBatch(route.params.id as string)

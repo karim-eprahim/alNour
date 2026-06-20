@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { h } from 'vue'
 import { Factory, Package, Scale, TrendingUp, AlertTriangle, DollarSign } from '@lucide/vue'
-import type { ColumnDef } from '@tanstack/vue-table'
-import type { ProductionBatch } from '@/modules/production/type'
-import { NuxtLink } from '#components'
+import { getBatchReportColumns } from '@/modules/production/components/column'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
@@ -19,64 +16,7 @@ const startDate = ref('')
 const endDate = ref('')
 
 const summary = computed(() => productionStore.reportSummary)
-
-const batchColumns: ColumnDef<ProductionBatch>[] = [
-  {
-    accessorKey: 'batchNumber',
-    header: 'Batch #',
-    cell: ({ row }) => h(NuxtLink, { to: `/production/${row.original.id}`, class: 'font-medium hover:underline' }, row.original.batchNumber),
-  },
-  {
-    accessorKey: 'warehouse.name',
-    header: 'Warehouse',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.warehouse?.name || '—'),
-  },
-  {
-    id: 'inputs',
-    header: 'Inputs',
-    cell: ({ row }) => {
-      const total = row.original.consumptions?.reduce((s, c) => s + Number(c.quantity), 0) || 0
-      return h('span', { class: 'tabular-nums block' }, total.toFixed(3))
-    },
-  },
-  {
-    id: 'output',
-    header: 'Output',
-    cell: ({ row }) => {
-      const total = row.original.outputs?.reduce((s, o) => s + Number(o.quantity), 0) || 0
-      return h('span', { class: 'tabular-nums block' }, total.toFixed(3))
-    },
-  },
-  {
-    id: 'waste',
-    header: 'Waste',
-    cell: ({ row }) => {
-      const total = row.original.outputs?.reduce((s, o) => s + Number(o.waste), 0) || 0
-      return h('span', { class: 'tabular-nums text-destructive block' }, total.toFixed(3))
-    },
-  },
-  {
-    id: 'efficiency',
-    header: 'Efficiency',
-    cell: ({ row }) => {
-      const out = row.original.outputs?.reduce((s, o) => s + Number(o.quantity), 0) || 0
-      const waste = row.original.outputs?.reduce((s, o) => s + Number(o.waste), 0) || 0
-      const total = out + waste
-      const pct = total > 0 ? (out / total) * 100 : 0
-      return h('span', { class: 'tabular-nums block' }, `${pct.toFixed(1)}%`)
-    },
-  },
-  {
-    accessorKey: 'totalBatchCost',
-    header: 'Cost',
-    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalBatchCost).toFixed(2)),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: 'Date',
-    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
-  },
-]
+const batchColumns = getBatchReportColumns()
 
 async function load() {
   await Promise.all([

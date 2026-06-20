@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { h } from 'vue'
-import { Plus, Eye } from '@lucide/vue'
-import type { ColumnDef } from '@tanstack/vue-table'
-import type { SalesOrder } from '@/modules/sales/type'
-import { NuxtLink, UiBadge, UiButton } from '#components'
+import { Plus } from '@lucide/vue'
+import type { OrderActions } from '@/modules/sales/components/column'
+import { getOrderColumns } from '@/modules/sales/components/column'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
@@ -20,62 +18,11 @@ const statusFilter = ref('__all__')
 const page = ref(1)
 const limit = 20
 
-function statusBadgeVariant(s: string) {
-  const map: Record<string, string> = { PENDING: 'secondary', CONFIRMED: 'warning', COMPLETED: 'success', CANCELLED: 'destructive' }
-  return map[s] || 'secondary'
+const orderActions: OrderActions = {
+  onView: (id) => navigateTo(`/sales/${id}`),
 }
 
-const columns: ColumnDef<SalesOrder>[] = [
-  {
-    accessorKey: 'orderNumber',
-    header: 'Order #',
-    cell: ({ row }) => h(NuxtLink, { to: `/sales/${row.original.id}`, class: 'font-medium hover:underline' }, row.original.orderNumber),
-  },
-  {
-    accessorKey: 'customer.name',
-    header: 'Customer',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.customer?.name || '—'),
-  },
-  {
-    accessorKey: 'warehouse.name',
-    header: 'Warehouse',
-    cell: ({ row }) => h('span', { class: 'text-muted-foreground text-sm' }, row.original.warehouse?.name || '—'),
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => h(UiBadge, { variant: statusBadgeVariant(row.original.status) as any, class: 'text-xs' }, row.original.status),
-  },
-  {
-    id: 'items',
-    header: 'Items',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.items ?? 0)),
-  },
-  {
-    accessorKey: 'totalAmount',
-    header: 'Total',
-    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalAmount).toFixed(2)),
-  },
-  {
-    id: 'paid',
-    header: 'Paid',
-    cell: ({ row }) => {
-      const paid = row.original.invoices?.reduce((s, inv) => s + Number(inv.paidAmount), 0) || 0
-      return h('span', { class: 'tabular-nums block' }, paid.toFixed(2))
-    },
-  },
-  {
-    accessorKey: 'createdAt',
-    header: 'Date',
-    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    enableSorting: false,
-    cell: ({ row }) => h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => navigateTo(`/sales/${row.original.id}`) }, () => h(Eye, { class: 'size-3.5' })),
-  },
-]
+const columns = getOrderColumns(orderActions)
 
 async function load() {
   await Promise.all([

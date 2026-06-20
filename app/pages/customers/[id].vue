@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { h } from 'vue'
 import { ArrowLeft, FileText, Phone, MapPin } from '@lucide/vue'
-import type { ColumnDef } from '@tanstack/vue-table'
+import { getLedgerColumns } from '@/modules/customers/components/column'
 import { UiBadge } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
@@ -14,35 +13,7 @@ const route = useRoute()
 const customersStore = useCustomersStore()
 
 const customer = computed(() => customersStore.currentCustomer)
-
-const ledgerColumns: ColumnDef<any>[] = [
-  {
-    accessorKey: 'createdAt',
-    header: 'Date',
-    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
-  },
-  {
-    accessorKey: 'description',
-    header: 'Description',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.description || '—'),
-  },
-  {
-    id: 'debit',
-    header: 'Debit',
-    cell: ({ row }) => {
-      const amt = row.original.type === 'DEBIT' ? Number(row.original.amount).toFixed(2) : '—'
-      return h('span', { class: 'tabular-nums text-destructive block' }, amt)
-    },
-  },
-  {
-    id: 'credit',
-    header: 'Credit',
-    cell: ({ row }) => {
-      const amt = row.original.type === 'CREDIT' ? Number(row.original.amount).toFixed(2) : '—'
-      return h('span', { class: 'tabular-nums text-green-600 block' }, amt)
-    },
-  },
-]
+const ledgerColumns = getLedgerColumns()
 
 onMounted(async () => {
   await customersStore.fetchCustomer(route.params.id as string)
@@ -64,7 +35,7 @@ onMounted(async () => {
       </PageHeader>
     </div>
 
-    <template v-if="customer">
+    <UiCard v-if="customer">
       <div class="grid gap-4 sm:grid-cols-3">
         <UiCard>
           <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
@@ -114,6 +85,6 @@ onMounted(async () => {
           </AppTable>
         </UiCardContent>
       </UiCard>
-    </template>
+    </UiCard>
   </div>
 </template>

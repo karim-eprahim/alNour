@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { h } from 'vue'
-import { Eye, DollarSign } from '@lucide/vue'
-import type { ColumnDef } from '@tanstack/vue-table'
-import type { Invoice } from '@/modules/sales/type'
-import { UiBadge, UiButton } from '#components'
+import { DollarSign } from '@lucide/vue'
+import type { InvoiceActions } from '@/modules/sales/components/column'
+import { getInvoiceColumns } from '@/modules/sales/components/column'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -20,17 +18,12 @@ const customerFilter = ref('__all__')
 const page = ref(1)
 const limit = 20
 
-function statusBadgeVariant(s: string) {
-  const map: Record<string, string> = { UNPAID: 'destructive', PARTIAL: 'warning', PAID: 'success', CANCELLED: 'secondary' }
-  return map[s] || 'secondary'
-}
-
 const showPayDialog = ref(false)
 const payForm = reactive({ amount: 0, paymentMethod: 'CASH' as string, notes: '' })
 const paying = ref(false)
 const selectedInvoiceId = ref('')
 
-function openPay(invoice: Invoice) {
+function openPay(invoice: any) {
   const due = Number(invoice.totalAmount) - Number(invoice.paidAmount)
   if (due <= 0) { toast.error('Invoice is already paid'); return }
   selectedInvoiceId.value = invoice.id
@@ -56,69 +49,12 @@ async function submitPayment() {
   finally { paying.value = false }
 }
 
-const columns: ColumnDef<Invoice>[] = [
-  {
-    accessorKey: 'invoiceNumber',
-    header: 'Invoice #',
-    cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.invoiceNumber),
-  },
-  {
-    accessorKey: 'customer.name',
-    header: 'Customer',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.customer?.name || '—'),
-  },
-  {
-    accessorKey: 'salesOrder.orderNumber',
-    header: 'Order',
-    cell: ({ row }) => h('span', { class: 'text-muted-foreground text-sm' }, row.original.salesOrder?.orderNumber || '—'),
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => h(UiBadge, { variant: statusBadgeVariant(row.original.status) as any, class: 'text-xs' }, row.original.status),
-  },
-  {
-    accessorKey: 'totalAmount',
-    header: 'Total',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.totalAmount).toFixed(2)),
-  },
-  {
-    accessorKey: 'paidAmount',
-    header: 'Paid',
-    cell: ({ row }) => h('span', { class: 'tabular-nums text-green-600 block' }, Number(row.original.paidAmount).toFixed(2)),
-  },
-  {
-    id: 'due',
-    header: 'Due',
-    cell: ({ row }) => {
-      const due = Number(row.original.totalAmount) - Number(row.original.paidAmount)
-      return h('span', { class: 'tabular-nums font-medium text-destructive block' }, due.toFixed(2))
-    },
-  },
-  {
-    id: 'payments',
-    header: 'Payments',
-    cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.payments ?? 0)),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: 'Date',
-    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    enableSorting: false,
-    cell: ({ row }) => {
-      const inv = row.original
-      const due = Number(inv.totalAmount) - Number(inv.paidAmount)
-      return h('div', { class: 'flex gap-1' }, [
-        h(UiButton, { variant: 'ghost', size: 'icon-xs', disabled: due <= 0, onClick: () => openPay(inv) }, () => h(DollarSign, { class: 'size-3.5' })),
-        h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => navigateTo(`/sales/${inv.salesOrderId}`) }, () => h(Eye, { class: 'size-3.5' })),
-      ])
-    },
-  },
-]
+const invoiceActions: InvoiceActions = {
+  onPay: (invoice) => openPay(invoice),
+  onViewOrder: (orderId) => navigateTo(`/sales/${orderId}`),
+}
+
+const columns = getInvoiceColumns(invoiceActions)
 
 async function load() {
   await Promise.all([
