@@ -81,39 +81,43 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <div class="flex flex-wrap gap-3">
-      <UiSelect v-model="customerFilter">
-        <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Customers" /></UiSelectTrigger>
-        <UiSelectContent>
-          <UiSelectItem value="__all__">All Customers</UiSelectItem>
-          <UiSelectItem v-for="c in customersStore.customers" :key="c.id" :value="c.id">{{ c.name }}</UiSelectItem>
-        </UiSelectContent>
-      </UiSelect>
-      <UiSelect v-model="statusFilter">
-        <UiSelectTrigger class="w-32"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
-        <UiSelectContent>
-          <UiSelectItem value="__all__">All Status</UiSelectItem>
-          <UiSelectItem value="UNPAID">Unpaid</UiSelectItem>
-          <UiSelectItem value="PARTIAL">Partial</UiSelectItem>
-          <UiSelectItem value="PAID">Paid</UiSelectItem>
-          <UiSelectItem value="CANCELLED">Cancelled</UiSelectItem>
-        </UiSelectContent>
-      </UiSelect>
-    </div>
-
-    <AppTable
-      :data="salesStore.invoices"
-      :columns="columns"
-      :loading="salesStore.loading"
-      :server-total="salesStore.totalInvoices"
-      :show-search="false"
-      :show-column-toggle="false"
-      search-placeholder="Search invoices..."
-    >
-      <template #empty>
-        <EmptyState title="No invoices found" description="Invoices appear when sales orders are created" />
-      </template>
-    </AppTable>
+    <UiCard>
+      <UiCardHeader class="pb-3">
+        <div class="flex items-center gap-2">
+          <UiSelect v-model="customerFilter">
+            <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Customers" /></UiSelectTrigger>
+            <UiSelectContent>
+              <UiSelectItem value="__all__">All Customers</UiSelectItem>
+              <UiSelectItem v-for="c in customersStore.customers" :key="c.id" :value="c.id">{{ c.name }}</UiSelectItem>
+            </UiSelectContent>
+          </UiSelect>
+          <UiSelect v-model="statusFilter">
+            <UiSelectTrigger class="w-32"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
+            <UiSelectContent>
+              <UiSelectItem value="__all__">All Status</UiSelectItem>
+              <UiSelectItem value="UNPAID">Unpaid</UiSelectItem>
+              <UiSelectItem value="PARTIAL">Partial</UiSelectItem>
+              <UiSelectItem value="PAID">Paid</UiSelectItem>
+              <UiSelectItem value="CANCELLED">Cancelled</UiSelectItem>
+            </UiSelectContent>
+          </UiSelect>
+        </div>
+      </UiCardHeader>
+      <UiCardContent>
+        <AppTable
+          :data="salesStore.invoices"
+          :columns="columns"
+          :loading="salesStore.loading"
+          :server-total="salesStore.totalInvoices"
+          :show-search="false"
+          :show-column-toggle="false"
+        >
+          <template #empty>
+            <EmptyState title="No invoices found" description="Invoices appear when sales orders are created" />
+          </template>
+        </AppTable>
+      </UiCardContent>
+    </UiCard>
 
     <UiDialog :open="showPayDialog" @update:open="showPayDialog = $event">
       <UiDialogContent>

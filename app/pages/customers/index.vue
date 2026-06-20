@@ -32,6 +32,14 @@ const customerActions: CustomerActions = {
 
 const columns = getCustomerColumns(customerActions)
 
+const debouncedSearch = ref('')
+watch(search, (val, _old, onCleanup) => {
+  const timer = setTimeout(() => { debouncedSearch.value = val }, 300)
+  onCleanup(() => clearTimeout(timer))
+})
+watch(debouncedSearch, () => { page.value = 1; load() })
+watch(page, load)
+
 function openCreate() {
   editing.value = false
   form.name = ''; form.phone = ''; form.address = ''
@@ -54,15 +62,9 @@ async function save() {
 }
 
 async function load() {
-  await customersStore.fetchCustomers({ search: search.value || undefined, page: page.value, limit })
+  await customersStore.fetchCustomers({ search: debouncedSearch.value || undefined, page: page.value, limit })
 }
 
-let debounce: ReturnType<typeof setTimeout>
-watch(search, () => {
-  clearTimeout(debounce)
-  debounce = setTimeout(() => { page.value = 1; load() }, 300)
-})
-watch(page, load)
 onMounted(load)
 </script>
 
@@ -74,18 +76,25 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <AppTable
-      :data="customersStore.customers"
-      :columns="columns"
-      :loading="customersStore.loading"
-      :server-total="customersStore.total"
-      search-placeholder="Search by name or phone..."
-      :show-column-toggle="false"
-    >
-      <template #empty>
-        <EmptyState title="No customers found" description="Add your first customer" action="Add Customer" @action="openCreate" />
-      </template>
-    </AppTable>
+    <UiCard>
+      <UiCardHeader class="pb-3">
+        <UiInput v-model="search" placeholder="Search by name or phone..." class="max-w-xs" />
+      </UiCardHeader>
+      <UiCardContent>
+        <AppTable
+          :data="customersStore.customers"
+          :columns="columns"
+          :loading="customersStore.loading"
+          :server-total="customersStore.total"
+          :show-search="false"
+          :show-column-toggle="false"
+        >
+          <template #empty>
+            <EmptyState title="No customers found" description="Add your first customer" action="Add Customer" @action="openCreate" />
+          </template>
+        </AppTable>
+      </UiCardContent>
+    </UiCard>
 
     <UiDialog :open="showDialog" @update:open="showDialog = $event">
       <UiDialogContent>

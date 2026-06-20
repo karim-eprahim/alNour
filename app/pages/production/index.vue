@@ -53,39 +53,42 @@ watch(page, load)
       </template>
     </PageHeader>
 
-    <div class="flex flex-wrap gap-3">
-      <UiSelect v-model="warehouseFilter">
-        <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Warehouses" /></UiSelectTrigger>
-        <UiSelectContent>
-          <UiSelectItem value="__all__">All Warehouses</UiSelectItem>
-          <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-        </UiSelectContent>
-      </UiSelect>
-      <UiSelect v-model="statusFilter">
-        <UiSelectTrigger class="w-40"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
-        <UiSelectContent>
-          <UiSelectItem value="__all__">All Status</UiSelectItem>
-          <UiSelectItem value="PENDING">Pending</UiSelectItem>
-          <UiSelectItem value="PROCESSING">Processing</UiSelectItem>
-          <UiSelectItem value="COMPLETED">Completed</UiSelectItem>
-          <UiSelectItem value="CANCELLED">Cancelled</UiSelectItem>
-        </UiSelectContent>
-      </UiSelect>
-    </div>
-
-    <AppTable
-      :data="productionStore.batches"
-      :columns="columns"
-      :loading="productionStore.loading"
-      :server-total="productionStore.total"
-      :show-search="false"
-      :show-column-toggle="false"
-      :show-pagination="false"
-      search-placeholder="Search batches..."
-    >
-      <template #empty>
-        <EmptyState title="No batches found" description="Create your first production batch" action="New Batch" @action="navigateTo('/production/new')" />
-      </template>
-    </AppTable>
+    <UiCard>
+      <UiCardHeader class="pb-3">
+        <div class="flex items-center gap-2">
+          <UiSelect v-model="warehouseFilter">
+            <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Warehouses" /></UiSelectTrigger>
+            <UiSelectContent>
+              <UiSelectItem value="__all__">All Warehouses</UiSelectItem>
+              <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
+            </UiSelectContent>
+          </UiSelect>
+          <UiSelect v-model="statusFilter">
+            <UiSelectTrigger class="w-40"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
+            <UiSelectContent>
+              <UiSelectItem value="__all__">All Status</UiSelectItem>
+              <UiSelectItem value="PENDING">Pending</UiSelectItem>
+              <UiSelectItem value="PROCESSING">Processing</UiSelectItem>
+              <UiSelectItem value="COMPLETED">Completed</UiSelectItem>
+              <UiSelectItem value="CANCELLED">Cancelled</UiSelectItem>
+            </UiSelectContent>
+          </UiSelect>
+        </div>
+      </UiCardHeader>
+      <UiCardContent>
+        <AppTable
+          :data="productionStore.batches"
+          :columns="columns"
+          :loading="productionStore.loading"
+          :server-total="productionStore.total"
+          :show-search="false"
+          :show-column-toggle="false"
+        >
+          <template #empty>
+            <EmptyState title="No batches found" description="Create your first production batch" action="New Batch" @action="navigateTo('/production/new')" />
+          </template>
+        </AppTable>
+      </UiCardContent>
+    </UiCard>
   </div>
 </template>

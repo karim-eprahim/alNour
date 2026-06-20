@@ -50,38 +50,42 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <div class="flex flex-wrap gap-3">
-      <UiSelect v-model="customerFilter">
-        <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Customers" /></UiSelectTrigger>
-        <UiSelectContent>
-          <UiSelectItem value="__all__">All Customers</UiSelectItem>
-          <UiSelectItem v-for="c in customersStore.customers" :key="c.id" :value="c.id">{{ c.name }}</UiSelectItem>
-        </UiSelectContent>
-      </UiSelect>
-      <UiSelect v-model="statusFilter">
-        <UiSelectTrigger class="w-36"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
-        <UiSelectContent>
-          <UiSelectItem value="__all__">All Status</UiSelectItem>
-          <UiSelectItem value="PENDING">Pending</UiSelectItem>
-          <UiSelectItem value="CONFIRMED">Confirmed</UiSelectItem>
-          <UiSelectItem value="COMPLETED">Completed</UiSelectItem>
-          <UiSelectItem value="CANCELLED">Cancelled</UiSelectItem>
-        </UiSelectContent>
-      </UiSelect>
-    </div>
-
-    <AppTable
-      :data="salesStore.orders"
-      :columns="columns"
-      :loading="salesStore.loading"
-      :server-total="salesStore.total"
-      :show-search="false"
-      :show-column-toggle="false"
-      search-placeholder="Search orders..."
-    >
-      <template #empty>
-        <EmptyState title="No orders found" description="Create your first sales order" action="New Order" @action="navigateTo('/sales/new')" />
-      </template>
-    </AppTable>
+    <UiCard>
+      <UiCardHeader class="pb-3">
+        <div class="flex items-center gap-2">
+          <UiSelect v-model="customerFilter">
+            <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Customers" /></UiSelectTrigger>
+            <UiSelectContent>
+              <UiSelectItem value="__all__">All Customers</UiSelectItem>
+              <UiSelectItem v-for="c in customersStore.customers" :key="c.id" :value="c.id">{{ c.name }}</UiSelectItem>
+            </UiSelectContent>
+          </UiSelect>
+          <UiSelect v-model="statusFilter">
+            <UiSelectTrigger class="w-36"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
+            <UiSelectContent>
+              <UiSelectItem value="__all__">All Status</UiSelectItem>
+              <UiSelectItem value="PENDING">Pending</UiSelectItem>
+              <UiSelectItem value="CONFIRMED">Confirmed</UiSelectItem>
+              <UiSelectItem value="COMPLETED">Completed</UiSelectItem>
+              <UiSelectItem value="CANCELLED">Cancelled</UiSelectItem>
+            </UiSelectContent>
+          </UiSelect>
+        </div>
+      </UiCardHeader>
+      <UiCardContent>
+        <AppTable
+          :data="salesStore.orders"
+          :columns="columns"
+          :loading="salesStore.loading"
+          :server-total="salesStore.total"
+          :show-search="false"
+          :show-column-toggle="false"
+        >
+          <template #empty>
+            <EmptyState title="No orders found" description="Create your first sales order" action="New Order" @action="navigateTo('/sales/new')" />
+          </template>
+        </AppTable>
+      </UiCardContent>
+    </UiCard>
   </div>
 </template>
