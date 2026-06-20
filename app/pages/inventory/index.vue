@@ -39,7 +39,7 @@ async function fetchAll() {
     await Promise.all([
       productsStore.fetchProducts(),
       warehousesStore.fetchWarehouses(),
-      stockStore.fetchStocks({ lowStock: '10' }),
+      stockStore.fetchStocks(),
       stockStore.fetchMovements({ limit: 10 }),
     ])
   } finally {
