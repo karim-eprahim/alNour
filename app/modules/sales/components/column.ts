@@ -52,19 +52,19 @@ export function getOrderColumns(actions: OrderActions): ColumnDef<SalesOrder>[] 
     {
       id: 'items',
       header: 'Items',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, String(row.original._count?.items ?? 0)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.items ?? 0)),
     },
     {
       accessorKey: 'totalAmount',
       header: 'Total',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums font-medium block' }, Number(row.original.totalAmount).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalAmount).toFixed(2)),
     },
     {
       id: 'paid',
       header: 'Paid',
       cell: ({ row }) => {
         const paid = row.original.invoices?.reduce((s, inv) => s + Number(inv.paidAmount), 0) || 0
-        return h('span', { class: 'text-right tabular-nums block' }, paid.toFixed(2))
+        return h('span', { class: 'tabular-nums block' }, paid.toFixed(2))
       },
     },
     {
@@ -94,17 +94,17 @@ export function getOrderItemColumns(): ColumnDef<SalesOrderItem>[] {
     {
       accessorKey: 'quantity',
       header: 'Qty',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
     },
     {
       accessorKey: 'unitPrice',
       header: 'Unit Price',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, Number(row.original.unitPrice).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.unitPrice).toFixed(2)),
     },
     {
       accessorKey: 'totalPrice',
       header: 'Total',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums font-medium block' }, Number(row.original.totalPrice).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalPrice).toFixed(2)),
     },
   ]
 }
@@ -134,25 +134,25 @@ export function getInvoiceColumns(actions: InvoiceActions): ColumnDef<Invoice>[]
     {
       accessorKey: 'totalAmount',
       header: 'Total',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, Number(row.original.totalAmount).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.totalAmount).toFixed(2)),
     },
     {
       accessorKey: 'paidAmount',
       header: 'Paid',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums text-green-600 block' }, Number(row.original.paidAmount).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums text-green-600 block' }, Number(row.original.paidAmount).toFixed(2)),
     },
     {
       id: 'due',
       header: 'Due',
       cell: ({ row }) => {
         const due = Number(row.original.totalAmount) - Number(row.original.paidAmount)
-        return h('span', { class: 'text-right tabular-nums font-medium text-destructive block' }, due.toFixed(2))
+        return h('span', { class: 'tabular-nums font-medium text-destructive block' }, due.toFixed(2))
       },
     },
     {
       id: 'payments',
       header: 'Payments',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, String(row.original._count?.payments ?? 0)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.payments ?? 0)),
     },
     {
       accessorKey: 'createdAt',

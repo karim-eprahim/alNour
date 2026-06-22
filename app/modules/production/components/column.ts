@@ -43,17 +43,17 @@ export function getBatchColumns(actions: BatchActions): ColumnDef<ProductionBatc
     {
       id: 'inputs',
       header: 'Inputs',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, String(row.original._count?.consumptions ?? 0)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.consumptions ?? 0)),
     },
     {
       id: 'outputs',
       header: 'Outputs',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, String(row.original._count?.outputs ?? 0)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.outputs ?? 0)),
     },
     {
       accessorKey: 'totalBatchCost',
       header: 'Total Cost',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums font-medium block' }, Number(row.original.totalBatchCost).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalBatchCost).toFixed(2)),
     },
     {
       accessorKey: 'createdAt',
@@ -85,17 +85,17 @@ export function getConsumptionColumns(): ColumnDef<ProductionConsumption>[] {
     {
       accessorKey: 'quantity',
       header: 'Qty',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
     },
     {
       accessorKey: 'unitCost',
       header: 'Unit Cost',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, Number(row.original.unitCost).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.unitCost).toFixed(2)),
     },
     {
       accessorKey: 'totalCost',
       header: 'Total',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums font-medium block' }, Number(row.original.totalCost).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalCost).toFixed(2)),
     },
   ]
 }
@@ -113,17 +113,17 @@ export function getOutputColumns(): ColumnDef<ProductionOutput>[] {
     {
       accessorKey: 'quantity',
       header: 'Qty',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.quantity).toFixed(3)),
     },
     {
       accessorKey: 'waste',
       header: 'Waste',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums text-destructive block' }, Number(row.original.waste).toFixed(3)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums text-destructive block' }, Number(row.original.waste).toFixed(3)),
     },
     {
       accessorKey: 'costPerUnit',
       header: 'Cost/Unit',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums font-medium block' }, Number(row.original.costPerUnit).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.costPerUnit).toFixed(2)),
     },
   ]
 }
@@ -138,17 +138,17 @@ export function getProductivityColumns(): ColumnDef<WorkerProductivity>[] {
     {
       accessorKey: 'bagsPacked',
       header: 'Bags Packed',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, String(row.original.bagsPacked)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original.bagsPacked)),
     },
     {
       accessorKey: 'rewardPerBag',
       header: 'Reward/Bag',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, Number(row.original.rewardPerBag).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, Number(row.original.rewardPerBag).toFixed(2)),
     },
     {
       accessorKey: 'totalReward',
       header: 'Total Reward',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums font-medium block' }, Number(row.original.totalReward).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalReward).toFixed(2)),
     },
   ]
 }
@@ -170,7 +170,7 @@ export function getBatchReportColumns(): ColumnDef<ProductionBatch>[] {
       header: 'Inputs',
       cell: ({ row }) => {
         const total = row.original.consumptions?.reduce((s, c) => s + Number(c.quantity), 0) || 0
-        return h('span', { class: 'text-right tabular-nums block' }, total.toFixed(3))
+        return h('span', { class: 'tabular-nums block' }, total.toFixed(3))
       },
     },
     {
@@ -178,7 +178,7 @@ export function getBatchReportColumns(): ColumnDef<ProductionBatch>[] {
       header: 'Output',
       cell: ({ row }) => {
         const total = row.original.outputs?.reduce((s, o) => s + Number(o.quantity), 0) || 0
-        return h('span', { class: 'text-right tabular-nums block' }, total.toFixed(3))
+        return h('span', { class: 'tabular-nums block' }, total.toFixed(3))
       },
     },
     {
@@ -186,7 +186,7 @@ export function getBatchReportColumns(): ColumnDef<ProductionBatch>[] {
       header: 'Waste',
       cell: ({ row }) => {
         const total = row.original.outputs?.reduce((s, o) => s + Number(o.waste), 0) || 0
-        return h('span', { class: 'text-right tabular-nums text-destructive block' }, total.toFixed(3))
+        return h('span', { class: 'tabular-nums text-destructive block' }, total.toFixed(3))
       },
     },
     {
@@ -197,13 +197,13 @@ export function getBatchReportColumns(): ColumnDef<ProductionBatch>[] {
         const waste = row.original.outputs?.reduce((s, o) => s + Number(o.waste), 0) || 0
         const total = out + waste
         const pct = total > 0 ? (out / total) * 100 : 0
-        return h('span', { class: 'text-right tabular-nums block' }, `${pct.toFixed(1)}%`)
+        return h('span', { class: 'tabular-nums block' }, `${pct.toFixed(1)}%`)
       },
     },
     {
       accessorKey: 'totalBatchCost',
       header: 'Cost',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums font-medium block' }, Number(row.original.totalBatchCost).toFixed(2)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalBatchCost).toFixed(2)),
     },
     {
       accessorKey: 'createdAt',

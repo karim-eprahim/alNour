@@ -40,19 +40,19 @@ export function getCustomerColumns(actions: CustomerActions): ColumnDef<Customer
     {
       id: 'orders',
       header: 'Orders',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, String(row.original._count?.salesOrders ?? 0)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.salesOrders ?? 0)),
     },
     {
       id: 'invoices',
       header: 'Invoices',
-      cell: ({ row }) => h('span', { class: 'text-right tabular-nums block' }, String(row.original._count?.invoices ?? 0)),
+      cell: ({ row }) => h('span', { class: 'tabular-nums block' }, String(row.original._count?.invoices ?? 0)),
     },
     {
       id: 'balance',
       header: 'Balance',
       cell: ({ row }) => {
         const bal = row.original.balance || 0
-        return h('span', { class: `text-right tabular-nums font-medium block ${bal > 0 ? 'text-destructive' : 'text-green-600'}` }, bal.toFixed(2))
+        return h('span', { class: `tabular-nums font-medium block ${bal > 0 ? 'text-destructive' : 'text-green-600'}` }, bal.toFixed(2))
       },
     },
     {
@@ -100,7 +100,7 @@ export function getLedgerColumns(): ColumnDef<any>[] {
       header: 'Debit',
       cell: ({ row }) => {
         const amt = row.original.type === 'DEBIT' ? Number(row.original.amount).toFixed(2) : '—'
-        return h('span', { class: 'text-right tabular-nums text-destructive block' }, amt)
+        return h('span', { class: 'tabular-nums text-destructive block' }, amt)
       },
     },
     {
@@ -108,7 +108,7 @@ export function getLedgerColumns(): ColumnDef<any>[] {
       header: 'Credit',
       cell: ({ row }) => {
         const amt = row.original.type === 'CREDIT' ? Number(row.original.amount).toFixed(2) : '—'
-        return h('span', { class: 'text-right tabular-nums text-green-600 block' }, amt)
+        return h('span', { class: 'tabular-nums text-green-600 block' }, amt)
       },
     },
   ]
