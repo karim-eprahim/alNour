@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, DollarSign, Package, TrendingUp, Scale } from '@lucide/vue'
-import { getConsumptionColumns, getOutputColumns, getProductivityColumns } from '@/modules/production/components/column'
+import { getConsumptionColumns, getOutputColumns } from '@/modules/production/components/column'
+import { getDailyWageColumns } from '@/modules/workers/components/column'
 import { UiBadge } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
@@ -43,7 +44,7 @@ const costPerUnit = computed(() => {
 
 const consumptionColumns = getConsumptionColumns()
 const outputColumns = getOutputColumns()
-const productivityColumns = getProductivityColumns()
+const dailyWageColumns = getDailyWageColumns()
 
 async function load() {
   await productionStore.fetchBatch(route.params.id as string)
@@ -159,19 +160,19 @@ onMounted(load)
 
       <UiCard>
         <UiCardHeader>
-          <UiCardTitle>Worker Productivity</UiCardTitle>
-          <UiCardDescription>Workers assigned to this batch</UiCardDescription>
+          <UiCardTitle>Worker Daily Wages</UiCardTitle>
+          <UiCardDescription>Workers assigned to this batch and their daily wages</UiCardDescription>
         </UiCardHeader>
         <UiCardContent>
           <AppTable
-            :data="batch.productivities || []"
-            :columns="productivityColumns"
+            :data="batch.workerDailyWages || []"
+            :columns="dailyWageColumns"
             :show-search="false"
             :show-column-toggle="false"
             :show-pagination="false"
           >
             <template #empty>
-              <EmptyState title="No workers recorded" description="Worker productivity not yet linked to this batch" />
+              <EmptyState title="No workers recorded" description="Log attendance and daily wages from the Workers page" />
             </template>
           </AppTable>
         </UiCardContent>

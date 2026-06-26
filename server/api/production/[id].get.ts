@@ -10,8 +10,9 @@ export default defineEventHandler(async (event) => {
       outputs: {
         include: { product: { select: { id: true, name: true, sku: true, type: true, purchaseCost: true } } },
       },
-      productivities: {
-        include: { worker: { select: { id: true, name: true } } },
+      workerDailyWages: {
+        include: { worker: { select: { id: true, name: true, role: true } } },
+        orderBy: { date: 'desc' },
       },
     },
   })

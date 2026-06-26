@@ -14,10 +14,22 @@ export interface ProductionBatch {
   consumptions?: ProductionConsumption[]
   outputs?: ProductionOutput[]
   productivities?: WorkerProductivity[]
+  workerDailyWages?: WorkerDailyWage[]
   _count?: {
     consumptions: number
     outputs: number
   }
+}
+
+export interface WorkerDailyWage {
+  id: string
+  workerId: string
+  productionBatchId: string
+  dailyWage: number
+  notes?: string | null
+  date: string
+  worker?: { id: string; name: string; role?: string | null }
+  batch?: { id: string; batchNumber: string }
 }
 
 export interface ProductionConsumption {
