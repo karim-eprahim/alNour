@@ -13,7 +13,6 @@ const productionStore = useProductionStore()
 
 const selectedDate = ref(new Date().toISOString().split('T')[0] || '')
 const selectedBatchId = ref('__none__')
-
 const workerRecords = ref<Record<string, {
   checked: boolean
   status: 'PRESENT' | 'ABSENT' | 'LEAVE'
@@ -99,6 +98,7 @@ function getRec(id: string) {
 }
 
 function toggleAll(checked: boolean) {
+  console.log("checked",checked)
   for (const id of Object.keys(workerRecords.value)) {
     getRec(id).checked = checked
   }
@@ -111,6 +111,11 @@ function setAllStatus(status: 'PRESENT' | 'ABSENT' | 'LEAVE') {
     rec.checked = status === 'PRESENT'
   }
 }
+
+const isAllChecked = computed(() => {
+  if (activeWorkers.value.length === 0) return false
+  return Object.values(workerRecords.value).every((r) => r.checked)
+})
 
 onMounted(load)
 </script>
@@ -159,11 +164,11 @@ onMounted(load)
             <UiTableHeader>
               <UiTableRow>
                 <UiTableHead class="w-12">
-                  <UiCheckbox
-                    :checked="Object.values(workerRecords).every((r) => r.checked)"
-                    :indeterminate="Object.values(workerRecords).some((r) => r.checked) && !Object.values(workerRecords).every((r) => r.checked)"
-                    @change="toggleAll(($event as any)?.target?.checked ?? false)"
-                  />
+                <UiCheckbox
+                  v-model="isAllChecked"
+                  :indeterminate="Object.values(workerRecords).some((r) => r.checked) && !Object.values(workerRecords).every((r) => r.checked)"
+                  @click="toggleAll(!Object.values(workerRecords).every((r) => r.checked))"
+                />
                 </UiTableHead>
                 <UiTableHead>Worker</UiTableHead>
                 <UiTableHead>Role</UiTableHead>
@@ -180,10 +185,10 @@ onMounted(load)
               </UiTableRow>
               <UiTableRow v-for="w in activeWorkers" :key="w.id">
                 <UiTableCell>
-                  <UiCheckbox
-                    :checked="getRec(w.id).checked"
-                    @change="getRec(w.id).checked = ($event as any)?.target?.checked ?? false"
-                  />
+                <UiCheckbox
+                  v-model="getRec(w.id).checked"
+                  @click="getRec(w.id).checked = !getRec(w.id).checked"
+                />
                 </UiTableCell>
                 <UiTableCell>
                   <span class="font-medium">{{ w.name }}</span>
@@ -208,8 +213,6 @@ onMounted(load)
                   <UiBadge v-else variant="default" class="text-xs bg-green-100 text-green-800 hover:bg-green-100">Present</UiBadge>
                 </UiTableCell>
                 <UiTableCell v-if="selectedBatchId !== '__none__'">
-                  <pre>{{ getRec(w.id) }}</pre>
-                  <pre>{{ w }}</pre>
                   <UiInput
                     v-if="getRec(w.id).checked"
                     v-model="getRec(w.id).dailyWage as unknown as number"
