@@ -511,9 +511,10 @@ model Worker {
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
 
-  attendance Attendance[]
-  advances   WorkerAdvance[]
-  dailyWages WorkerDailyWage[]
+  attendance    Attendance[]
+  advances      WorkerAdvance[]
+  dailyWages    WorkerDailyWage[]
+  ledgerEntries LedgerEntry[]
 
   @@map("workers")
 }
@@ -582,6 +583,7 @@ model LedgerEntry {
   id          String     @id @default(uuid())
   customerId  String?
   supplierId  String?
+  workerId    String?
   amount      Decimal    @db.Decimal(12, 2) // Positive for dues, Negative for payments
   type        LedgerType
   description String?
@@ -589,6 +591,7 @@ model LedgerEntry {
 
   customer Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
   supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  worker   Worker?   @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
   @@map("ledger_entries")
 }
