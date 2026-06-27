@@ -90,7 +90,7 @@ async function handleDeleteUser() {
   } catch {}
 }
 
-const userRoles: UserRole[] = ['ADMIN', 'MANAGER', 'STOREKEEPER', 'ACCOUNTANT', 'DISTRIBUTOR', 'WORKER']
+const userRoles: UserRole[] = ['ADMIN', 'MANAGER', 'STOREKEEPER', 'ACCOUNTANT', 'DISTRIBUTOR']
 const userStatuses: UserStatus[] = ['ACTIVE', 'INACTIVE', 'BLOCKED']
 
 // Permissions

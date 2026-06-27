@@ -154,5 +154,81 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // ──────────────────────────────────────────────
+  // 4. DISTRIBUTOR DATA — visible to DISTRIBUTOR role
+  // ──────────────────────────────────────────────
+  if (userRole === 'DISTRIBUTOR') {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const [custodies, salesToday, ledgerEntries] = await Promise.all([
+      prisma.distributorCustody.findMany({
+        where: { distributorId: auth.userId },
+        include: {
+          product: { select: { id: true, name: true, nameAr: true } },
+        },
+      }),
+      prisma.salesOrder.count({
+        where: {
+          createdById: auth.userId,
+          createdAt: { gte: todayStart },
+        },
+      }),
+      prisma.ledgerEntry.findMany({
+        where: { distributorId: auth.userId },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+
+    const totalCustody = custodies.reduce((sum, c) => sum + c.quantity.toNumber(), 0)
+    const outstanding = ledgerEntries.reduce((sum, e) => {
+      return e.type === 'DEBIT' ? sum + e.amount.toNumber() : sum - e.amount.toNumber()
+    }, 0)
+
+    data.distributor = {
+      custodies: custodies.map((c) => ({
+        productId: c.productId,
+        productName: c.product.name,
+        quantity: c.quantity.toNumber(),
+      })),
+      totalCustody,
+      salesToday,
+      outstanding,
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // 5. GOODS IN TRANSIT — ADMIN / MANAGER / ACCOUNTANT
+  // ──────────────────────────────────────────────
+  if (canViewFinancial || isAdmin) {
+    const [custodyAgg, distributorsWithCustody] = await Promise.all([
+      prisma.distributorCustody.aggregate({
+        _sum: { quantity: true },
+      }),
+      prisma.distributorCustody.findMany({
+        include: {
+          distributor: { select: { id: true, name: true } },
+          product: { select: { id: true, name: true } },
+        },
+      }),
+    ])
+
+    const byDistributor: Record<string, { name: string; totalQty: number; products: { name: string; qty: number }[] }> = {}
+    for (const c of distributorsWithCustody) {
+      const did = c.distributor.id
+      if (!byDistributor[did]) {
+        byDistributor[did] = { name: c.distributor.name, totalQty: 0, products: [] }
+      }
+      byDistributor[did].totalQty += c.quantity.toNumber()
+      byDistributor[did].products.push({ name: c.product.name, qty: c.quantity.toNumber() })
+    }
+
+    data.goodsInTransit = {
+      totalQuantity: custodyAgg._sum.quantity?.toNumber() || 0,
+      distributorCount: Object.keys(byDistributor).length,
+      byDistributor: Object.values(byDistributor),
+    }
+  }
+
   return data
 })

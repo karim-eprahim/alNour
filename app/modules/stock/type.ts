@@ -1,4 +1,4 @@
-export type MovementType = 'PURCHASE' | 'PRODUCTION_CONSUME' | 'PRODUCTION_OUTPUT' | 'SALE' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'ADJUSTMENT'
+export type MovementType = 'PURCHASE' | 'PRODUCTION_CONSUME' | 'PRODUCTION_OUTPUT' | 'SALE' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'ADJUSTMENT' | 'DISTRIBUTOR_LOAD' | 'DISTRIBUTOR_RETURN'
 
 export interface StockEntry {
   id: string
@@ -73,4 +73,6 @@ export const MOVEMENT_TYPES: { value: MovementType; label: string; isIncrease: b
   { value: 'PRODUCTION_CONSUME', label: 'Production Consume', isIncrease: false },
   { value: 'TRANSFER_OUT', label: 'Transfer Out', isIncrease: false },
   { value: 'ADJUSTMENT', label: 'Adjustment', isIncrease: false },
+  { value: 'DISTRIBUTOR_LOAD', label: 'Distributor Load', isIncrease: false },
+  { value: 'DISTRIBUTOR_RETURN', label: 'Distributor Return', isIncrease: true },
 ]

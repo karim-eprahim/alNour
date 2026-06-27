@@ -2,7 +2,7 @@
 import {
   Package, Warehouse, AlertTriangle, ArrowUp, ArrowDown, Factory,
   DollarSign, TrendingUp, TrendingDown, Users, Briefcase,
-  ShoppingBag, Receipt, Scale, RefreshCw,
+  ShoppingBag, Receipt, Scale, RefreshCw, Truck,
 } from '@lucide/vue'
 import { MOVEMENT_TYPES } from '@/modules/stock/type'
 import PageHeader from '~/components/shared/PageHeader.vue'
@@ -19,6 +19,7 @@ const userRole = computed(() => authStore.userRole)
 const isStorekeeper = computed(() => userRole.value === 'STOREKEEPER')
 const isAccountant = computed(() => userRole.value === 'ACCOUNTANT')
 const isAdmin = computed(() => userRole.value === 'ADMIN' || userRole.value === 'MANAGER')
+const isDistributor = computed(() => userRole.value === 'DISTRIBUTOR')
 const canViewFinancial = computed(() => isAdmin.value || isAccountant.value)
 const canViewStock = computed(() => isAdmin.value || isStorekeeper.value || true)
 
@@ -133,6 +134,93 @@ onMounted(fetchDashboard)
           </UiCardContent>
         </UiCard>
       </div>
+
+      <!-- DISTRIBUTOR WIDGETS — DISTRIBUTOR ROLE -->
+      <template v-if="isDistributor && data.distributor">
+        <div class="grid gap-4 sm:grid-cols-3">
+          <UiCard>
+            <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
+              <UiCardTitle class="text-sm font-medium text-muted-foreground">My Custody</UiCardTitle>
+              <Truck class="size-4 text-muted-foreground" />
+            </UiCardHeader>
+            <UiCardContent>
+              <p class="text-2xl font-bold">{{ (data.distributor.totalCustody || 0).toFixed(3) }}</p>
+              <p class="text-xs text-muted-foreground">bags currently on truck</p>
+              <div v-if="data.distributor.custodies?.length" class="mt-3 space-y-1 border-t pt-3">
+                <div v-for="c in data.distributor.custodies" :key="c.productId" class="flex justify-between text-xs">
+                  <span class="text-muted-foreground">{{ c.productName }}</span>
+                  <span class="font-medium tabular-nums">{{ c.quantity.toFixed(3) }}</span>
+                </div>
+              </div>
+            </UiCardContent>
+          </UiCard>
+
+          <UiCard>
+            <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
+              <UiCardTitle class="text-sm font-medium text-muted-foreground">Today's Sales</UiCardTitle>
+              <ShoppingBag class="size-4 text-muted-foreground" />
+            </UiCardHeader>
+            <UiCardContent>
+              <p class="text-2xl font-bold">{{ data.distributor.salesToday || 0 }}</p>
+              <p class="text-xs text-muted-foreground">orders created today</p>
+            </UiCardContent>
+          </UiCard>
+
+          <UiCard>
+            <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
+              <UiCardTitle class="text-sm font-medium text-muted-foreground">Financial Outstanding</UiCardTitle>
+              <DollarSign class="size-4 text-muted-foreground" />
+            </UiCardHeader>
+            <UiCardContent>
+              <p class="text-2xl font-bold" :class="(data.distributor.outstanding || 0) > 0 ? 'text-destructive' : 'text-green-600'">
+                {{ (data.distributor.outstanding || 0).toFixed(2) }}
+              </p>
+              <p class="text-xs text-muted-foreground">{{ (data.distributor.outstanding || 0) > 0 ? 'balance due' : 'no outstanding dues' }}</p>
+            </UiCardContent>
+          </UiCard>
+        </div>
+      </template>
+
+      <!-- GOODS IN TRANSIT WIDGET — ADMIN / ACCOUNTANT -->
+      <template v-if="(isAdmin || isAccountant) && data.goodsInTransit">
+        <UiCard>
+          <UiCardHeader>
+            <UiCardTitle class="flex items-center gap-2">
+              <Truck class="size-5" /> Goods in Transit / With Distributors
+            </UiCardTitle>
+            <UiCardDescription>Total inventory currently loaded on distributor trucks</UiCardDescription>
+          </UiCardHeader>
+          <UiCardContent>
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+              <div class="rounded-lg border p-4">
+                <p class="text-sm text-muted-foreground">Total Bags in Transit</p>
+                <p class="text-2xl font-bold">{{ (data.goodsInTransit.totalQuantity || 0).toFixed(3) }}</p>
+              </div>
+              <div class="rounded-lg border p-4">
+                <p class="text-sm text-muted-foreground">Active Distributors</p>
+                <p class="text-2xl font-bold">{{ data.goodsInTransit.distributorCount || 0 }}</p>
+              </div>
+            </div>
+            <div v-if="data.goodsInTransit.byDistributor?.length" class="space-y-3">
+              <div v-for="d in data.goodsInTransit.byDistributor" :key="d.name" class="rounded-lg border p-3">
+                <div class="flex items-center justify-between mb-1">
+                  <p class="text-sm font-medium">{{ d.name }}</p>
+                  <span class="text-sm font-bold tabular-nums">{{ d.totalQty.toFixed(3) }}</span>
+                </div>
+                <div class="space-y-0.5">
+                  <div v-for="p in d.products" :key="p.name" class="flex justify-between text-xs text-muted-foreground pl-2">
+                    <span>{{ p.name }}</span>
+                    <span class="tabular-nums">{{ p.qty.toFixed(3) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else>
+              <EmptyState title="No goods in transit" description="All distributor trucks are empty" />
+            </div>
+          </UiCardContent>
+        </UiCard>
+      </template>
 
       <!-- INVENTORY WIDGETS — STOREKEEPER / ADMIN -->
       <template v-if="canViewStock && data.inventory">
