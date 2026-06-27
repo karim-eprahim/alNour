@@ -1,13 +1,14 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   const distributors = await prisma.user.findMany({
-    where: { role: 'DISTRIBUTOR', status: 'ACTIVE' },
+    where: { role: { name: 'DISTRIBUTOR' }, status: 'ACTIVE' },
     select: {
       id: true,
       name: true,
       email: true,
       phone: true,
       avatar: true,
-      role: true,
+      roleId: true,
+      role: { select: { id: true, name: true } },
       status: true,
       createdAt: true,
       custodies: {

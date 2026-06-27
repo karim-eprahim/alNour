@@ -17,9 +17,9 @@ export default defineEventHandler(async (event) => {
 
   const distributor = await prisma.user.findUnique({
     where: { id: body.distributorId },
-    select: { id: true, role: true },
+    select: { id: true, role: { select: { name: true } } },
   })
-  if (!distributor || distributor.role !== 'DISTRIBUTOR') {
+  if (!distributor || distributor.role?.name !== 'DISTRIBUTOR') {
     throw createError({ statusCode: 400, statusMessage: 'Invalid distributor' })
   }
 

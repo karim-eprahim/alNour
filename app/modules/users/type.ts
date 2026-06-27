@@ -1,5 +1,10 @@
-export type UserRole = 'ADMIN' | 'MANAGER' | 'STOREKEEPER' | 'ACCOUNTANT' | 'DISTRIBUTOR' | 'WORKER'
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED'
+
+export interface RoleBrief {
+  id: string
+  name: string
+  label?: string | null
+}
 
 export interface User {
   id: string
@@ -7,7 +12,8 @@ export interface User {
   email: string
   phone?: string | null
   avatar?: string | null
-  role: UserRole
+  roleId: string
+  role: RoleBrief
   status: UserStatus
   lastLogin?: string | null
   createdAt: string
@@ -19,7 +25,7 @@ export interface CreateUserPayload {
   email: string
   password: string
   phone?: string
-  role: UserRole
+  roleId: string
 }
 
 export interface UpdateUserPayload {
@@ -27,7 +33,7 @@ export interface UpdateUserPayload {
   email?: string
   phone?: string
   avatar?: string
-  role?: UserRole
+  roleId?: string
   status?: UserStatus
   password?: string
 }

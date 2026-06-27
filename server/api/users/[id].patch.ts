@@ -9,22 +9,22 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'User not found' })
   }
 
-  const data: any = {}
-  if (body.name) data.name = body.name
-  if (body.email) data.email = body.email
-  if (body.phone !== undefined) data.phone = body.phone
-  if (body.avatar !== undefined) data.avatar = body.avatar
-  if (body.role) data.role = body.role
-  if (body.status) data.status = body.status
-  if (body.password) {
-    data.password = await bcrypt.hash(body.password, 12)
-  }
-
   if (body.email && body.email !== existing.email) {
     const emailExists = await prisma.user.findUnique({ where: { email: body.email } })
     if (emailExists) {
       throw createError({ statusCode: 409, statusMessage: 'Email already in use' })
     }
+  }
+
+  const data: any = {}
+  if (body.name) data.name = body.name
+  if (body.email) data.email = body.email
+  if (body.phone !== undefined) data.phone = body.phone
+  if (body.avatar !== undefined) data.avatar = body.avatar
+  if (body.roleId) data.roleId = body.roleId
+  if (body.status) data.status = body.status
+  if (body.password) {
+    data.password = await bcrypt.hash(body.password, 12)
   }
 
   const user = await prisma.user.update({
@@ -36,7 +36,8 @@ export default defineEventHandler(async (event) => {
       email: true,
       phone: true,
       avatar: true,
-      role: true,
+      roleId: true,
+      role: { select: { id: true, name: true, label: true } },
       status: true,
       lastLogin: true,
       createdAt: true,

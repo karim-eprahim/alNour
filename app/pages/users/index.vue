@@ -1,27 +1,39 @@
 <script setup lang="ts">
-import type { User, UserRole, UserStatus } from '@/modules/users/type'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { Plus, Shield, Pencil, Trash2, Loader2, Save } from '@lucide/vue'
+import { toast } from 'vue-sonner'
+import type { User, UserStatus } from '@/modules/users/type'
 import type { UserActions } from '@/modules/users/components/column'
 import { getUserColumns } from '@/modules/users/components/column'
-import type { PermissionAction, ModuleName, Permission } from '@/modules/permissions/type'
-import { Plus, Trash2, Shield } from '@lucide/vue'
-import PageHeader from '~/components/shared/PageHeader.vue';
-import LoadingState from '~/components/shared/LoadingState.vue'
-
-const userActions: UserActions = {
-  onView: (id) => navigateTo(`/users/${id}`),
-  onEdit: (user) => openEdit(user),
-  onDelete: (user) => openDelete(user),
-}
-
-const userColumns = getUserColumns(userActions)
+import type { Role } from '@/modules/permissions/type'
+import PageHeader from '~/components/shared/PageHeader.vue'
+import PermissionGroupP from '@/components/permissions/PermissionGroup.vue'
+import {
+  fetchRolesApi,
+  createRoleApi,
+  deleteRoleApi,
+  fetchGroupedPermissionsApi,
+  fetchRolePermissionIdsApi,
+  saveRolePermissionsApi,
+  updateRoleApi,
+} from '~/modules/permissions/api'
+import type { PermissionGroup } from '~/modules/permissions/type'
 
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
 })
 
+const userActions: UserActions = {
+  onView: (id) => navigateTo(`/users/${id}`),
+  onEdit: (user) => openEdit(user),
+  onDelete: (user) => openDelete(user),
+}
+const userColumns = getUserColumns(userActions)
+
 // Users
 const usersStore = useUsersStore()
+const rolesStore = usePermissionsStore()
 
 const roleFilter = ref<string>('all')
 const statusFilter = ref<string>('all')
@@ -32,8 +44,10 @@ const showDeleteDialog = ref(false)
 const editingUser = ref<User | null>(null)
 const deletingUser = ref<User | null>(null)
 
-const createForm = reactive({ name: '', email: '', password: '', phone: '', role: 'WORKER' as UserRole })
-const editForm = reactive({ name: '', email: '', phone: '', role: 'WORKER' as UserRole, status: 'ACTIVE' as UserStatus })
+const createForm = reactive({ name: '', email: '', password: '', phone: '', roleId: '' })
+const editForm = reactive({ name: '', email: '', phone: '', roleId: '', status: 'ACTIVE' as UserStatus })
+
+const allRoles = computed(() => rolesStore.roles)
 
 watch([roleFilter, statusFilter], () => fetchUsers())
 
@@ -54,7 +68,7 @@ function resetCreateForm() {
   createForm.email = ''
   createForm.password = ''
   createForm.phone = ''
-  createForm.role = 'WORKER'
+  createForm.roleId = ''
 }
 
 function openEdit(user: User) {
@@ -62,7 +76,7 @@ function openEdit(user: User) {
   editForm.name = user.name
   editForm.email = user.email
   editForm.phone = user.phone ?? ''
-  editForm.role = user.role
+  editForm.roleId = user.roleId
   editForm.status = user.status
   showEditDialog.value = true
 }
@@ -90,64 +104,125 @@ async function handleDeleteUser() {
   } catch {}
 }
 
-const userRoles: UserRole[] = ['ADMIN', 'MANAGER', 'STOREKEEPER', 'ACCOUNTANT', 'DISTRIBUTOR']
 const userStatuses: UserStatus[] = ['ACTIVE', 'INACTIVE', 'BLOCKED']
 
-// Permissions
-const permsStore = usePermissionsStore()
+// Roles
+const roles = ref<Role[]>([])
+const rolesLoading = ref(false)
 
-const showCreatePermDialog = ref(false)
-const showDeletePermDialog = ref(false)
-const deletingPerm = ref<Permission | null>(null)
+const editingRoleId = ref<string | null>(null)
+const showRoleEditor = ref(false)
+const showCreateRoleDialog = ref(false)
+const showDeleteRoleDialog = ref(false)
+const deletingRole = ref<Role | null>(null)
+const newRoleName = ref('')
+const roleModules = ref<PermissionGroup[]>([])
+const roleSelectedIds = ref<Set<string>>(new Set())
+const roleEditName = ref('')
+const roleSaving = ref(false)
 
-const createPermForm = reactive({ role: 'WORKER', module: 'PRODUCTS' as ModuleName, action: 'READ' as PermissionAction })
+async function fetchRoles() {
+  rolesLoading.value = true
+  try {
+    await rolesStore.fetchRoles()
+    roles.value = rolesStore.roles
+  } catch {
+    toast.error('Failed to load roles')
+  } finally {
+    rolesLoading.value = false
+  }
+}
 
-const permRoles = ['ADMIN', 'MANAGER', 'STOREKEEPER', 'ACCOUNTANT', 'DISTRIBUTOR', 'WORKER']
-const permModules: ModuleName[] = ['PRODUCTS', 'INVENTORY', 'PURCHASES', 'SALES', 'CUSTOMERS', 'SUPPLIERS', 'PRODUCTION', 'WORKERS', 'ACCOUNTING', 'REPORTS']
-const permActions: PermissionAction[] = ['CREATE', 'READ', 'UPDATE', 'DELETE']
+async function openRoleEditor(role: Role) {
+  editingRoleId.value = role.id
+  roleEditName.value = role.name
+  showRoleEditor.value = true
+  roleSaving.value = false
+  try {
+    const [grouped, permIds] = await Promise.all([
+      fetchGroupedPermissionsApi(),
+      fetchRolePermissionIdsApi(role.id),
+    ])
+    roleModules.value = grouped.modules
+    roleSelectedIds.value = new Set(permIds.permissionIds)
+  } catch {
+    toast.error('Failed to load permissions')
+  }
+}
 
-const groupedPermissions = computed(() => {
-  const map: Record<string, Record<string, string[]>> = {}
-  for (const role of permRoles) {
-    map[role] = {}
-    for (const mod of permModules) {
-      map[role][mod] = []
+function togglePermission(permissionId: string) {
+  const next = new Set(roleSelectedIds.value)
+  if (next.has(permissionId)) next.delete(permissionId)
+  else next.add(permissionId)
+  roleSelectedIds.value = next
+}
+
+function toggleModuleAll(moduleName: string, checked: boolean) {
+  const mod = roleModules.value.find((m) => m.name === moduleName)
+  if (!mod) return
+  const next = new Set(roleSelectedIds.value)
+  for (const p of mod.permissions) {
+    if (checked) next.add(p.id)
+    else next.delete(p.id)
+  }
+  roleSelectedIds.value = next
+}
+
+async function handleSaveRole() {
+  if (!editingRoleId.value) return
+  roleSaving.value = true
+  try {
+    if (roleEditName.value) {
+      await updateRoleApi(editingRoleId.value, { name: roleEditName.value })
     }
+    await saveRolePermissionsApi(editingRoleId.value, Array.from(roleSelectedIds.value))
+    toast.success('Role saved')
+    showRoleEditor.value = false
+    await fetchRoles()
+  } catch (err: any) {
+    toast.error(err?.data?.statusMessage || 'Failed to save role')
+  } finally {
+    roleSaving.value = false
   }
-  for (const p of permsStore.permissions) {
-    map[p.role]![p.module]!.push(p.action)
+}
+
+async function handleCreateRole() {
+  if (!newRoleName.value) {
+    toast.error('Role name is required')
+    return
   }
-  return map
-})
-
-function hasPermission(role: string, mod: string, action: string): Permission | undefined {
-  return permsStore.permissions.find((p) => p.role === role && p.module === mod && p.action === action)
-}
-
-function openDeletePerm(perm: Permission) {
-  deletingPerm.value = perm
-  showDeletePermDialog.value = true
-}
-
-async function handleDeletePerm() {
-  if (!deletingPerm.value) return
   try {
-    await permsStore.deletePermission(deletingPerm.value.id)
-    showDeletePermDialog.value = false
-    deletingPerm.value = null
-  } catch {}
+    await createRoleApi({ name: newRoleName.value.toUpperCase(), label: newRoleName.value })
+    toast.success('Role created')
+    showCreateRoleDialog.value = false
+    newRoleName.value = ''
+    await fetchRoles()
+  } catch (err: any) {
+    toast.error(err?.data?.statusMessage || 'Failed to create role')
+  }
 }
 
-async function handleCreatePerm() {
+function confirmDeleteRole(role: Role) {
+  deletingRole.value = role
+  showDeleteRoleDialog.value = true
+}
+
+async function handleDeleteRole() {
+  if (!deletingRole.value) return
   try {
-    await permsStore.createPermission(createPermForm)
-    showCreatePermDialog.value = false
-  } catch {}
+    await deleteRoleApi(deletingRole.value.id)
+    toast.success('Role deleted')
+    showDeleteRoleDialog.value = false
+    deletingRole.value = null
+    await fetchRoles()
+  } catch (err: any) {
+    toast.error(err?.data?.statusMessage || 'Failed to delete role')
+  }
 }
 
 onMounted(() => {
   fetchUsers()
-  permsStore.fetchPermissions()
+  fetchRoles()
 })
 </script>
 
@@ -156,8 +231,8 @@ onMounted(() => {
     <PageHeader title="Users & Permissions" description="Manage system users and role-based permissions">
       <template #actions>
         <UiButton @click="showCreateDialog = true">Create User</UiButton>
-        <UiButton variant="outline" @click="showCreatePermDialog = true">
-          <Plus class="size-4" /> Add Permission
+        <UiButton variant="outline" @click="showCreateRoleDialog = true">
+          <Plus class="size-4" /> Create Role
         </UiButton>
       </template>
     </PageHeader>
@@ -174,7 +249,7 @@ onMounted(() => {
               </UiSelectTrigger>
               <UiSelectContent>
                 <UiSelectItem value="all">All roles</UiSelectItem>
-                <UiSelectItem v-for="r in userRoles" :key="r" :value="r">{{ r }}</UiSelectItem>
+                <UiSelectItem v-for="r in allRoles" :key="r.id" :value="r.name">{{ r.name }}</UiSelectItem>
               </UiSelectContent>
             </UiSelect>
             <UiSelect v-model="statusFilter">
@@ -209,57 +284,40 @@ onMounted(() => {
       </UiCardContent>
     </UiCard>
 
-    <!-- Permissions Matrix -->
+    <!-- Roles Section -->
     <UiCard>
       <UiCardHeader>
-        <div class="flex items-center justify-between">
-          <div>
-            <UiCardTitle>Permissions</UiCardTitle>
-            <UiCardDescription>Role-based access control across all modules</UiCardDescription>
-          </div>
-        </div>
+        <UiCardTitle>Roles</UiCardTitle>
+        <UiCardDescription>Manage role-based permissions. Each role defines what actions users can perform.</UiCardDescription>
       </UiCardHeader>
-      <UiCardContent class="p-0">
-        <div v-if="permsStore.loading && permsStore.permissions.length === 0" class="p-6">
+      <UiCardContent>
+        <div v-if="rolesLoading && roles.length === 0" class="py-8">
           <LoadingState />
         </div>
-        <div v-else-if="permsStore.permissions.length === 0" class="p-6">
-          <EmptyState title="No permissions defined" description="Create your first permission to set up role-based access control" action="Add Permission" @action="showCreatePermDialog = true" />
+        <div v-else-if="roles.length === 0" class="py-8">
+          <EmptyState title="No roles defined" description="Create your first role to set up access control" action="Create Role" @action="showCreateRoleDialog = true" />
         </div>
-        <div v-else class="overflow-x-auto">
-          <UiTable>
-            <UiTableHeader>
-              <UiTableRow>
-                <UiTableHead class="sticky left-0 z-10 bg-background min-w-[120px]">Role / Module</UiTableHead>
-                <UiTableHead v-for="mod in permModules" :key="mod" class="min-w-[140px] text-center">{{ mod }}</UiTableHead>
-              </UiTableRow>
-            </UiTableHeader>
-            <UiTableBody>
-              <UiTableRow v-for="role in permRoles" :key="role">
-                <UiTableCell class="sticky left-0 z-10 bg-background font-medium">{{ role }}</UiTableCell>
-                <UiTableCell v-for="mod in permModules" :key="mod" class="text-center">
-                  <div class="flex flex-wrap justify-center gap-1">
-                    <template v-for="action in permActions" :key="action">
-                      <UiBadge
-                        v-if="hasPermission(role, mod, action)"
-                        variant="default"
-                        class="cursor-pointer text-[10px] px-1.5 py-0 hover:opacity-80"
-                        @click="openDeletePerm(hasPermission(role, mod, action)!)"
-                      >
-                        {{ action.charAt(0) }}
-                      </UiBadge>
-                    </template>
-                    <span v-if="permActions.every((a) => !hasPermission(role, mod, a))" class="text-[10px] text-muted-foreground">—</span>
-                  </div>
-                </UiTableCell>
-              </UiTableRow>
-            </UiTableBody>
-          </UiTable>
+        <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            v-for="role in roles"
+            :key="role.id"
+            class="rounded-lg border p-4 flex items-center justify-between hover:bg-accent/30 transition-colors"
+          >
+            <div>
+              <p class="font-medium">{{ role.name }}</p>
+              <p class="text-xs text-muted-foreground">{{ role._count?.users ?? 0 }} user{{ (role._count?.users ?? 0) !== 1 ? 's' : '' }}</p>
+            </div>
+            <div class="flex gap-1">
+              <UiButton variant="ghost" size="icon-sm" @click="openRoleEditor(role)">
+                <Shield class="size-3.5" />
+              </UiButton>
+              <UiButton variant="ghost" size="icon-sm" class="text-destructive hover:text-destructive" @click="confirmDeleteRole(role)">
+                <Trash2 class="size-3.5" />
+              </UiButton>
+            </div>
+          </div>
         </div>
       </UiCardContent>
-      <UiCardFooter v-if="permsStore.permissions.length > 0" class="border-t px-4 py-3">
-        <p class="text-xs text-muted-foreground">{{ permsStore.permissions.length }} permission{{ permsStore.permissions.length !== 1 ? 's' : '' }} defined</p>
-      </UiCardFooter>
     </UiCard>
 
     <!-- Create User Dialog -->
@@ -285,10 +343,10 @@ onMounted(() => {
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
               <UiLabel for="create-role">Role</UiLabel>
-              <UiSelect v-model="createForm.role">
-                <UiSelectTrigger id="create-role"><UiSelectValue /></UiSelectTrigger>
+              <UiSelect v-model="createForm.roleId">
+                <UiSelectTrigger id="create-role"><UiSelectValue placeholder="Select role" /></UiSelectTrigger>
                 <UiSelectContent>
-                  <UiSelectItem v-for="r in userRoles" :key="r" :value="r">{{ r }}</UiSelectItem>
+                  <UiSelectItem v-for="r in allRoles" :key="r.id" :value="r.id">{{ r.name }}</UiSelectItem>
                 </UiSelectContent>
               </UiSelect>
             </div>
@@ -328,10 +386,10 @@ onMounted(() => {
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
               <UiLabel for="edit-role">Role</UiLabel>
-              <UiSelect v-model="editForm.role">
-                <UiSelectTrigger id="edit-role"><UiSelectValue /></UiSelectTrigger>
+              <UiSelect v-model="editForm.roleId">
+                <UiSelectTrigger id="edit-role"><UiSelectValue placeholder="Select role" /></UiSelectTrigger>
                 <UiSelectContent>
-                  <UiSelectItem v-for="r in userRoles" :key="r" :value="r">{{ r }}</UiSelectItem>
+                  <UiSelectItem v-for="r in allRoles" :key="r.id" :value="r.id">{{ r.name }}</UiSelectItem>
                 </UiSelectContent>
               </UiSelect>
             </div>
@@ -365,59 +423,70 @@ onMounted(() => {
       @cancel="showDeleteDialog = false"
     />
 
-    <!-- Create Permission Dialog -->
-    <UiDialog :open="showCreatePermDialog" @update:open="showCreatePermDialog = $event">
+    <!-- Create Role Dialog -->
+    <UiDialog :open="showCreateRoleDialog" @update:open="showCreateRoleDialog = $event">
       <UiDialogContent class="sm:max-w-sm">
         <UiDialogHeader>
-          <UiDialogTitle>Add Permission</UiDialogTitle>
-          <UiDialogDescription>Define which role can perform which action on a module</UiDialogDescription>
+          <UiDialogTitle>Create Role</UiDialogTitle>
+          <UiDialogDescription>Add a new role to define permissions for a group of users</UiDialogDescription>
         </UiDialogHeader>
-        <form class="space-y-4" @submit.prevent="handleCreatePerm">
+        <form @submit.prevent="handleCreateRole" class="space-y-4">
           <div class="space-y-2">
-            <UiLabel for="create-perm-role">Role</UiLabel>
-            <UiSelect v-model="createPermForm.role">
-              <UiSelectTrigger id="create-perm-role"><UiSelectValue /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="r in permRoles" :key="r" :value="r">{{ r }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
-          </div>
-          <div class="space-y-2">
-            <UiLabel for="create-perm-module">Module</UiLabel>
-            <UiSelect v-model="createPermForm.module">
-              <UiSelectTrigger id="create-perm-module"><UiSelectValue /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="mod in permModules" :key="mod" :value="mod">{{ mod }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
-          </div>
-          <div class="space-y-2">
-            <UiLabel for="create-perm-action">Action</UiLabel>
-            <UiSelect v-model="createPermForm.action">
-              <UiSelectTrigger id="create-perm-action"><UiSelectValue /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="a in permActions" :key="a" :value="a">{{ a }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <UiLabel for="new-role-name">Role Name</UiLabel>
+            <UiInput id="new-role-name" v-model="newRoleName" placeholder="e.g. MANAGER" />
           </div>
           <UiDialogFooter>
-            <UiButton type="button" variant="outline" @click="showCreatePermDialog = false">Cancel</UiButton>
-            <UiButton type="submit" :disabled="permsStore.loading">Add</UiButton>
+            <UiButton type="button" variant="outline" @click="showCreateRoleDialog = false">Cancel</UiButton>
+            <UiButton type="submit">Create</UiButton>
           </UiDialogFooter>
         </form>
       </UiDialogContent>
     </UiDialog>
 
-    <!-- Delete Permission Confirm -->
+    <!-- Delete Role Confirm -->
     <ConfirmDialog
-      v-model:open="showDeletePermDialog"
-      title="Delete Permission"
-      :description="`Remove ${deletingPerm?.role} — ${deletingPerm?.module} — ${deletingPerm?.action} permission?`"
+      v-model:open="showDeleteRoleDialog"
+      title="Delete Role"
+      :description="`Are you sure you want to delete ${deletingRole?.name}? This cannot be undone if no users are assigned.`"
       confirm-text="Delete"
       variant="destructive"
-      :loading="permsStore.loading"
-      @confirm="handleDeletePerm"
-      @cancel="showDeletePermDialog = false"
+      @confirm="handleDeleteRole"
+      @cancel="showDeleteRoleDialog = false"
     />
+
+    <!-- Edit Role Permissions Dialog -->
+    <UiDialog :open="showRoleEditor" @update:open="showRoleEditor = $event" class="max-h-[90vh]">
+      <UiDialogContent class="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <UiDialogHeader>
+          <UiDialogTitle>Edit Role: {{ editingRoleId ? roleEditName : '' }}</UiDialogTitle>
+          <UiDialogDescription>Select permissions to assign to this role. Changes affect all users with this role.</UiDialogDescription>
+        </UiDialogHeader>
+        <div class="space-y-4 py-2">
+          <div class="flex items-center gap-4">
+            <div class="space-y-1 flex-1">
+              <UiLabel for="edit-role-name">Role Name</UiLabel>
+              <UiInput id="edit-role-name" v-model="roleEditName" class="max-w-xs" />
+            </div>
+            <UiButton :disabled="roleSaving" @click="handleSaveRole" class="mt-6">
+              <Loader2 v-if="roleSaving" class="size-4 mr-1 animate-spin" />
+              <Save v-else class="size-4 mr-1" />
+              Save
+            </UiButton>
+          </div>
+          <div class="space-y-4">
+            <PermissionGroupP
+              v-for="mod in roleModules"
+              :key="mod.id"
+              :module-name="mod.name"
+              :module-label="mod.label"
+              :permissions="mod.permissions"
+              :selected-ids="roleSelectedIds"
+              @toggle="togglePermission"
+              @toggle-all="toggleModuleAll"
+            />
+          </div>
+        </div>
+      </UiDialogContent>
+    </UiDialog>
   </div>
 </template>

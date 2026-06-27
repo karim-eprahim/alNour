@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
   const auth = event.context.auth
-  const userRole: string = auth.userRole
+  const userRole: string = auth.role
 
   const isStorekeeper = userRole === 'STOREKEEPER'
   const isAccountant = userRole === 'ACCOUNTANT'

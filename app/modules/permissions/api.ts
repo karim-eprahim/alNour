@@ -3,6 +3,10 @@ import type {
   CreatePermissionPayload,
   PermissionsListResponse,
   UserPermissionsResponse,
+  GroupedPermissionsResponse,
+  RolesListResponse,
+  RoleResponse,
+  CreateRolePayload,
 } from './type'
 
 export async function fetchPermissionsApi(): Promise<PermissionsListResponse> {
@@ -33,4 +37,45 @@ export async function assignUserPermissionApi(userId: string, permissionId: stri
 
 export async function removeUserPermissionApi(userId: string, permissionId: string): Promise<void> {
   await $fetch<{ success: boolean }>(`/api/users/${userId}/permissions/${permissionId}`, { method: 'DELETE' })
+}
+
+export async function fetchRolesApi(): Promise<RolesListResponse> {
+  return $fetch<RolesListResponse>('/api/roles')
+}
+
+export async function createRoleApi(payload: CreateRolePayload): Promise<RoleResponse> {
+  return $fetch<RoleResponse>('/api/roles', {
+    method: 'POST',
+    body: payload,
+  })
+}
+
+export async function fetchRoleApi(id: string): Promise<RoleResponse> {
+  return $fetch<RoleResponse>(`/api/roles/${id}`)
+}
+
+export async function updateRoleApi(id: string, payload: Partial<CreateRolePayload>): Promise<RoleResponse> {
+  return $fetch<RoleResponse>(`/api/roles/${id}`, {
+    method: 'PATCH',
+    body: payload,
+  })
+}
+
+export async function deleteRoleApi(id: string): Promise<void> {
+  await $fetch(`/api/roles/${id}`, { method: 'DELETE' })
+}
+
+export async function fetchGroupedPermissionsApi(): Promise<GroupedPermissionsResponse> {
+  return $fetch<GroupedPermissionsResponse>('/api/permissions/grouped')
+}
+
+export async function fetchRolePermissionIdsApi(roleId: string): Promise<{ permissionIds: string[] }> {
+  return $fetch<{ permissionIds: string[] }>(`/api/roles/${roleId}/permissions`)
+}
+
+export async function saveRolePermissionsApi(roleId: string, permissionIds: string[]): Promise<{ success: boolean }> {
+  return $fetch<{ success: boolean }>(`/api/roles/${roleId}/permissions`, {
+    method: 'PUT',
+    body: { permissionIds },
+  })
 }

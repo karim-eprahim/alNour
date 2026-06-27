@@ -7,7 +7,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Email and password are required' })
   }
 
-  const user = await prisma.user.findUnique({ where: { email } })
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { role: { select: { id: true, name: true } } },
+  })
 
   if (!user) {
     throw createError({ statusCode: 401, statusMessage: 'Invalid email or password' })
@@ -27,7 +30,7 @@ export default defineEventHandler(async (event) => {
     data: { lastLogin: new Date() },
   })
 
-  const payload = { userId: user.id, email: user.email, role: user.role }
+  const payload = { userId: user.id, email: user.email, role: user.role.name }
   const token = signToken(payload)
 
   setCookie(event, 'auth_token', token, {
@@ -46,7 +49,8 @@ export default defineEventHandler(async (event) => {
       email: user.email,
       phone: user.phone,
       avatar: user.avatar,
-      role: user.role,
+      role: user.role.name,
+      roleId: user.roleId,
     },
   }
 })

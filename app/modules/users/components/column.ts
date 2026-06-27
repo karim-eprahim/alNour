@@ -56,9 +56,13 @@ export function getUserColumns(actions: UserActions): ColumnDef<User>[] {
       },
     },
     {
-      accessorKey: 'role',
+      id: 'role',
       header: 'Role',
-      cell: ({ row }) => h(UiBadge, { variant: roleBadgeVariant(row.original.role) as any, class: 'text-xs' }, row.original.role),
+      accessorFn: (row) => row.role?.name || '',
+      cell: ({ row }) => {
+        const roleName = row.original.role?.name || '—'
+        return h(UiBadge, { variant: roleBadgeVariant(roleName) as any, class: 'text-xs' }, roleName)
+      },
     },
     {
       accessorKey: 'status',

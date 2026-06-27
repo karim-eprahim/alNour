@@ -17,7 +17,8 @@ export default defineEventHandler(async (event) => {
       email: true,
       phone: true,
       avatar: true,
-      role: true,
+      roleId: true,
+      role: { select: { id: true, name: true } },
       status: true,
       lastLogin: true,
       createdAt: true,
@@ -28,5 +29,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'User not found' })
   }
 
-  return { user }
+  return {
+    user: {
+      ...user,
+      role: user.role.name,
+    },
+  }
 })

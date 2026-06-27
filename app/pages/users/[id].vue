@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, Shield, ShieldCheck, ShieldX } from '@lucide/vue'
 import type { Permission, UserPermission } from '@/modules/permissions/type'
-import PageHeader from '~/components/shared/PageHeader.vue';
+import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
   layout: 'dashboard',
@@ -102,7 +102,7 @@ onMounted(async () => {
               </div>
               <div class="space-y-1">
                 <p class="text-xs font-medium text-muted-foreground">Role</p>
-                <UiBadge variant="secondary" class="text-xs">{{ usersStore.currentUser.role }}</UiBadge>
+                <UiBadge variant="secondary" class="text-xs">{{ usersStore.currentUser.role?.name || '—' }}</UiBadge>
               </div>
               <div class="space-y-1">
                 <p class="text-xs font-medium text-muted-foreground">Status</p>
@@ -128,7 +128,7 @@ onMounted(async () => {
           <UiCardHeader class="flex flex-row items-center justify-between">
             <div>
               <UiCardTitle>User Permissions</UiCardTitle>
-              <UiCardDescription>Manage granular permissions for this user</UiCardDescription>
+              <UiCardDescription>Manage granular permissions for this user (overrides role permissions)</UiCardDescription>
             </div>
             <UiButton size="sm" :disabled="availablePermissions.length === 0" @click="showAssignDialog = true">
               <Shield class="size-4" /> Assign
@@ -146,17 +146,17 @@ onMounted(async () => {
                 <UiTableRow>
                   <UiTableHead>Module</UiTableHead>
                   <UiTableHead>Action</UiTableHead>
-                  <UiTableHead>Assigned</UiTableHead>
+                  <UiTableHead>Label</UiTableHead>
                   <UiTableHead class="w-20 text-right">Action</UiTableHead>
                 </UiTableRow>
               </UiTableHeader>
               <UiTableBody>
                 <UiTableRow v-for="up in permsStore.userPermissions" :key="up.id">
-                  <UiTableCell class="text-sm font-medium">{{ up.permission.module }}</UiTableCell>
+                  <UiTableCell class="text-sm font-medium">{{ up.permission.module?.name || up.permission.moduleId }}</UiTableCell>
                   <UiTableCell>
-                    <UiBadge variant="outline" class="text-xs">{{ up.permission.action }}</UiBadge>
+                    <UiBadge variant="outline" class="text-xs">{{ up.permission.action?.name || up.permission.actionId }}</UiBadge>
                   </UiTableCell>
-                  <UiTableCell class="text-xs text-muted-foreground">{{ new Date(up.permission.createdAt || '').toLocaleDateString() }}</UiTableCell>
+                  <UiTableCell class="text-xs text-muted-foreground">{{ up.permission.label }}</UiTableCell>
                   <UiTableCell class="text-right">
                     <UiButton variant="ghost" size="icon-xs" class="text-destructive hover:text-destructive" @click="handleRemove(up.permissionId)">
                       <ShieldX class="size-3.5" />
@@ -182,12 +182,9 @@ onMounted(async () => {
             <UiSelect v-model="selectedPermissionId">
               <UiSelectTrigger id="assign-perm"><UiSelectValue placeholder="Select permission..." /></UiSelectTrigger>
               <UiSelectContent>
-                <UiSelectGroup v-for="(perms, role) in (Object.groupBy(availablePermissions, (p) => p.role) ?? {})" :key="role">
-                  <UiSelectLabel>{{ role }}</UiSelectLabel>
-                  <UiSelectItem v-for="p in perms" :key="p.id" :value="p.id">
-                    {{ p.module }} — {{ p.action }}
-                  </UiSelectItem>
-                </UiSelectGroup>
+                <UiSelectItem v-for="p in availablePermissions" :key="p.id" :value="p.id">
+                  {{ p.module?.name || p.moduleId }} — {{ p.action?.name || p.actionId }} ({{ p.label }})
+                </UiSelectItem>
               </UiSelectContent>
             </UiSelect>
           </div>

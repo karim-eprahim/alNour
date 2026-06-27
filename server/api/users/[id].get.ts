@@ -9,13 +9,14 @@ export default defineEventHandler(async (event) => {
       email: true,
       phone: true,
       avatar: true,
-      role: true,
+      roleId: true,
+      role: { select: { id: true, name: true, label: true } },
       status: true,
       lastLogin: true,
       createdAt: true,
       updatedAt: true,
       permissions: {
-        include: { permission: true },
+        include: { permission: { include: { module: true, action: true } } },
       },
     },
   })

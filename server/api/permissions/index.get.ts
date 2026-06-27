@@ -1,7 +1,10 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   const permissions = await prisma.permission.findMany({
-    orderBy: [{ role: 'asc' }, { module: 'asc' }, { action: 'asc' }],
+    include: {
+      module: { select: { id: true, name: true, label: true } },
+      action: { select: { id: true, name: true, label: true } },
+    },
+    orderBy: [{ module: { name: 'asc' } }, { action: { name: 'asc' } }],
   })
-
   return { permissions }
 })

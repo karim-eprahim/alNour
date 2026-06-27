@@ -1,5 +1,3 @@
-import bcrypt from 'bcryptjs'
-
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const where: any = {}
@@ -10,7 +8,9 @@ export default defineEventHandler(async (event) => {
       { email: { contains: query.search, mode: 'insensitive' } },
     ]
   }
-  if (query.role) where.role = query.role
+  if (query.role) {
+    where.role = { name: query.role }
+  }
   if (query.status) where.status = query.status
 
   const [users, total] = await Promise.all([
@@ -22,7 +22,8 @@ export default defineEventHandler(async (event) => {
         email: true,
         phone: true,
         avatar: true,
-        role: true,
+        roleId: true,
+        role: { select: { id: true, name: true, label: true } },
         status: true,
         lastLogin: true,
         createdAt: true,
