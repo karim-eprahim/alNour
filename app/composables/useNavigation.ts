@@ -43,14 +43,6 @@ export const useNavigation = () => {
     },
     { title: 'Warehouses', icon: Warehouse, to: '/warehouses' },
     {
-      title: 'Raw Materials',
-      icon: Package,
-      children: [
-        { title: 'Charcoal Inventory', to: '/raw-materials' },
-        { title: 'Stock Movements', to: '/stock/movements' },
-      ],
-    },
-    {
       title: 'Suppliers & Purchases',
       icon: Truck,
       children: [
@@ -58,6 +50,15 @@ export const useNavigation = () => {
         { title: 'Purchases', to: '/purchases' },
         { title: 'Weight Tickets', to: '/purchases/weight-tickets' },
         { title: 'Purchases Report', to: '/purchases/report' },
+      ],
+    },
+        {
+      title: 'Workers',
+      icon: Briefcase,
+      children: [
+        { title: 'All Workers', to: '/workers' },
+        { title: 'Attendance', to: '/workers/attendance' },
+        { title: 'Advances', to: '/workers/advances' },
       ],
     },
     {
@@ -89,19 +90,9 @@ export const useNavigation = () => {
         { title: 'Payments', to: '/sales/payments' },
       ],
     },
-    { title: 'Ledger', icon: BookOpen, to: '/ledger' },
     { title: 'Expenses', icon: DollarSign, to: '/expenses' },
-    { title: 'Cash Box', icon: Wallet, to: '/cash-box' },
-    {
-      title: 'Workers',
-      icon: Briefcase,
-      children: [
-        { title: 'All Workers', to: '/workers' },
-        { title: 'Attendance', to: '/workers/attendance' },
-        { title: 'Advances', to: '/workers/advances' },
-      ],
-    },
-    { title: 'Productivity', icon: BarChart3, to: '/productivity' },
+    // { title: 'Cash Box', icon: Wallet, to: '/cash-box' },
+    // { title: 'Productivity', icon: BarChart3, to: '/productivity' },
     { title: 'GPS Tracking', icon: MapPin, to: '/gps-tracking' },
     { title: 'Sync Queue', icon: RefreshCw, to: '/sync-queue' },
     { title: 'Audit Logs', icon: ClipboardList, to: '/audit-logs' },
