@@ -25,6 +25,18 @@ const someSelected = computed(() =>
 function handleToggleAll() {
   emit('toggleAll', props.moduleName, !allSelected.value)
 }
+
+function getPermissionModel(id: string) {
+  return computed({
+    get() {
+      return props.selectedIds.has(id)
+    },
+
+    set(value: boolean) {
+      emit('toggle', id)
+    }
+  })
+}
 </script>
 
 <template>
@@ -34,9 +46,9 @@ function handleToggleAll() {
         <UiCardTitle class="text-base font-semibold">{{ moduleLabel || moduleName }} Permissions</UiCardTitle>
         <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
           <UiCheckbox
-            :checked="allSelected"
+            :model-value="allSelected"
             :indeterminate="someSelected"
-            @update:checked="handleToggleAll"
+            @update:model-value="handleToggleAll"
           />
           <span class="text-muted-foreground text-xs">Select All</span>
         </label>
@@ -50,10 +62,10 @@ function handleToggleAll() {
           class="flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors select-none"
           :class="{ 'border-primary/30 bg-primary/5': selectedIds.has(perm.id) }"
         >
-          <UiCheckbox
-            :checked="selectedIds.has(perm.id)"
-            @update:checked="emit('toggle', perm.id)"
-          />
+<UiCheckbox
+  :model-value="selectedIds.has(perm.id)"
+  @update:model-value="emit('toggle', perm.id)"
+/>
           <span class="text-sm">{{ perm.label }}</span>
         </label>
       </div>

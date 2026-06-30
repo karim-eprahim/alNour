@@ -113,7 +113,7 @@ const pageCount = computed(() => {
           >
             <div class="flex items-center gap-2">
               <UiCheckbox
-                :checked="column.getIsVisible()"
+                :model-value="column.getIsVisible()"
                 @click.stop="column.toggleVisibility()"
               />
               <span class="capitalize">{{ column.id }}</span>
