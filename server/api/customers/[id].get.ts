@@ -19,6 +19,11 @@ export default defineEventHandler(async (event) => {
         take: 20,
       },
       ledgerEntries: { orderBy: { createdAt: 'desc' }, take: 50 },
+      linkedSupplier: {
+        include: {
+          ledgerEntries: { select: { amount: true, type: true } },
+        },
+      },
     },
   })
   if (!customer) {
@@ -27,5 +32,25 @@ export default defineEventHandler(async (event) => {
   const balance = customer.ledgerEntries.reduce((sum, e) => {
     return e.type === 'DEBIT' ? sum + e.amount.toNumber() : sum - e.amount.toNumber()
   }, 0)
-  return { customer: { ...customer, balance } }
+
+  let linkedSupplierBalance = 0
+  let netBalance = balance
+  if (customer.linkedSupplier) {
+    linkedSupplierBalance = customer.linkedSupplier.ledgerEntries.reduce((sum, e) => {
+      return e.type === 'DEBIT' ? sum + Number(e.amount) : sum - Number(e.amount)
+    }, 0)
+    netBalance = balance - linkedSupplierBalance
+  }
+
+  const { linkedSupplier, ...rest } = customer
+  return {
+    customer: {
+      ...rest,
+      balance,
+      linkedSupplier: linkedSupplier
+        ? { id: linkedSupplier.id, name: linkedSupplier.name, balance: linkedSupplierBalance }
+        : null,
+      netBalance,
+    },
+  }
 })

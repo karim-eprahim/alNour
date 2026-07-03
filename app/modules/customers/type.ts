@@ -4,6 +4,8 @@ export interface Customer {
   phone?: string | null
   address?: string | null
   balance?: number
+  netBalance?: number
+  linkedSupplier?: { id: string; name: string; balance?: number } | null
   createdAt: string
   updatedAt: string
   _count?: { salesOrders: number; invoices: number }
@@ -16,4 +18,5 @@ export interface CreateCustomerPayload {
   name: string
   phone?: string
   address?: string
+  linkedSupplierId?: string | null
 }

@@ -16,6 +16,9 @@ export default defineEventHandler(async (event) => {
       include: {
         _count: { select: { purchaseInvoices: true, ledgerEntries: true } },
         ledgerEntries: { select: { amount: true, type: true } },
+        linkedCustomer: {
+          select: { id: true, name: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     }),

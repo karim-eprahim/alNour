@@ -13,8 +13,11 @@ export default defineEventHandler(async (event) => {
   if (body.email !== undefined) data.email = body.email
   if (body.address !== undefined) data.address = body.address
   if (body.company !== undefined) data.company = body.company
+  if (body.linkedCustomerId !== undefined) data.linkedCustomerId = body.linkedCustomerId || null
 
-  const supplier = await prisma.supplier.update({ where: { id }, data })
+  const supplier = await prisma.supplier.update({
+    where: { id }, data,
+  }).catch(() => { throw createError({ statusCode: 400, statusMessage: 'Customer already linked to another supplier' }) })
 
   return { supplier }
 })

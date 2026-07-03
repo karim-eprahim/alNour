@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { h } from 'vue'
-import { MoreHorizontal, Eye, Pencil, Trash2, Building2, Phone, MapPin } from '@lucide/vue'
+import { MoreHorizontal, Eye, Pencil, Trash2, Building2, Phone, MapPin, Link } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { Supplier } from '@/modules/suppliers/type'
 import { NuxtLink, UiBadge, UiButton, UiDropdownMenu, UiDropdownMenuTrigger, UiDropdownMenuContent, UiDropdownMenuItem, UiDropdownMenuSeparator } from '#components'
@@ -14,6 +14,8 @@ definePageMeta({
 })
 
 const suppliersStore = useSuppliersStore()
+const customersStore = useCustomersStore()
+const customerOptions = ref<{ id: string; name: string }[]>([])
 const search = ref('')
 const debouncedSearch = ref('')
 watch(search, (val, _old, onCleanup) => {
@@ -29,8 +31,13 @@ const showDeleteDialog = ref(false)
 const editingSupplier = ref<Supplier | null>(null)
 const deletingSupplier = ref<Supplier | null>(null)
 
-const createForm = reactive({ name: '', phone: '', email: '', address: '', company: '' })
-const editForm = reactive({ name: '', phone: '', email: '', address: '', company: '' })
+const createForm = reactive({ name: '', phone: '', email: '', address: '', company: '', linkedCustomerId: '' })
+const editForm = reactive({ name: '', phone: '', email: '', address: '', company: '', linkedCustomerId: '' })
+
+async function loadCustomerOptions() {
+  const res = await customersStore.fetchCustomers({ limit: 200 })
+  if (res) customerOptions.value = res.customers.map((c: any) => ({ id: c.id, name: c.name }))
+}
 
 function openEdit(s: Supplier) {
   editingSupplier.value = s
@@ -39,6 +46,7 @@ function openEdit(s: Supplier) {
   editForm.email = s.email ?? ''
   editForm.address = s.address ?? ''
   editForm.company = s.company ?? ''
+  editForm.linkedCustomerId = (s as any).linkedCustomer?.id ?? ''
   showEditDialog.value = true
 }
 
@@ -49,9 +57,11 @@ function openDelete(s: Supplier) {
 
 async function handleCreate() {
   try {
-    await suppliersStore.createSupplier(createForm)
+    const payload: any = { ...createForm }
+    if (!payload.linkedCustomerId) payload.linkedCustomerId = null
+    await suppliersStore.createSupplier(payload)
     showCreateDialog.value = false
-    createForm.name = ''; createForm.phone = ''; createForm.email = ''; createForm.address = ''; createForm.company = ''
+    createForm.name = ''; createForm.phone = ''; createForm.email = ''; createForm.address = ''; createForm.company = ''; createForm.linkedCustomerId = ''
     toast.success('Supplier created')
   } catch {}
 }
@@ -205,6 +215,16 @@ onMounted(() => suppliersStore.fetchSuppliers())
             <UiLabel for="create-address">Address</UiLabel>
             <UiTextarea id="create-address" v-model="createForm.address" placeholder="Address" />
           </div>
+          <div class="space-y-2 *:w-full">
+            <UiLabel for="create-customer-link">Link to Customer <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
+            <UiSelect style="width: 100%;" v-model="createForm.linkedCustomerId" @update:open="(isOpen) => isOpen && loadCustomerOptions()" class="w-full">
+              <UiSelectTrigger id="create-customer-link"><UiSelectValue placeholder="Select a customer..." /></UiSelectTrigger>
+              <UiSelectContent>
+                <UiSelectItem value="__all__">None</UiSelectItem>
+                <UiSelectItem v-for="c in customerOptions" :key="c.id" :value="c.id">{{ c.name }}</UiSelectItem>
+              </UiSelectContent>
+            </UiSelect>
+          </div>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showCreateDialog = false">Cancel</UiButton>
             <UiButton type="submit" :disabled="suppliersStore.loading">Create</UiButton>
@@ -241,6 +261,16 @@ onMounted(() => suppliersStore.fetchSuppliers())
           <div class="space-y-2">
             <UiLabel for="edit-address">Address</UiLabel>
             <UiTextarea id="edit-address" v-model="editForm.address" />
+          </div>
+          <div class="space-y-2 *:w-full">
+            <UiLabel for="edit-customer-link">Link to Customer<span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
+            <UiSelect style="width: 100%;" v-model="editForm.linkedCustomerId" @update:open="(isOpen) => isOpen && loadCustomerOptions()" class="w-full">
+              <UiSelectTrigger id="edit-customer-link"><UiSelectValue placeholder="Select a customer..." /></UiSelectTrigger>
+              <UiSelectContent>
+                <UiSelectItem value="__all__">None</UiSelectItem>
+                <UiSelectItem v-for="c in customerOptions" :key="c.id" :value="c.id">{{ c.name }}</UiSelectItem>
+              </UiSelectContent>
+            </UiSelect>
           </div>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showEditDialog = false">Cancel</UiButton>

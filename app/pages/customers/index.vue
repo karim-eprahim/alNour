@@ -12,12 +12,14 @@ definePageMeta({
 })
 
 const customersStore = useCustomersStore()
+const suppliersStore = useSuppliersStore()
+const supplierOptions = ref<{ id: string; name: string }[]>([])
 const search = ref('')
 const page = ref(1)
 const limit = 20
 const showDialog = ref(false)
 const editing = ref(false)
-const form = reactive({ name: '', phone: '', address: '' })
+const form = reactive({ name: '', phone: '', address: '', linkedSupplierId: '' })
 const currentId = ref('')
 
 const customerActions: CustomerActions = {
@@ -40,23 +42,35 @@ watch(search, (val, _old, onCleanup) => {
 watch(debouncedSearch, () => { page.value = 1; load() })
 watch(page, load)
 
+async function loadSupplierOptions() {
+  console.log('loadSupplierOptions')
+  try {
+    const res = await $fetch('/api/suppliers')
+    supplierOptions.value = (res as any).suppliers?.map((s: any) => ({ id: s.id, name: s.name })) ?? []
+    console.log('supplierOptions', res,supplierOptions.value)
+  } catch {}
+}
+
 function openCreate() {
   editing.value = false
-  form.name = ''; form.phone = ''; form.address = ''
+  form.name = ''; form.phone = ''; form.address = ''; form.linkedSupplierId = ''
   showDialog.value = true
 }
 
 function openEdit(customer: Customer) {
   editing.value = true
   form.name = customer.name; form.phone = customer.phone || ''; form.address = customer.address || ''
+  form.linkedSupplierId = (customer as any).linkedSupplier?.id ?? ''
   showDialog.value = true
 }
 
 async function save() {
   if (!form.name) { toast.error('Name is required'); return }
   try {
-    if (editing.value) { await customersStore.updateCustomer(currentId.value, { ...form }); toast.success('Customer updated') }
-    else { await customersStore.createCustomer({ ...form }); toast.success('Customer created') }
+    const payload: any = { name: form.name, phone: form.phone, address: form.address }
+    if (form.linkedSupplierId) payload.linkedSupplierId = form.linkedSupplierId
+    if (editing.value) { await customersStore.updateCustomer(currentId.value, payload); toast.success('Customer updated') }
+    else { await customersStore.createCustomer(payload); toast.success('Customer created') }
     showDialog.value = false
   } catch { toast.error('Failed to save customer') }
 }
@@ -114,6 +128,16 @@ onMounted(load)
           <div class="space-y-2">
             <UiLabel for="address">Address</UiLabel>
             <UiTextarea id="address" v-model="form.address" placeholder="Address" />
+          </div>
+          <div class="space-y-2 *:w-full">
+            <UiLabel for="supplier-link">Link to Supplier <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
+            <UiSelect v-model="form.linkedSupplierId" @update:open="(isOpen) => isOpen && loadSupplierOptions()">
+              <UiSelectTrigger id="supplier-link"><UiSelectValue placeholder="Select a supplier..." /></UiSelectTrigger>
+              <UiSelectContent>
+                <UiSelectItem value="__all__">None</UiSelectItem>
+                <UiSelectItem v-for="s in supplierOptions" :key="s.id" :value="s.id">{{ s.name }}</UiSelectItem>
+              </UiSelectContent>
+            </UiSelect>
           </div>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showDialog = false">Cancel</UiButton>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, Building2, Phone, Mail, MapPin, FileText, CreditCard, ArrowUpRight, ArrowDownRight } from '@lucide/vue'
+import { ArrowLeft, Building2, Phone, Mail, MapPin, FileText, CreditCard, ArrowUpRight, ArrowDownRight, Link, ArrowLeftRight } from '@lucide/vue'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -17,10 +17,12 @@ const suppliersStore = useSuppliersStore()
 const activeTab = ref('invoices')
 const showLedgerDialog = ref(false)
 const showPayDialog = ref(false)
+const showContraDialog = ref(false)
 const payingInvoice = ref<any>(null)
 
 const ledgerForm = reactive({ amount: null as number | null, type: 'DEBIT' as 'DEBIT' | 'CREDIT', description: '' })
 const payForm = reactive({ amount: null as number | null, description: '' })
+const contraForm = reactive({ amount: null as number | null })
 
 async function fetchSupplier() {
   await suppliersStore.fetchSupplier(supplierId.value)
@@ -29,6 +31,30 @@ async function fetchSupplier() {
 const balance = computed(() => (suppliersStore.currentSupplier as any)?.balance ?? 0)
 const invoices = computed(() => (suppliersStore.currentSupplier as any)?.purchaseInvoices ?? [])
 const ledgerEntries = computed(() => (suppliersStore.currentSupplier as any)?.ledgerEntries ?? [])
+
+const linkedCustomer = computed(() => (suppliersStore.currentSupplier as any)?.linkedCustomer ?? null)
+const linkedCustomerBalance = computed(() => linkedCustomer.value?.balance ?? 0)
+const netBalance = computed(() => (suppliersStore.currentSupplier as any)?.netBalance ?? balance.value)
+
+async function handleContraSettlement() {
+  if (!contraForm.amount && contraForm.amount !== 0) return
+  try {
+    await $fetch('/api/accounting/reconcile-partner', {
+      method: 'POST',
+      body: {
+        supplierId: supplierId.value,
+        customerId: linkedCustomer.value.id,
+        amount: contraForm.amount,
+      },
+    })
+    showContraDialog.value = false
+    contraForm.amount = null
+    toast.success('Contra settlement completed')
+    fetchSupplier()
+  } catch (e: any) {
+    toast.error(e?.data?.statusMessage || 'Settlement failed')
+  }
+}
 
 async function handleLedgerEntry() {
   if (!ledgerForm.amount) return
@@ -80,6 +106,34 @@ onMounted(fetchSupplier)
         <div>
           <h1 class="text-lg font-semibold">{{ suppliersStore.currentSupplier?.name || 'Loading...' }}</h1>
           <p v-if="suppliersStore.currentSupplier?.company" class="text-xs text-muted-foreground">{{ suppliersStore.currentSupplier.company }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="linkedCustomer" class="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20 p-4">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-2">
+          <Link class="size-4 text-blue-600" />
+          <span class="text-sm font-medium">Linked to Customer: <NuxtLink :to="`/customers/${linkedCustomer.id}`" class="text-blue-600 hover:underline">{{ linkedCustomer.name }}</NuxtLink></span>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="text-right">
+            <p class="text-xs text-muted-foreground">Supplier Balance</p>
+            <p class="text-sm font-medium tabular-nums" :class="balance > 0 ? 'text-destructive' : 'text-green-600'">{{ Number(balance).toFixed(2) }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-muted-foreground">Customer Balance</p>
+            <p class="text-sm font-medium tabular-nums" :class="linkedCustomerBalance > 0 ? 'text-destructive' : 'text-green-600'">{{ Number(linkedCustomerBalance).toFixed(2) }}</p>
+          </div>
+          <div class="text-right border-l pl-4">
+            <p class="text-xs text-muted-foreground">Net Balance</p>
+            <p class="text-sm font-bold tabular-nums" :class="netBalance > 0 ? 'text-destructive' : netBalance < 0 ? 'text-green-600' : ''">
+              {{ netBalance > 0 ? `نحن ندين له بـ ${Number(netBalance).toFixed(2)}` : netBalance < 0 ? `هو مدين لنا بـ ${Number(Math.abs(netBalance)).toFixed(2)}` : 'صفر' }}
+            </p>
+          </div>
+          <UiButton size="sm" variant="outline" class="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-400" @click="showContraDialog = true">
+            <ArrowLeftRight class="size-4" /> مقاصة مالية
+          </UiButton>
         </div>
       </div>
     </div>
@@ -264,6 +318,31 @@ onMounted(fetchSupplier)
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showLedgerDialog = false">Cancel</UiButton>
             <UiButton type="submit" :disabled="suppliersStore.loading">Add Entry</UiButton>
+          </UiDialogFooter>
+        </form>
+      </UiDialogContent>
+    </UiDialog>
+
+    <UiDialog :open="showContraDialog" @update:open="showContraDialog = $event">
+      <UiDialogContent class="sm:max-w-sm">
+        <UiDialogHeader>
+          <UiDialogTitle>Contra Settlement (مقاصة مالية)</UiDialogTitle>
+          <UiDialogDescription>Settle outstanding balances between {{ suppliersStore.currentSupplier?.name }} and {{ linkedCustomer?.name }}</UiDialogDescription>
+        </UiDialogHeader>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between"><span>Supplier Balance:</span><span :class="balance > 0 ? 'text-destructive' : 'text-green-600'" class="font-medium">{{ Number(balance).toFixed(2) }}</span></div>
+          <div class="flex justify-between"><span>Customer Balance:</span><span :class="linkedCustomerBalance > 0 ? 'text-destructive' : 'text-green-600'" class="font-medium">{{ Number(linkedCustomerBalance).toFixed(2) }}</span></div>
+          <div class="flex justify-between border-t pt-2"><span>Current Net:</span><span class="font-bold" :class="netBalance > 0 ? 'text-destructive' : netBalance < 0 ? 'text-green-600' : ''">{{ Number(netBalance).toFixed(2) }}</span></div>
+        </div>
+        <form class="space-y-4" @submit.prevent="handleContraSettlement">
+          <div class="space-y-2">
+            <UiLabel for="contra-amount">Settlement Amount</UiLabel>
+            <UiInput id="contra-amount" v-model="contraForm.amount as number" type="number" step="0.01" placeholder="0.00" required />
+            <p class="text-xs text-muted-foreground">Leave empty to auto-calculate the minimum of both balances</p>
+          </div>
+          <UiDialogFooter>
+            <UiButton type="button" variant="outline" @click="showContraDialog = false">Cancel</UiButton>
+            <UiButton type="submit">Execute Settlement</UiButton>
           </UiDialogFooter>
         </form>
       </UiDialogContent>

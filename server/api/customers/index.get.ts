@@ -22,6 +22,9 @@ export default defineEventHandler(async (event) => {
           orderBy: { createdAt: 'desc' },
           take: 1,
         },
+        linkedSupplier: {
+          select: { id: true, name: true },
+        },
       },
       orderBy: { name: 'asc' },
       skip,

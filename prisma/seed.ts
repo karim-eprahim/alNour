@@ -123,7 +123,7 @@ async function main() {
 
   console.log('Seeding role permissions...')
   await seedRbac()
-  console.log('Role permissions seeded successfully.')
+  console.log('Role permissions seeded successfully.');
 }
 
 main()

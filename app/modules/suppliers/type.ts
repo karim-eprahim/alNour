@@ -8,6 +8,8 @@ export interface Supplier {
   createdAt: string
   updatedAt: string
   balance?: number
+  netBalance?: number
+  linkedCustomer?: { id: string; name: string; balance?: number } | null
   _count?: { purchaseInvoices: number; ledgerEntries: number }
 }
 
@@ -17,6 +19,7 @@ export interface CreateSupplierPayload {
   email?: string
   address?: string
   company?: string
+  linkedCustomerId?: string | null
 }
 
 export interface UpdateSupplierPayload {
@@ -25,6 +28,7 @@ export interface UpdateSupplierPayload {
   email?: string | null
   address?: string | null
   company?: string | null
+  linkedCustomerId?: string | null
 }
 
 export interface LedgerEntry {
