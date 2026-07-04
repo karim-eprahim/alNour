@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import {getUserPermissions} from '~~/server/utils/permissions'
 
 export default defineEventHandler(async (event) => {
   const { email, password } = await readBody<{ email: string; password: string }>(event)
@@ -41,6 +42,8 @@ export default defineEventHandler(async (event) => {
     path: '/',
   })
 
+  const permissions = await getUserPermissions(user.id, user.roleId)
+
   return {
     token,
     user: {
@@ -52,5 +55,6 @@ export default defineEventHandler(async (event) => {
       role: user.role.name,
       roleId: user.roleId,
     },
+    permissions,
   }
 })

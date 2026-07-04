@@ -1,3 +1,4 @@
+import {getUserPermissions} from '~~/server/utils/permissions'
 export default defineEventHandler(async (event) => {
   const token = extractToken(event)
   if (!token) {
@@ -29,10 +30,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'User not found' })
   }
 
+  const permissions = await getUserPermissions(user.id, user.roleId)
+
   return {
     user: {
       ...user,
       role: user.role.name,
     },
+    permissions,
   }
 })

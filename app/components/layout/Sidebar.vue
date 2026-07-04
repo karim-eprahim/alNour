@@ -1,13 +1,41 @@
 <script setup lang="ts">
 import { useSidebar } from '@/composables/useSidebar'
 import { useNavigation, type NavItem } from '@/composables/useNavigation'
+import { usePermissions } from '@/composables/usePermissions'
 import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronLeft, PanelLeftClose, PanelLeft, LogOut } from '@lucide/vue'
 
 const { collapsed, toggle, closeMobile } = useSidebar()
 const { navigation } = useNavigation()
+const { has } = usePermissions()
 
 const route = useRoute()
+
+function isNavVisible(item: NavItem): boolean {
+  if (item.permission && !has(`${item.permission.module}.${item.permission.action}`)) {
+    return false
+  }
+  if (item.children) {
+    return item.children.some(child => isNavVisible(child))
+  }
+  return true
+}
+
+function filterNav(items: NavItem[]): NavItem[] {
+  return items.reduce<NavItem[]>((acc, item) => {
+    if (!isNavVisible(item)) return acc
+    if (item.children) {
+      const visibleChildren = filterNav(item.children)
+      if (visibleChildren.length === 0) return acc
+      acc.push({ ...item, children: visibleChildren })
+    } else {
+      acc.push(item)
+    }
+    return acc
+  }, [])
+}
+
+const visibleNavigation = computed(() => filterNav(navigation))
 
 const openGroups = ref<string[]>([])
 
@@ -74,7 +102,7 @@ const transitionClass = 'transition-all duration-300 ease-in-out'
 
     <UiScrollArea class="flex-1 px-2 py-3">
       <nav class="flex flex-col gap-1">
-        <template v-for="item in navigation" :key="item.title">
+        <template v-for="item in visibleNavigation" :key="item.title">
           <div v-if="item.children">
             <button
               :class="cn(

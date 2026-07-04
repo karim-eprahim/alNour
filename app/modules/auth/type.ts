@@ -18,8 +18,10 @@ export interface LoginPayload {
 export interface LoginResponse {
   token: string
   user: User
+  permissions: string[]
 }
 
 export interface MeResponse {
   user: User
+  permissions: string[]
 }
