@@ -30,7 +30,7 @@ export interface NavItem {
 
 export const useNavigation = () => {
   const navigation: NavItem[] = [
-    { title: 'Dashboard', icon: LayoutDashboard, to: '/', permission: { module: 'DASHBOARD', action: 'READ' } },
+    { title: 'Dashboard', icon: LayoutDashboard, to: '/' },
     { title: 'Inventory Dashboard', icon: BarChart3, to: '/inventory', permission: { module: 'INVENTORY', action: 'READ' } },
     { title: 'Users & Permissions', icon: Shield, to: '/users', permission: { module: 'USERS', action: 'READ' } },
     {

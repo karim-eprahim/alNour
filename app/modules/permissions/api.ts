@@ -7,6 +7,8 @@ import type {
   RolesListResponse,
   RoleResponse,
   CreateRolePayload,
+  ModuleInfo,
+  ActionInfo,
 } from './type'
 
 export async function fetchPermissionsApi(): Promise<PermissionsListResponse> {
@@ -78,4 +80,8 @@ export async function saveRolePermissionsApi(roleId: string, permissionIds: stri
     method: 'PUT',
     body: { permissionIds },
   })
+}
+
+export async function fetchPermissionOptionsApi(): Promise<{ modules: ModuleInfo[]; actions: ActionInfo[] }> {
+  return $fetch<{ modules: ModuleInfo[]; actions: ActionInfo[] }>('/api/permissions/options')
 }

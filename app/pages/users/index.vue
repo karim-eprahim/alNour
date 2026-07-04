@@ -5,7 +5,7 @@ import { toast } from 'vue-sonner'
 import type { User, UserStatus } from '@/modules/users/type'
 import type { UserActions } from '@/modules/users/components/column'
 import { getUserColumns } from '@/modules/users/components/column'
-import type { Role } from '@/modules/permissions/type'
+import type { Role, ModuleInfo, ActionInfo } from '@/modules/permissions/type'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import PermissionGroupP from '@/components/permissions/PermissionGroup.vue'
 import {
@@ -16,6 +16,8 @@ import {
   fetchRolePermissionIdsApi,
   saveRolePermissionsApi,
   updateRoleApi,
+  createPermissionApi,
+  fetchPermissionOptionsApi,
 } from '~/modules/permissions/api'
 import type { PermissionGroup } from '~/modules/permissions/type'
 
@@ -105,6 +107,44 @@ async function handleDeleteUser() {
 }
 
 const userStatuses: UserStatus[] = ['ACTIVE', 'INACTIVE', 'BLOCKED']
+
+// Create Permission
+const showCreatePermissionDialog = ref(false)
+const permissionModules = ref<ModuleInfo[]>([])
+const permissionActions = ref<ActionInfo[]>([])
+const createPermissionForm = reactive({
+  moduleId: '',
+  actionId: '',
+  label: '',
+})
+
+async function openCreatePermission() {
+  showCreatePermissionDialog.value = true
+  try {
+    const data = await fetchPermissionOptionsApi()
+    permissionModules.value = data.modules
+    permissionActions.value = data.actions
+  } catch {
+    toast.error('Failed to load permission options')
+  }
+}
+
+async function handleCreatePermission() {
+  if (!createPermissionForm.moduleId || !createPermissionForm.actionId || !createPermissionForm.label) {
+    toast.error('All fields are required')
+    return
+  }
+  try {
+    await createPermissionApi(createPermissionForm)
+    toast.success('Permission created')
+    showCreatePermissionDialog.value = false
+    createPermissionForm.moduleId = ''
+    createPermissionForm.actionId = ''
+    createPermissionForm.label = ''
+  } catch (err: any) {
+    toast.error(err?.data?.statusMessage || 'Failed to create permission')
+  }
+}
 
 // Roles
 const roles = ref<Role[]>([])
@@ -234,6 +274,9 @@ onMounted(() => {
         <UiButton variant="outline" @click="showCreateRoleDialog = true">
           <Plus class="size-4" /> Create Role
         </UiButton>
+        <!-- <UiButton variant="outline" @click="openCreatePermission">
+          <Plus class="size-4" /> Create Permission
+        </UiButton> -->
       </template>
     </PageHeader>
 
@@ -453,6 +496,44 @@ onMounted(() => {
       @confirm="handleDeleteRole"
       @cancel="showDeleteRoleDialog = false"
     />
+
+    <!-- Create Permission Dialog -->
+    <UiDialog :open="showCreatePermissionDialog" @update:open="showCreatePermissionDialog = $event">
+      <UiDialogContent class="sm:max-w-sm">
+        <UiDialogHeader>
+          <UiDialogTitle>Create Permission</UiDialogTitle>
+          <UiDialogDescription>Add a new permission to the system.</UiDialogDescription>
+        </UiDialogHeader>
+        <form @submit.prevent="handleCreatePermission" class="space-y-4">
+          <div class="space-y-2">
+            <UiLabel for="perm-module">Module</UiLabel>
+            <UiSelect v-model="createPermissionForm.moduleId">
+              <UiSelectTrigger id="perm-module"><UiSelectValue placeholder="Select module" /></UiSelectTrigger>
+              <UiSelectContent>
+                <UiSelectItem v-for="m in permissionModules" :key="m.id" :value="m.id">{{ m.label }}</UiSelectItem>
+              </UiSelectContent>
+            </UiSelect>
+          </div>
+          <div class="space-y-2">
+            <UiLabel for="perm-action">Action</UiLabel>
+            <UiSelect v-model="createPermissionForm.actionId">
+              <UiSelectTrigger id="perm-action"><UiSelectValue placeholder="Select action" /></UiSelectTrigger>
+              <UiSelectContent>
+                <UiSelectItem v-for="a in permissionActions" :key="a.id" :value="a.id">{{ a.label }}</UiSelectItem>
+              </UiSelectContent>
+            </UiSelect>
+          </div>
+          <div class="space-y-2">
+            <UiLabel for="perm-label">Label</UiLabel>
+            <UiInput id="perm-label" v-model="createPermissionForm.label" placeholder="e.g. Create products" />
+          </div>
+          <UiDialogFooter>
+            <UiButton type="button" variant="outline" @click="showCreatePermissionDialog = false">Cancel</UiButton>
+            <UiButton type="submit">Create</UiButton>
+          </UiDialogFooter>
+        </form>
+      </UiDialogContent>
+    </UiDialog>
 
     <!-- Edit Role Permissions Dialog -->
     <UiDialog :open="showRoleEditor" @update:open="showRoleEditor = $event" class="max-h-[90vh]">

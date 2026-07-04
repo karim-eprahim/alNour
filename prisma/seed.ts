@@ -8,7 +8,98 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
 const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
-// ─── RBAC Helpers ─────────────────────────────────────────────
+// ─── RBAC Seed Functions ─────────────────────────────────────
+
+async function seedRoles() {
+  const roles = [
+    { name: 'ADMIN', label: 'Administrator' },
+    { name: 'MANAGER', label: 'Manager' },
+    { name: 'STOREKEEPER', label: 'Storekeeper' },
+    { name: 'ACCOUNTANT', label: 'Accountant' },
+    { name: 'DISTRIBUTOR', label: 'Distributor' },
+  ]
+
+  for (const r of roles) {
+    await prisma.role.upsert({
+      where: { name: r.name },
+      create: r,
+      update: { label: r.label },
+    })
+  }
+
+  console.log(`  Seeded ${roles.length} roles`)
+}
+
+async function seedPermissionActions() {
+  const actions = [
+    { name: 'CREATE', label: 'Create' },
+    { name: 'READ', label: 'Read' },
+    { name: 'UPDATE', label: 'Update' },
+    { name: 'DELETE', label: 'Delete' },
+  ]
+
+  for (const a of actions) {
+    await prisma.permissionAction.upsert({
+      where: { name: a.name },
+      create: a,
+      update: { label: a.label },
+    })
+  }
+
+  console.log(`  Seeded ${actions.length} permission actions`)
+}
+
+async function seedModules() {
+  const modules = [
+    { name: 'USERS', label: 'Users' },
+    { name: 'PRODUCTS', label: 'Products' },
+    { name: 'WAREHOUSES', label: 'Warehouses' },
+    { name: 'INVENTORY', label: 'Inventory' },
+    { name: 'PURCHASES', label: 'Purchases' },
+    { name: 'SUPPLIERS', label: 'Suppliers' },
+    { name: 'SALES', label: 'Sales' },
+    { name: 'CUSTOMERS', label: 'Customers' },
+    { name: 'PRODUCTION', label: 'Production' },
+    { name: 'WORKERS', label: 'Workers' },
+    { name: 'ATTENDANCE', label: 'Attendance' },
+    { name: 'EXPENSES', label: 'Expenses' },
+    { name: 'ACCOUNTING', label: 'Accounting' },
+    { name: 'REPORTS', label: 'Reports' },
+    { name: 'GPS', label: 'GPS' },
+    { name: 'SETTINGS', label: 'Settings' },
+  ]
+
+  for (const m of modules) {
+    await prisma.module.upsert({
+      where: { name: m.name },
+      create: m,
+      update: { label: m.label },
+    })
+  }
+
+  console.log(`  Seeded ${modules.length} modules`)
+}
+
+async function seedPermissions() {
+  const modules = await prisma.module.findMany({ orderBy: { name: 'asc' } })
+  const actions = await prisma.permissionAction.findMany({ orderBy: { name: 'asc' } })
+
+  const data = modules.flatMap(m =>
+    actions.map(a => ({
+      moduleId: m.id,
+      actionId: a.id,
+      label: `${a.label} ${m.label}`,
+    }))
+  )
+
+  if (data.length > 0) {
+    await prisma.permission.createMany({ data, skipDuplicates: true })
+  }
+
+  console.log(`  Generated ${data.length} permissions (${modules.length} modules × ${actions.length} actions)`)
+}
+
+// ─── Role Permission Assignment ──────────────────────────────
 
 async function assignPermissionsToRole(roleName: string, permissionKeys: string[]) {
   const role = await prisma.role.findUnique({ where: { name: roleName } })
@@ -38,8 +129,8 @@ async function assignPermissionsToRole(roleName: string, permissionKeys: string[
   console.log(`  Granted ${permissionIds.length} permissions to "${roleName}"`)
 }
 
-async function seedRbac() {
-  // ── ADMIN: All permissions ──────────────────────────────
+async function seedRolePermissions() {
+  // ADMIN gets every permission in the system
   const allPermissions = await prisma.permission.findMany()
   const adminRole = await prisma.role.findUnique({ where: { name: 'ADMIN' } })
   if (adminRole) {
@@ -50,7 +141,7 @@ async function seedRbac() {
     console.log(`  Granted ${allPermissions.length} permissions to "ADMIN"`)
   }
 
-  // ── MANAGER ─────────────────────────────────────────────
+  // MANAGER
   await assignPermissionsToRole('MANAGER', [
     'USERS.READ',
     'PRODUCTS.READ', 'PRODUCTS.CREATE', 'PRODUCTS.UPDATE',
@@ -68,7 +159,7 @@ async function seedRbac() {
     'REPORTS.READ',
   ])
 
-  // ── STOREKEEPER ─────────────────────────────────────────
+  // STOREKEEPER
   await assignPermissionsToRole('STOREKEEPER', [
     'PRODUCTS.READ',
     'WAREHOUSES.READ',
@@ -76,7 +167,7 @@ async function seedRbac() {
     'PRODUCTION.READ', 'PRODUCTION.UPDATE',
   ])
 
-  // ── ACCOUNTANT ──────────────────────────────────────────
+  // ACCOUNTANT
   await assignPermissionsToRole('ACCOUNTANT', [
     'SALES.READ', 'SALES.UPDATE',
     'CUSTOMERS.READ',
@@ -87,7 +178,7 @@ async function seedRbac() {
     'REPORTS.READ',
   ])
 
-  // ── DISTRIBUTOR ─────────────────────────────────────────
+  // DISTRIBUTOR
   await assignPermissionsToRole('DISTRIBUTOR', [
     'CUSTOMERS.READ', 'CUSTOMERS.CREATE', 'CUSTOMERS.UPDATE',
     'SALES.READ', 'SALES.CREATE', 'SALES.UPDATE',
@@ -97,7 +188,7 @@ async function seedRbac() {
   ])
 }
 
-async function main() {
+async function seedAdmin() {
   const adminEmail = 'admin@alnour.com'
   const existing = await prisma.user.findUnique({ where: { email: adminEmail } })
 
@@ -105,7 +196,7 @@ async function main() {
     const password = await bcrypt.hash('admin123', 12)
     const adminRole = await prisma.role.findUnique({ where: { name: 'ADMIN' } })
 
-    const admin = await prisma.user.create({
+    await prisma.user.create({
       data: {
         name: 'Super Admin',
         email: adminEmail,
@@ -116,14 +207,34 @@ async function main() {
       },
     })
 
-    console.log(`Admin user created: ${admin.email} / admin123`)
+    console.log(`  Admin user created: ${adminEmail} / admin123`)
   } else {
-    console.log('Admin user already exists, skipping user creation.')
+    console.log('  Admin user already exists, skipping.')
   }
+}
+
+// ─── Main ────────────────────────────────────────────────────
+
+async function main() {
+  console.log('Seeding roles...')
+  await seedRoles()
+
+  console.log('Seeding permission actions...')
+  await seedPermissionActions()
+
+  console.log('Seeding modules...')
+  await seedModules()
+
+  console.log('Seeding permissions...')
+  await seedPermissions()
 
   console.log('Seeding role permissions...')
-  await seedRbac()
-  console.log('Role permissions seeded successfully.');
+  await seedRolePermissions()
+
+  console.log('Seeding admin user...')
+  await seedAdmin()
+
+  console.log('Seed completed successfully.')
 }
 
 main()
