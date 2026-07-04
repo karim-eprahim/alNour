@@ -32,6 +32,8 @@ export interface CreateProductPayload {
   weight?: number
   purchaseCost?: number
   sellingPrice?: number
+  warehouseId?: string
+  initialQuantity?: number
 }
 
 export interface UpdateProductPayload {

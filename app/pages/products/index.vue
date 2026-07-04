@@ -41,7 +41,11 @@ const createForm = reactive({
   weight: null as number | null,
   purchaseCost: null as number | null,
   sellingPrice: null as number | null,
+  warehouseId: null as string | null,
+  initialQuantity: null as number | null,
 })
+
+const showInitialStock = ref(false)
 
 const editForm = reactive({
   name: '',
@@ -87,6 +91,9 @@ function resetCreateForm() {
   createForm.weight = null
   createForm.purchaseCost = null
   createForm.sellingPrice = null
+  createForm.warehouseId = null
+  createForm.initialQuantity = null
+  showInitialStock.value = false
 }
 
 function openEdit(product: Product) {
@@ -232,6 +239,28 @@ onMounted(() => {
             <UiLabel>Image</UiLabel>
             <ImageUpload v-model="createForm.image" />
           </div>
+          <UiSeparator />
+          <div class="flex items-center gap-2">
+            <UiSwitch id="initial-stock-toggle" v-model="showInitialStock" />
+            <UiLabel for="initial-stock-toggle" class="cursor-pointer">Add Initial Stock</UiLabel>
+          </div>
+          <template v-if="showInitialStock">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="space-y-2">
+                <UiLabel for="create-warehouse">Warehouse</UiLabel>
+                <UiSelect v-model="createForm.warehouseId">
+                  <UiSelectTrigger id="create-warehouse"><UiSelectValue placeholder="Select warehouse" /></UiSelectTrigger>
+                  <UiSelectContent>
+                    <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
+                  </UiSelectContent>
+                </UiSelect>
+              </div>
+              <div class="space-y-2">
+                <UiLabel for="create-initial-qty">Initial Quantity</UiLabel>
+                <UiInput id="create-initial-qty" v-model="createForm.initialQuantity as number" type="number" step="0.001" placeholder="0.000" />
+              </div>
+            </div>
+          </template>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showCreateDialog = false">Cancel</UiButton>
             <UiButton type="submit" :disabled="productsStore.loading">Create</UiButton>

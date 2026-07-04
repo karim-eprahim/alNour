@@ -25,20 +25,58 @@ export default defineEventHandler(async (event) => {
   }
   const sku = `${prefix}-${String(nextNum).padStart(4, '0')}`
 
-  const product = await prisma.product.create({
-    data: {
-      name: body.name,
-      nameAr: body.nameAr,
-      type: body.type,
-      sku,
-      image: body.image,
-      weight: body.weight ? parseFloat(body.weight) : null,
-      purchaseCost: body.purchaseCost ? parseFloat(body.purchaseCost) : null,
-      sellingPrice: body.sellingPrice ? parseFloat(body.sellingPrice) : null,
-    },
-    include: {
-      stocks: { include: { warehouse: true } },
-    },
+  const initialQuantity = body.initialQuantity ? parseFloat(body.initialQuantity) : 0
+
+  const product = await prisma.$transaction(async (tx) => {
+    const created = await tx.product.create({
+      data: {
+        name: body.name,
+        nameAr: body.nameAr,
+        type: body.type,
+        sku,
+        image: body.image,
+        weight: body.weight ? parseFloat(body.weight) : null,
+        purchaseCost: body.purchaseCost ? parseFloat(body.purchaseCost) : null,
+        sellingPrice: body.sellingPrice ? parseFloat(body.sellingPrice) : null,
+      },
+    })
+
+    if (initialQuantity > 0 && body.warehouseId) {
+      await tx.stock.upsert({
+        where: {
+          warehouseId_productId: {
+            warehouseId: body.warehouseId,
+            productId: created.id,
+          },
+        },
+        create: {
+          warehouseId: body.warehouseId,
+          productId: created.id,
+          quantity: initialQuantity,
+        },
+        update: {
+          quantity: initialQuantity,
+        },
+      })
+
+      await tx.stockMovement.create({
+        data: {
+          productId: created.id,
+          warehouseId: body.warehouseId,
+          type: 'ADJUSTMENT',
+          quantity: initialQuantity,
+          notes: 'Opening stock / رصيد أول المدة',
+          createdById: event.context.auth.userId,
+        },
+      })
+    }
+
+    return tx.product.findUniqueOrThrow({
+      where: { id: created.id },
+      include: {
+        stocks: { include: { warehouse: true } },
+      },
+    })
   })
 
   return { product }
