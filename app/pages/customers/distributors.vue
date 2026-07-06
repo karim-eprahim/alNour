@@ -14,7 +14,7 @@ definePageMeta({
   middleware: 'auth',
   permission: {
     module: 'DISTRIBUTORS',
-    action: 'VIEW'
+    action: 'READ'
   }
 })
 

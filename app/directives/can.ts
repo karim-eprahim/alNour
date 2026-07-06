@@ -9,4 +9,7 @@ export const vCan: Directive<HTMLElement, { module: string; action: string }> = 
       el.parentNode?.removeChild(el)
     }
   },
+  getSSRProps() {
+    return {}
+  },
 }

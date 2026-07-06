@@ -10,7 +10,7 @@ definePageMeta({
   middleware: 'auth',
   permission: {
     module: 'CUSTOMERS',
-    action: 'VIEW'
+    action: 'READ'
   }
 })
 
