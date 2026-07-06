@@ -6,6 +6,7 @@ import PageHeader from '~/components/shared/PageHeader.vue'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'PRODUCTION', action: 'READ' },
 })
 
 const productionStore = useProductionStore()

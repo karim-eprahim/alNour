@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { MoreHorizontal, Eye, Trash2 } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { ProductionBatch, ProductionConsumption, ProductionOutput, WorkerProductivity } from '../type'
+import { usePermissions } from '~/composables/usePermissions'
 import {
   NuxtLink,
   UiBadge,
@@ -66,10 +67,15 @@ export function getBatchColumns(actions: BatchActions): ColumnDef<ProductionBatc
       enableSorting: false,
       cell: ({ row }) => {
         const b = row.original
-        return h('div', { class: 'flex gap-1' }, [
+        const { can } = usePermissions()
+        const canDelete = can('PRODUCTION', 'DELETE')
+        const buttons: any[] = [
           h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onView(b.id) }, () => h(Eye, { class: 'size-3.5' })),
-          h(UiButton, { variant: 'ghost', size: 'icon-xs', class: 'text-destructive', onClick: () => actions.onDelete(b.id) }, () => h(Trash2, { class: 'size-3.5' })),
-        ])
+        ]
+        if (canDelete) {
+          buttons.push(h(UiButton, { variant: 'ghost', size: 'icon-xs', class: 'text-destructive', onClick: () => actions.onDelete(b.id) }, () => h(Trash2, { class: 'size-3.5' })))
+        }
+        return h('div', { class: 'flex gap-1' }, buttons)
       },
     },
   ]

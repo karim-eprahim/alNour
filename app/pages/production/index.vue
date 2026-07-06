@@ -8,6 +8,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'PRODUCTION', action: 'READ' },
 })
 
 const productionStore = useProductionStore()
@@ -47,7 +48,7 @@ watch(page, load)
   <div class="space-y-6">
     <PageHeader title="Production Batches" description="Manage production batches and track output">
       <template #actions>
-        <UiButton @click="navigateTo('/production/new')">
+        <UiButton v-can="{ module: 'PRODUCTION', action: 'CREATE' }" @click="navigateTo('/production/new')">
           <Plus class="size-4" /> New Batch
         </UiButton>
       </template>

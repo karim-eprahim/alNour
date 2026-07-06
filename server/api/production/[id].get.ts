@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'PRODUCTION', 'READ')
   const id = getRouterParam(event, 'id')
   const batch = await prisma.productionBatch.findUnique({
     where: { id },

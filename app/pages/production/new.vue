@@ -6,6 +6,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'PRODUCTION', action: 'CREATE' },
 })
 
 const productionStore = useProductionStore()

@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'PRODUCTION', 'UPDATE')
   const id = getRouterParam(event, 'id')
   const body = await readBody(event)
 
