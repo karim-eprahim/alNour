@@ -9,6 +9,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   const auth = useAuthStore()
 
+  console.log('auth.isAuthenticated', auth.isAuthenticated)
   if (!auth.isAuthenticated) {
     await auth.fetchUser()
   }

@@ -1,4 +1,6 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'CUSTOMERS', 'UPDATE')
+
   const id = getRouterParam(event, 'id')
   const body = await readBody(event)
   const existing = await prisma.customer.findUnique({ where: { id } })

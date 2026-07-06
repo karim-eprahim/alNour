@@ -1,4 +1,6 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'CUSTOMERS', 'CREATE')
+
   const body = await readBody(event)
   if (!body.name) {
     throw createError({ statusCode: 400, statusMessage: 'name is required' })

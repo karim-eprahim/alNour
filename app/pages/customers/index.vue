@@ -9,6 +9,10 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: {
+    module: 'CUSTOMERS',
+    action: 'VIEW'
+  }
 })
 
 const customersStore = useCustomersStore()
@@ -86,7 +90,7 @@ onMounted(load)
   <div class="space-y-6">
     <PageHeader title="Customers" description="Customer directory and balances">
       <template #actions>
-        <UiButton @click="openCreate"><Plus class="size-4" /> Add Customer</UiButton>
+        <UiButton v-can="{ module: 'CUSTOMERS', action: 'CREATE' }" @click="openCreate"><Plus class="size-4" /> Add Customer</UiButton>
       </template>
     </PageHeader>
 

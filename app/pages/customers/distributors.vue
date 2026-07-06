@@ -12,6 +12,10 @@ import {
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: {
+    module: 'DISTRIBUTORS',
+    action: 'VIEW'
+  }
 })
 
 interface CustodyProduct {

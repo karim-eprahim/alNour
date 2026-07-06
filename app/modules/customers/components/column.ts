@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { MoreHorizontal, Trash2, Pencil, FileText } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { Customer } from '../type'
+import { usePermissions } from '~/composables/usePermissions'
 import {
   UiButton,
   UiDropdownMenu,
@@ -61,6 +62,13 @@ export function getCustomerColumns(actions: CustomerActions): ColumnDef<Customer
       enableSorting: false,
       cell: ({ row }) => {
         const c = row.original
+        const { can } = usePermissions()
+        const canEdit = can('CUSTOMERS', 'UPDATE')
+        const canDelete = can('CUSTOMERS', 'DELETE')
+        const items: any[] = []
+        items.push(h(UiDropdownMenuItem, { onClick: () => actions.onView(c.id) }, [h(FileText, { class: 'size-4' }), ' View']))
+        if (canEdit) items.push(h(UiDropdownMenuItem, { onClick: () => actions.onEdit(c) }, [h(Pencil, { class: 'size-4' }), ' Edit']))
+        if (canDelete) items.push(h(UiDropdownMenuSeparator), h(UiDropdownMenuItem, { variant: 'destructive', onClick: () => actions.onDelete(c.id) }, [h(Trash2, { class: 'size-4' }), ' Delete']))
         return h('div', [
           h(UiDropdownMenu, null, {
             default: () => [
@@ -69,12 +77,7 @@ export function getCustomerColumns(actions: CustomerActions): ColumnDef<Customer
                   default: () => h(MoreHorizontal, { class: 'size-4' }),
                 }),
               }),
-              h(UiDropdownMenuContent, { align: 'end', class: 'w-36' }, [
-                h(UiDropdownMenuItem, { onClick: () => actions.onView(c.id) }, [h(FileText, { class: 'size-4' }), ' View']),
-                h(UiDropdownMenuItem, { onClick: () => actions.onEdit(c) }, [h(Pencil, { class: 'size-4' }), ' Edit']),
-                h(UiDropdownMenuSeparator),
-                h(UiDropdownMenuItem, { variant: 'destructive', onClick: () => actions.onDelete(c.id) }, [h(Trash2, { class: 'size-4' }), ' Delete']),
-              ]),
+              h(UiDropdownMenuContent, { align: 'end', class: 'w-36' }, items),
             ],
           }),
         ])

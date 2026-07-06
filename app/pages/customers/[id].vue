@@ -8,6 +8,10 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: {
+    module: 'CUSTOMERS',
+    action: 'VIEW'
+  }
 })
 
 const route = useRoute()
