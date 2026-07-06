@@ -9,6 +9,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'EXPENSES', action: 'READ' },
 })
 
 const expensesStore = useExpensesStore()
@@ -147,7 +148,7 @@ onMounted(fetchData)
   <div class="space-y-6">
     <PageHeader title="Expenses" description="Track and manage all operating expenses">
       <template #actions>
-        <UiButton @click="showCreateDialog = true">
+        <UiButton v-can="{ module: 'EXPENSES', action: 'CREATE' }" @click="showCreateDialog = true">
           <Plus class="size-4" /> Add Expense
         </UiButton>
       </template>

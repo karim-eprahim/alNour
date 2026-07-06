@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { Pencil, Trash2, CircleDollarSign } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { Expense } from '../type'
+import { usePermissions } from '~/composables/usePermissions'
 import { UiBadge, UiButton } from '#components'
 
 export interface ExpenseActions {
@@ -51,10 +52,17 @@ export function getExpenseColumns(actions: ExpenseActions): ColumnDef<Expense>[]
       enableSorting: false,
       cell: ({ row }) => {
         const e = row.original
-        return h('div', { class: 'flex gap-1' }, [
-          h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onEdit(e) }, () => h(Pencil, { class: 'size-3.5' })),
-          h(UiButton, { variant: 'ghost', size: 'icon-xs', class: 'text-destructive', onClick: () => actions.onDelete(e) }, () => h(Trash2, { class: 'size-3.5' })),
-        ])
+        const { can } = usePermissions()
+        const canEdit = can('EXPENSES', 'UPDATE')
+        const canDelete = can('EXPENSES', 'DELETE')
+        const buttons: any[] = []
+        if (canEdit) {
+          buttons.push(h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onEdit(e) }, () => h(Pencil, { class: 'size-3.5' })))
+        }
+        if (canDelete) {
+          buttons.push(h(UiButton, { variant: 'ghost', size: 'icon-xs', class: 'text-destructive', onClick: () => actions.onDelete(e) }, () => h(Trash2, { class: 'size-3.5' })))
+        }
+        return h('div', { class: 'flex gap-1' }, buttons)
       },
     },
   ]

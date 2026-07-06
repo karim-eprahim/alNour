@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'EXPENSES', 'DELETE')
   const id = getRouterParam(event, 'id')
 
   const existing = await prisma.expense.findUnique({ where: { id } })
