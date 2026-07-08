@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'USERS', 'UPDATE')
   const userId = getRouterParam(event, 'id')
   if (!userId) throw createError({ statusCode: 400, statusMessage: 'User ID is required' })
 

@@ -6,6 +6,7 @@ import PageHeader from '~/components/shared/PageHeader.vue'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'USERS', action: 'READ' },
 })
 
 const route = useRoute()
@@ -130,7 +131,7 @@ onMounted(async () => {
               <UiCardTitle>User Permissions</UiCardTitle>
               <UiCardDescription>Manage granular permissions for this user (overrides role permissions)</UiCardDescription>
             </div>
-            <UiButton size="sm" :disabled="availablePermissions.length === 0" @click="showAssignDialog = true">
+            <UiButton v-can="{ module: 'USERS', action: 'UPDATE' }" size="sm" :disabled="availablePermissions.length === 0" @click="showAssignDialog = true">
               <Shield class="size-4" /> Assign
             </UiButton>
           </UiCardHeader>
@@ -158,7 +159,7 @@ onMounted(async () => {
                   </UiTableCell>
                   <UiTableCell class="text-xs text-muted-foreground">{{ up.permission.label }}</UiTableCell>
                   <UiTableCell class="text-right">
-                    <UiButton variant="ghost" size="icon-xs" class="text-destructive hover:text-destructive" @click="handleRemove(up.permissionId)">
+                    <UiButton v-can="{ module: 'USERS', action: 'UPDATE' }" variant="ghost" size="icon-xs" class="text-destructive hover:text-destructive" @click="handleRemove(up.permissionId)">
                       <ShieldX class="size-3.5" />
                     </UiButton>
                   </UiTableCell>

@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'USERS', 'READ')
   const id = getRouterParam(event, 'id')
 
   const user = await prisma.user.findUnique({

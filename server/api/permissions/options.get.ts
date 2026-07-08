@@ -1,4 +1,5 @@
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'USERS', 'READ')
   const modules = await prisma.module.findMany({
     orderBy: { name: 'asc' },
   })

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'USERS', 'UPDATE')
   const id = getRouterParam(event, 'id')
   const body = await readBody(event)
 

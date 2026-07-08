@@ -24,6 +24,7 @@ import type { PermissionGroup } from '~/modules/permissions/type'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'USERS', action: 'READ' },
 })
 
 const userActions: UserActions = {
@@ -270,8 +271,8 @@ onMounted(() => {
   <div class="space-y-6">
     <PageHeader title="Users & Permissions" description="Manage system users and role-based permissions">
       <template #actions>
-        <UiButton @click="showCreateDialog = true">Create User</UiButton>
-        <UiButton variant="outline" @click="showCreateRoleDialog = true">
+        <UiButton v-can="{ module: 'USERS', action: 'CREATE' }" @click="showCreateDialog = true">Create User</UiButton>
+        <UiButton v-can="{ module: 'USERS', action: 'CREATE' }" variant="outline" @click="showCreateRoleDialog = true">
           <Plus class="size-4" /> Create Role
         </UiButton>
         <!-- <UiButton variant="outline" @click="openCreatePermission">
@@ -351,10 +352,10 @@ onMounted(() => {
               <p class="text-xs text-muted-foreground">{{ role._count?.users ?? 0 }} user{{ (role._count?.users ?? 0) !== 1 ? 's' : '' }}</p>
             </div>
             <div class="flex gap-1">
-              <UiButton variant="ghost" size="icon-sm" @click="openRoleEditor(role)">
+              <UiButton v-can="{ module: 'USERS', action: 'UPDATE' }" variant="ghost" size="icon-sm" @click="openRoleEditor(role)">
                 <Shield class="size-3.5" />
               </UiButton>
-              <UiButton variant="ghost" size="icon-sm" class="text-destructive hover:text-destructive" @click="confirmDeleteRole(role)">
+              <UiButton v-can="{ module: 'USERS', action: 'DELETE' }" variant="ghost" size="icon-sm" class="text-destructive hover:text-destructive" @click="confirmDeleteRole(role)">
                 <Trash2 class="size-3.5" />
               </UiButton>
             </div>

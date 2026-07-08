@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'USERS', 'CREATE')
   const body = await readBody(event)
 
   if (!body.name || !body.email || !body.password || !body.roleId) {

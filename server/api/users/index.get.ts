@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'USERS', 'READ')
   const query = getQuery(event)
   const where: any = {}
 

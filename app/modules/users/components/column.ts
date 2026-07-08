@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { MoreHorizontal, Eye, Pencil, Trash2 } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { User } from '../type'
+import { usePermissions } from '~/composables/usePermissions'
 import {
   NuxtLink,
   UiAvatar,
@@ -84,6 +85,28 @@ export function getUserColumns(actions: UserActions): ColumnDef<User>[] {
       enableHiding: false,
       cell: ({ row }) => {
         const user = row.original
+        const { can } = usePermissions()
+        const canEdit = can('USERS', 'UPDATE')
+        const canDelete = can('USERS', 'DELETE')
+        const items: any[] = [
+          h(UiDropdownMenuItem, { onClick: () => actions.onView(user.id) }, [
+            h(Eye, { class: 'size-4' }),
+            ' View',
+          ]),
+        ]
+        if (canEdit) {
+          items.push(h(UiDropdownMenuItem, { onClick: () => actions.onEdit(user) }, [
+            h(Pencil, { class: 'size-4' }),
+            ' Edit',
+          ]))
+        }
+        if (canDelete) {
+          items.push(h(UiDropdownMenuSeparator))
+          items.push(h(UiDropdownMenuItem, { variant: 'destructive', onClick: () => actions.onDelete(user) }, [
+            h(Trash2, { class: 'size-4' }),
+            ' Delete',
+          ]))
+        }
         return h('div',[
           h(UiDropdownMenu, null, {
             default: () => [
@@ -92,21 +115,7 @@ export function getUserColumns(actions: UserActions): ColumnDef<User>[] {
                   default: () => h(MoreHorizontal, { class: 'size-4' }),
                 }),
               }),
-              h(UiDropdownMenuContent, { align: 'end', class: 'w-36' }, [
-                h(UiDropdownMenuItem, { onClick: () => actions.onView(user.id) }, [
-                  h(Eye, { class: 'size-4' }),
-                  ' View',
-                ]),
-                h(UiDropdownMenuItem, { onClick: () => actions.onEdit(user) }, [
-                  h(Pencil, { class: 'size-4' }),
-                  ' Edit',
-                ]),
-                h(UiDropdownMenuSeparator),
-                h(UiDropdownMenuItem, { variant: 'destructive', onClick: () => actions.onDelete(user) }, [
-                  h(Trash2, { class: 'size-4' }),
-                  ' Delete',
-                ]),
-              ]),
+              h(UiDropdownMenuContent, { align: 'end', class: 'w-36' }, items),
             ],
           }),
         ])

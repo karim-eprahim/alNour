@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'USERS', 'CREATE')
   const body = await readBody(event)
 
   if (!body.moduleId || !body.actionId || !body.label) {
