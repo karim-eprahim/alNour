@@ -7,6 +7,7 @@ import PageHeader from '~/components/shared/PageHeader.vue'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'SALES', action: 'READ' },
 })
 
 const salesStore = useSalesStore()
@@ -46,7 +47,7 @@ onMounted(load)
   <div class="space-y-6">
     <PageHeader title="Sales Orders" description="Manage customer orders">
       <template #actions>
-        <UiButton @click="navigateTo('/sales/new')"><Plus class="size-4" /> New Order</UiButton>
+        <UiButton v-can="{ module: 'SALES', action: 'CREATE' }" @click="navigateTo('/sales/new')"><Plus class="size-4" /> New Order</UiButton>
       </template>
     </PageHeader>
 

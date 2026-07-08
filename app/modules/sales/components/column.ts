@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { Eye, DollarSign } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { SalesOrder, Invoice, SalesOrderItem } from '../type'
+import { usePermissions } from '~/composables/usePermissions'
 import {
   NuxtLink,
   UiBadge,
@@ -76,7 +77,11 @@ export function getOrderColumns(actions: OrderActions): ColumnDef<SalesOrder>[] 
       id: 'actions',
       header: 'Actions',
       enableSorting: false,
-      cell: ({ row }) => h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onView(row.original.id) }, () => h(Eye, { class: 'size-3.5' })),
+      cell: ({ row }) => {
+        const { can } = usePermissions()
+        if (!can('SALES', 'READ')) return h('span')
+        return h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onView(row.original.id) }, () => h(Eye, { class: 'size-3.5' }))
+      },
     },
   ]
 }
@@ -166,10 +171,15 @@ export function getInvoiceColumns(actions: InvoiceActions): ColumnDef<Invoice>[]
       cell: ({ row }) => {
         const inv = row.original
         const due = Number(inv.totalAmount) - Number(inv.paidAmount)
-        return h('div', { class: 'flex gap-1' }, [
-          h(UiButton, { variant: 'ghost', size: 'icon-xs', disabled: due <= 0, onClick: () => actions.onPay(inv) }, () => h(DollarSign, { class: 'size-3.5' })),
-          h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onViewOrder(inv.salesOrderId) }, () => h(Eye, { class: 'size-3.5' })),
-        ])
+        const { can } = usePermissions()
+        const buttons: any[] = []
+        if (can('SALES', 'UPDATE') && due > 0) {
+          buttons.push(h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onPay(inv) }, () => h(DollarSign, { class: 'size-3.5' })))
+        }
+        if (can('SALES', 'READ')) {
+          buttons.push(h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onViewOrder(inv.salesOrderId) }, () => h(Eye, { class: 'size-3.5' })))
+        }
+        return h('div', { class: 'flex gap-1' }, buttons)
       },
     },
   ]

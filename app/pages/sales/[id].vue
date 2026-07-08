@@ -9,10 +9,12 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'SALES', action: 'READ' },
 })
 
 const route = useRoute()
 const salesStore = useSalesStore()
+const { can } = usePermissions()
 
 const order = computed(() => salesStore.currentOrder)
 
@@ -180,7 +182,7 @@ onMounted(async () => {
                     <span class="font-medium text-green-600">{{ Number(p.amount).toFixed(2) }}</span>
                   </div>
                 </div>
-                <UiButton v-if="Number(inv.totalAmount) > Number(inv.paidAmount)" size="sm" class="w-full mt-2" @click="openPay(inv.id, Number(inv.totalAmount) - Number(inv.paidAmount))">
+                <UiButton v-if="Number(inv.totalAmount) > Number(inv.paidAmount) && can('SALES', 'UPDATE')" size="sm" class="w-full mt-2" @click="openPay(inv.id, Number(inv.totalAmount) - Number(inv.paidAmount))">
                   <DollarSign class="size-3.5" /> Record Payment
                 </UiButton>
               </UiCardContent>

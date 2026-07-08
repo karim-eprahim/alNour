@@ -4,6 +4,7 @@ import { ArrowLeft } from '@lucide/vue'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'SALES', action: 'READ' },
 })
 </script>
 

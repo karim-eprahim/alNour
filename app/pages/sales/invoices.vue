@@ -8,6 +8,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'SALES', action: 'READ' },
 })
 
 const salesStore = useSalesStore()
