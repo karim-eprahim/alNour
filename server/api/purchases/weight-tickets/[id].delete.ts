@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'PURCHASES', 'DELETE')
   const id = getRouterParam(event, 'id')
 
   const existing = await prisma.weightTicket.findUnique({ where: { id } })

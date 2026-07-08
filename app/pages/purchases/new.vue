@@ -7,6 +7,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'PURCHASES', action: 'CREATE' },
 })
 
 const purchasesStore = usePurchasesStore()

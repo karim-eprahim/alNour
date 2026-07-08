@@ -5,6 +5,7 @@ import PageHeader from '~/components/shared/PageHeader.vue'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'PURCHASES', action: 'READ' },
 })
 
 const tickets = ref<any[]>([])

@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'PURCHASES', 'CREATE')
   const body = await readBody(event)
   const auth = event.context.auth
 

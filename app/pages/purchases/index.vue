@@ -5,6 +5,7 @@ import PageHeader from '~/components/shared/PageHeader.vue'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'PURCHASES', action: 'READ' },
 })
 
 const purchasesStore = usePurchasesStore()
@@ -49,7 +50,7 @@ onMounted(async () => {
   <div class="space-y-6">
     <PageHeader title="Purchase Invoices" description="Manage supplier invoices and raw material purchases">
       <template #actions>
-        <UiButton @click="navigateTo('/purchases/new')">
+        <UiButton v-can="{ module: 'PURCHASES', action: 'CREATE' }" @click="navigateTo('/purchases/new')">
           <Plus class="size-4" /> New Invoice
         </UiButton>
       </template>

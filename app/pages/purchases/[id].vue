@@ -9,12 +9,14 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'PURCHASES', action: 'READ' },
 })
 
 const route = useRoute()
 const invoiceId = computed(() => route.params.id as string)
 
 const purchasesStore = usePurchasesStore()
+const { can } = usePermissions()
 
 const activeTab = ref('items')
 const showPayDialog = ref(false)
@@ -115,7 +117,7 @@ onMounted(fetchInvoice)
           <p class="text-2xl font-bold" :class="dueAmount > 0 ? 'text-destructive' : ''">{{ dueAmount.toFixed(2) }}</p>
         </UiCardContent>
       </UiCard>
-      <UiCard class="cursor-pointer hover:bg-accent/50" @click="showPayDialog = true">
+      <UiCard v-can="{ module: 'PURCHASES', action: 'EDIT' }" class="cursor-pointer hover:bg-accent/50" @click="showPayDialog = true">
         <UiCardHeader class="pb-2">
           <UiCardTitle class="text-sm font-medium text-muted-foreground">Make Payment</UiCardTitle>
         </UiCardHeader>
@@ -181,7 +183,7 @@ onMounted(fetchInvoice)
               <UiCardTitle>Weight Tickets</UiCardTitle>
               <UiCardDescription>Load weight records for this invoice</UiCardDescription>
             </div>
-            <UiButton size="sm" variant="outline" @click="showAddTicketDialog = true">
+            <UiButton v-can="{ module: 'PURCHASES', action: 'EDIT' }" size="sm" variant="outline" @click="showAddTicketDialog = true">
               <Scale class="size-4" /> Add Ticket
             </UiButton>
           </UiCardHeader>
@@ -210,7 +212,7 @@ onMounted(fetchInvoice)
                   <UiTableCell class="text-right font-medium tabular-nums text-primary">{{ Number(t.netWeight).toFixed(3) }}</UiTableCell>
                   <UiTableCell class="text-xs text-muted-foreground">{{ new Date(t.createdAt).toLocaleDateString() }}</UiTableCell>
                   <UiTableCell class="text-right">
-                    <UiButton variant="ghost" size="icon-xs" class="text-destructive" @click="handleDeleteTicket(t.id)">
+                    <UiButton v-if="can('PURCHASES', 'DELETE')" variant="ghost" size="icon-xs" class="text-destructive" @click="handleDeleteTicket(t.id)">
                       <X class="size-3.5" />
                     </UiButton>
                   </UiTableCell>
