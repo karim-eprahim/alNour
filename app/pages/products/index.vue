@@ -18,6 +18,7 @@ const productColumns = getProductColumns(productActions)
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'PRODUCTS', action: 'READ' },
 })
 
 const productsStore = useProductsStore()
@@ -143,7 +144,7 @@ onMounted(() => {
   <div class="space-y-6">
     <PageHeader title="Products" description="Manage all products and inventory items">
       <template #actions>
-        <UiButton @click="showCreateDialog = true">Create Product</UiButton>
+        <UiButton v-can="{ module: 'PRODUCTS', action: 'CREATE' }" @click="showCreateDialog = true">Create Product</UiButton>
       </template>
     </PageHeader>
 

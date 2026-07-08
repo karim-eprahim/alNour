@@ -7,6 +7,7 @@ import {useStockStore} from '@/modules/stock/store'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'INVENTORY', action: 'READ' },
 })
 
 const productsStore = useProductsStore()
@@ -25,7 +26,7 @@ const totalStockValue = computed(() => {
   }
   return total
 })
-console.log("toatalStock",stockStore)
+console.log("totalStock",stockStore)
 
 const lowStockItems = computed(() =>
   stockStore.stocks.filter((s) => Number(s.quantity) <= 0)

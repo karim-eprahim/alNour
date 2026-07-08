@@ -8,6 +8,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'PRODUCTS', action: 'READ' },
 })
 
 const route = useRoute()
@@ -144,7 +145,7 @@ onMounted(fetchProduct)
               <UiCardTitle>Stock by Warehouse</UiCardTitle>
               <UiCardDescription>Current inventory levels across all warehouses</UiCardDescription>
             </div>
-            <UiButton size="sm" @click="showMovementDialog = true">
+            <UiButton v-can="{ module: 'PRODUCTS', action: 'UPDATE' }" size="sm" @click="showMovementDialog = true">
               <ArrowRightLeft class="size-4" /> Record Movement
             </UiButton>
           </UiCardHeader>

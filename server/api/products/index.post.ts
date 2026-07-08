@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'PRODUCTS', 'CREATE')
   const body = await readBody(event)
 
   if (!body.name || !body.nameAr || !body.type) {
