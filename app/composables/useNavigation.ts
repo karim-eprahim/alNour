@@ -87,7 +87,7 @@ export const useNavigation = () => {
       permission: { module: 'SALES', action: 'READ' },
       children: [
         { title: 'Customers', to: '/customers', permission: { module: 'SALES', action: 'READ' } },
-        { title: 'Distributors', to: '/customers/distributors', permission: { module: 'DISTRIBUTORS', action: 'READ' } },
+        { title: 'Distributors', to: '/customers/distributors', permission: { module: 'SALES', action: 'READ' } },
         { title: 'Orders', to: '/sales/orders', permission: { module: 'SALES', action: 'READ' } },
         { title: 'Invoices', to: '/sales/invoices', permission: { module: 'SALES', action: 'READ' } },
         { title: 'Payments', to: '/sales/payments', permission: { module: 'SALES', action: 'READ' } },

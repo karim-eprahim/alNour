@@ -13,7 +13,7 @@ definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
   permission: {
-    module: 'DISTRIBUTORS',
+    module: 'SALES',
     action: 'READ'
   }
 })
