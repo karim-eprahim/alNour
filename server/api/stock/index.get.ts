@@ -3,7 +3,15 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const where: any = {}
 
-  if (query.warehouseId) where.warehouseId = query.warehouseId
+  if (query.warehouseId) {
+    await validateWarehouseAccess(event, query.warehouseId as string)
+    where.warehouseId = query.warehouseId
+  } else {
+    const warehouseIds = await getAccessibleWarehouseIds(event)
+    if (warehouseIds !== null) {
+      where.warehouseId = { in: warehouseIds }
+    }
+  }
   if (query.productId) where.productId = query.productId
   if (query.lowStock) {
     where.quantity = { lte: parseFloat(query.lowStock as string) }

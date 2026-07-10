@@ -3,6 +3,12 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
   const where: any = {}
+
+  const warehouseIds = await getAccessibleWarehouseIds(event)
+  if (warehouseIds !== null) {
+    where.id = { in: warehouseIds }
+  }
+
   if (query.search) {
     where.OR = [
       { name: { contains: query.search, mode: 'insensitive' } },

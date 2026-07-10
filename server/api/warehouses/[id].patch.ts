@@ -8,6 +8,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Warehouse not found' })
   }
 
+  await validateWarehouseAccess(event, id!)
+
   const data: any = {}
   if (body.name) data.name = body.name
   if (body.location !== undefined) data.location = body.location

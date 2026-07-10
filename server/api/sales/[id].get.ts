@@ -22,5 +22,8 @@ export default defineEventHandler(async (event) => {
   if (!order) {
     throw createError({ statusCode: 404, statusMessage: 'Sales order not found' })
   }
+
+  await validateWarehouseAccess(event, order.warehouseId)
+
   return { order }
 })

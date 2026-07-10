@@ -20,5 +20,8 @@ export default defineEventHandler(async (event) => {
   if (!batch) {
     throw createError({ statusCode: 404, statusMessage: 'Production batch not found' })
   }
+
+  await validateWarehouseAccess(event, batch.warehouseId)
+
   return { batch }
 })

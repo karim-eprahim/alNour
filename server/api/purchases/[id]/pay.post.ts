@@ -12,6 +12,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Purchase invoice not found' })
   }
 
+  await validateWarehouseAccess(event, invoice.warehouseId)
+
   const paymentAmount = parseFloat(body.amount)
   if (paymentAmount <= 0) {
     throw createError({ statusCode: 400, statusMessage: 'Payment amount must be positive' })

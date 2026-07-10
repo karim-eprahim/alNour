@@ -3,6 +3,14 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const where: any = {}
 
+  const warehouseIds = await getAccessibleWarehouseIds(event)
+  if (warehouseIds !== null) {
+    where.OR = [
+      { fromWarehouseId: { in: warehouseIds } },
+      { toWarehouseId: { in: warehouseIds } },
+    ]
+  }
+
   if (query.status) where.status = query.status
 
   const [transfers, total] = await Promise.all([

@@ -12,6 +12,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Transfer not found' })
   }
 
+  await validateWarehouseAccess(event, transfer.fromWarehouseId)
+  await validateWarehouseAccess(event, transfer.toWarehouseId)
+
   if (transfer.status !== 'PENDING') {
     throw createError({ statusCode: 400, statusMessage: 'Transfer is already completed or cancelled' })
   }

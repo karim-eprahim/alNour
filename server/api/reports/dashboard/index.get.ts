@@ -102,14 +102,24 @@ export default defineEventHandler(async (event) => {
   // 3. INVENTORY & WAREHOUSE — ADMIN / MANAGER / STOREKEEPER
   // ──────────────────────────────────────────────
   if (canViewStock) {
+    const warehouseIds = await getAccessibleWarehouseIds(event)
+    const stockWhere: any = {}
+    const movementWhere: any = {}
+    if (warehouseIds !== null) {
+      stockWhere.warehouseId = { in: warehouseIds }
+      movementWhere.warehouseId = { in: warehouseIds }
+    }
+
     const [stocks, movements, warehouseCount] = await Promise.all([
       prisma.stock.findMany({
+        where: stockWhere,
         include: {
           warehouse: { select: { id: true, name: true } },
           product: { select: { id: true, name: true, sku: true, type: true, purchaseCost: true } },
         },
       }),
       prisma.stockMovement.findMany({
+        where: movementWhere,
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -118,7 +128,9 @@ export default defineEventHandler(async (event) => {
           createdBy: { select: { id: true, name: true } },
         },
       }),
-      prisma.warehouse.count(),
+      warehouseIds !== null
+        ? prisma.warehouse.count({ where: { id: { in: warehouseIds } } })
+        : prisma.warehouse.count(),
     ])
 
     const totalStockQuantity = stocks.reduce((s, st) => s + st.quantity.toNumber(), 0)

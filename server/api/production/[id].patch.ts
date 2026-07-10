@@ -8,6 +8,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Production batch not found' })
   }
 
+  await validateWarehouseAccess(event, existing.warehouseId)
+
   const data: any = {}
   if (body.status) data.status = body.status
   if (body.laborCost !== undefined) data.laborCost = parseFloat(body.laborCost)

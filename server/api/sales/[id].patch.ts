@@ -6,6 +6,9 @@ export default defineEventHandler(async (event) => {
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Sales order not found' })
   }
+
+  await validateWarehouseAccess(event, existing.warehouseId)
+
   const data: any = {}
   if (body.status) data.status = body.status
   const order = await prisma.salesOrder.update({

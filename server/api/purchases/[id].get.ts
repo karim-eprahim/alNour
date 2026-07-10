@@ -20,5 +20,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Purchase invoice not found' })
   }
 
+  await validateWarehouseAccess(event, invoice.warehouseId)
+
   return { invoice }
 })

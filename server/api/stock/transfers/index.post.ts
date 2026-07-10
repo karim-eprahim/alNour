@@ -3,6 +3,9 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const auth = event.context.auth
 
+  await validateWarehouseAccess(event, body.fromWarehouseId)
+  await validateWarehouseAccess(event, body.toWarehouseId)
+
   if (!body.fromWarehouseId || !body.toWarehouseId || !body.items?.length) {
     throw createError({ statusCode: 400, statusMessage: 'fromWarehouseId, toWarehouseId, and items are required' })
   }

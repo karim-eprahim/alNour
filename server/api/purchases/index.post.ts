@@ -3,6 +3,8 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const auth = event.context.auth
 
+  await validateWarehouseAccess(event, body.warehouseId)
+
   if (!body.supplierId || !body.warehouseId || !body.items?.length) {
     throw createError({ statusCode: 400, statusMessage: 'supplierId, warehouseId, and items are required' })
   }

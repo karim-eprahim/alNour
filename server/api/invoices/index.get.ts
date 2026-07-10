@@ -3,6 +3,13 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const where: any = {}
 
+  const warehouseIds = await getAccessibleWarehouseIds(event)
+  if (warehouseIds !== null) {
+    where.salesOrder = {
+      warehouseId: { in: warehouseIds },
+    }
+  }
+
   if (query.customerId) where.customerId = query.customerId
   if (query.status) where.status = query.status
   if (query.search) {

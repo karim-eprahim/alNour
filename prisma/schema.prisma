@@ -120,6 +120,7 @@ model User {
 
   role            Role                   @relation(fields: [roleId], references: [id])
   permissions     UserPermission[]
+  userWarehouses  UserWarehouse[]
   locations       UserLocation[]
   auditLogs       AuditLog[]
   syncRecords     SyncQueue[]
@@ -226,6 +227,7 @@ model Warehouse {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  userWarehouses    UserWarehouse[]
   stocks            Stock[]
   movements         StockMovement[]
   transfersFrom     StockTransfer[]   @relation("FromWarehouse")
@@ -235,6 +237,21 @@ model Warehouse {
   salesOrders       SalesOrder[]
 
   @@map("warehouses")
+}
+
+model UserWarehouse {
+  id          String   @id @default(uuid())
+
+  userId      String
+  warehouseId String
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, warehouseId])
+  @@map("user_warehouses")
 }
 
 model Product {

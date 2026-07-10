@@ -5,6 +5,9 @@ export default defineEventHandler(async (event) => {
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Production batch not found' })
   }
+
+  await validateWarehouseAccess(event, existing.warehouseId)
+
   await prisma.productionBatch.delete({ where: { id } })
   return { success: true }
 })

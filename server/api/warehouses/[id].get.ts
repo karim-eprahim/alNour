@@ -2,6 +2,8 @@ export default defineEventHandler(async (event) => {
   await requirePermission(event, 'WAREHOUSES', 'READ')
   const id = getRouterParam(event, 'id')
 
+  await validateWarehouseAccess(event, id!)
+
   const warehouse = await prisma.warehouse.findUnique({
     where: { id },
     include: {

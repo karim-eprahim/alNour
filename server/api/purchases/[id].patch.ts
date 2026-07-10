@@ -8,6 +8,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Purchase invoice not found' })
   }
 
+  await validateWarehouseAccess(event, existing.warehouseId)
+
   const data: any = {}
   if (body.invoiceDate) data.invoiceDate = new Date(body.invoiceDate)
 
