@@ -5,7 +5,7 @@ import { usePermissions } from '@/composables/usePermissions'
 import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronLeft, PanelLeftClose, PanelLeft, LogOut } from '@lucide/vue'
 
-const { collapsed, toggle, closeMobile } = useSidebar()
+const { collapsed, toggle, closeMobile, isMobileOpen } = useSidebar()
 const { navigation } = useNavigation()
 const { has } = usePermissions()
 
@@ -77,6 +77,8 @@ const transitionClass = 'transition-all duration-300 ease-in-out'
       'fixed left-0 top-0 z-30 flex h-screen flex-col bg-sidebar border-r border-sidebar-border',
       sidebarWidth,
       transitionClass,
+      isMobileOpen ? 'translate-x-0' : '-translate-x-full',
+      'lg:translate-x-0',
     )"
   >
     <div class="flex h-14 items-center justify-between px-3 border-b border-sidebar-border">
