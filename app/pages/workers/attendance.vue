@@ -6,6 +6,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'ATTENDANCE', action: 'READ' },
 })
 
 const workersStore = useWorkersStore()
@@ -124,7 +125,7 @@ onMounted(load)
   <div class="space-y-6">
     <PageHeader title="Attendance & Daily Wages" description="Log daily attendance and assign workers to production batches">
       <template #actions>
-        <UiButton @click="handleSubmit" :disabled="submitting">
+        <UiButton v-can="{ module: 'ATTENDANCE', action: 'UPDATE' }" @click="handleSubmit" :disabled="submitting">
           <Check class="size-4" /> {{ submitting ? 'Saving...' : 'Save All' }}
         </UiButton>
       </template>

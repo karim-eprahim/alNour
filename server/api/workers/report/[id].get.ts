@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'WORKERS', 'READ')
   const id = getRouterParam(event, 'id')
 
   const worker = await prisma.worker.findUnique({ where: { id } })

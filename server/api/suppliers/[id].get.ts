@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'SUPPLIERS', 'READ')
   const id = getRouterParam(event, 'id')
 
   const supplier = await prisma.supplier.findUnique({

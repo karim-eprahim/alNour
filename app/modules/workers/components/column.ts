@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { Eye, Pencil, Trash2, CircleCheck, CircleX, Ban } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { Worker, Attendance, WorkerAdvance, WorkerDailyWage } from '../type'
+import { usePermissions } from '~/composables/usePermissions'
 import { UiBadge, UiButton, NuxtLink } from '#components'
 
 export interface WorkerActions {
@@ -77,11 +78,18 @@ export function getWorkerColumns(actions: WorkerActions): ColumnDef<Worker>[] {
       enableSorting: false,
       cell: ({ row }) => {
         const w = row.original
-        return h('div', { class: 'flex gap-1' }, [
-          actions.onView && h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onView!(w.id) }, () => h(Eye, { class: 'size-3.5' })),
-          actions.onEdit && h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onEdit!(w) }, () => h(Pencil, { class: 'size-3.5' })),
-          actions.onDelete && h(UiButton, { variant: 'ghost', size: 'icon-xs', class: 'text-destructive', onClick: () => actions.onDelete!(w) }, () => h(Trash2, { class: 'size-3.5' })),
-        ])
+        const { can } = usePermissions()
+        const buttons: any[] = []
+        if (actions.onView && can('WORKERS', 'READ')) {
+          buttons.push(h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onView!(w.id) }, () => h(Eye, { class: 'size-3.5' })))
+        }
+        if (actions.onEdit && can('WORKERS', 'UPDATE')) {
+          buttons.push(h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => actions.onEdit!(w) }, () => h(Pencil, { class: 'size-3.5' })))
+        }
+        if (actions.onDelete && can('WORKERS', 'DELETE')) {
+          buttons.push(h(UiButton, { variant: 'ghost', size: 'icon-xs', class: 'text-destructive', onClick: () => actions.onDelete!(w) }, () => h(Trash2, { class: 'size-3.5' })))
+        }
+        return h('div', { class: 'flex gap-1' }, buttons)
       },
     },
   ]

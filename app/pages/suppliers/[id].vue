@@ -7,12 +7,14 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'SUPPLIERS', action: 'READ' },
 })
 
 const route = useRoute()
 const supplierId = computed(() => route.params.id as string)
 
 const suppliersStore = useSuppliersStore()
+const { can } = usePermissions()
 
 const activeTab = ref('invoices')
 const showLedgerDialog = ref(false)
@@ -131,7 +133,7 @@ onMounted(fetchSupplier)
               {{ netBalance > 0 ? `نحن ندين له بـ ${Number(netBalance).toFixed(2)}` : netBalance < 0 ? `هو مدين لنا بـ ${Number(Math.abs(netBalance)).toFixed(2)}` : 'صفر' }}
             </p>
           </div>
-          <UiButton size="sm" variant="outline" class="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-400" @click="showContraDialog = true">
+          <UiButton v-can="{ module: 'SUPPLIERS', action: 'UPDATE' }" size="sm" variant="outline" class="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-400" @click="showContraDialog = true">
             <ArrowLeftRight class="size-4" /> مقاصة مالية
           </UiButton>
         </div>
@@ -194,7 +196,7 @@ onMounted(fetchSupplier)
               <UiCardTitle>Purchase Invoices</UiCardTitle>
               <UiCardDescription>All purchase invoices from this supplier</UiCardDescription>
             </div>
-            <UiButton size="sm" @click="navigateTo('/purchases/new')">
+            <UiButton v-can="{ module: 'SUPPLIERS', action: 'UPDATE' }" size="sm" @click="navigateTo('/purchases/new')">
               <FileText class="size-4" /> New Invoice
             </UiButton>
           </UiCardHeader>
@@ -228,7 +230,7 @@ onMounted(fetchSupplier)
                   </UiTableCell>
                   <UiTableCell class="text-right">
                     <UiButton
-                      v-if="Number(inv.totalAmount) > Number(inv.paidAmount)"
+                      v-if="Number(inv.totalAmount) > Number(inv.paidAmount) && can('SUPPLIERS', 'UPDATE')"
                       variant="ghost" size="icon-xs" class="text-green-600"
                       @click="openPay(inv)"
                     >
@@ -249,7 +251,7 @@ onMounted(fetchSupplier)
               <UiCardTitle>Ledger Entries</UiCardTitle>
               <UiCardDescription>Financial transactions with this supplier</UiCardDescription>
             </div>
-            <UiButton size="sm" variant="outline" @click="showLedgerDialog = true">
+            <UiButton v-can="{ module: 'SUPPLIERS', action: 'UPDATE' }" size="sm" variant="outline" @click="showLedgerDialog = true">
               <CreditCard class="size-4" /> Add Entry
             </UiButton>
           </UiCardHeader>

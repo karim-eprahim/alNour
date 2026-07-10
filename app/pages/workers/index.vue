@@ -9,6 +9,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'WORKERS', action: 'READ' },
 })
 
 const workersStore = useWorkersStore()
@@ -124,7 +125,7 @@ onMounted(fetchData)
   <div class="space-y-6">
     <PageHeader title="Workers" description="Manage all workers, track wages and advances">
       <template #actions>
-        <UiButton @click="showCreateDialog = true">
+        <UiButton v-can="{ module: 'WORKERS', action: 'CREATE' }" @click="showCreateDialog = true">
           <Plus class="size-4" /> Add Worker
         </UiButton>
       </template>
