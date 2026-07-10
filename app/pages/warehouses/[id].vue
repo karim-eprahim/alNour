@@ -5,6 +5,7 @@ import PageHeader from '~/components/shared/PageHeader.vue'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'WAREHOUSES', action: 'READ' },
 })
 
 const route = useRoute()

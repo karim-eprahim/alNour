@@ -8,6 +8,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'INVENTORY', action: 'READ' },
 })
 
 const warehousesStore = useWarehousesStore()
@@ -79,7 +80,7 @@ onMounted(async () => {
   <div class="space-y-6">
     <PageHeader title="Stock Transfers" description="Move stock between warehouses">
       <template #actions>
-        <UiButton @click="showCreateDialog = true">New Transfer</UiButton>
+        <UiButton v-can="{ module: 'INVENTORY', action: 'CREATE' }" @click="showCreateDialog = true">New Transfer</UiButton>
       </template>
     </PageHeader>
 
@@ -118,6 +119,7 @@ onMounted(async () => {
               <UiTableCell class="text-right">
                 <UiButton
                   v-if="t.status === 'PENDING'"
+                  v-can="{ module: 'INVENTORY', action: 'UPDATE' }"
                   variant="ghost"
                   size="icon-xs"
                   class="text-green-600"

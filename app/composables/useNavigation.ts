@@ -74,11 +74,11 @@ export const useNavigation = () => {
     {
       title: 'Stock',
       icon: ArrowRightLeft,
-      permission: { module: 'STOCK', action: 'READ' },
+      permission: { module: 'INVENTORY', action: 'READ' },
       children: [
-        { title: 'Stock Overview', to: '/stock', permission: { module: 'STOCK', action: 'READ' } },
-        { title: 'Stock Movements', to: '/stock/movements', permission: { module: 'STOCK', action: 'READ' } },
-        { title: 'Transfers', to: '/stock/transfers', permission: { module: 'STOCK', action: 'CREATE' } },
+        { title: 'Stock Overview', to: '/stock', permission: { module: 'INVENTORY', action: 'READ' } },
+        { title: 'Stock Movements', to: '/stock/movements', permission: { module: 'INVENTORY', action: 'READ' } },
+        { title: 'Transfers', to: '/stock/transfers', permission: { module: 'INVENTORY', action: 'CREATE' } },
       ],
     },
     {
@@ -87,7 +87,7 @@ export const useNavigation = () => {
       permission: { module: 'SALES', action: 'READ' },
       children: [
         { title: 'Customers', to: '/customers', permission: { module: 'SALES', action: 'READ' } },
-        { title: 'Distributors', to: '/customers/distributors', permission: { module: 'SALES', action: 'READ' } },
+        { title: 'Distributors', to: '/customers/distributors', permission: { module: 'DISTRIBUTORS', action: 'READ' } },
         { title: 'Orders', to: '/sales/orders', permission: { module: 'SALES', action: 'READ' } },
         { title: 'Invoices', to: '/sales/invoices', permission: { module: 'SALES', action: 'READ' } },
         { title: 'Payments', to: '/sales/payments', permission: { module: 'SALES', action: 'READ' } },

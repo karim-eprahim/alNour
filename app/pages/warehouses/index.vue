@@ -3,6 +3,7 @@ import { h } from 'vue'
 import { MoreHorizontal, Eye, Pencil, Trash2, MapPin, Package } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { Warehouse } from '@/modules/warehouses/type'
+import { usePermissions } from '~/composables/usePermissions'
 import { NuxtLink, UiBadge, UiButton, UiDropdownMenu, UiDropdownMenuTrigger, UiDropdownMenuContent, UiDropdownMenuItem, UiDropdownMenuSeparator } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
@@ -10,6 +11,7 @@ import { toast } from 'vue-sonner'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'WAREHOUSES', action: 'READ' },
 })
 
 const warehousesStore = useWarehousesStore()
@@ -108,35 +110,37 @@ const columns: ColumnDef<Warehouse>[] = [
   },
   {
     id: 'actions',
-    header: 'Actions',
-    enableSorting: false,
-    cell: ({ row }) => {
-      const w = row.original
-      return h('div', [
-        h(UiDropdownMenu, null, {
-          default: () => [
-            h(UiDropdownMenuTrigger, { 'as-child': true }, {
-              default: () => h(UiButton, { variant: 'ghost', size: 'icon-sm' }, {
-                default: () => h(MoreHorizontal, { class: 'size-4' }),
+      header: 'Actions',
+      enableSorting: false,
+      cell: ({ row }) => {
+        const w = row.original
+        const { can } = usePermissions()
+        const items: any[] = []
+        if (can('WAREHOUSES', 'READ')) {
+          items.push(h(UiDropdownMenuItem, { onClick: () => navigateTo(`/warehouses/${w.id}`) }, [h(Eye, { class: 'size-4' }), ' View']))
+        }
+        if (can('WAREHOUSES', 'UPDATE')) {
+          items.push(h(UiDropdownMenuItem, { onClick: () => openEdit(w) }, [h(Pencil, { class: 'size-4' }), ' Edit']))
+        }
+        if (can('WAREHOUSES', 'DELETE')) {
+          items.push(h(UiDropdownMenuSeparator))
+          items.push(h(UiDropdownMenuItem, { variant: 'destructive', onClick: () => openDelete(w) }, [h(Trash2, { class: 'size-4' }), ' Delete']))
+        }
+        if (items.length === 0) return h('span')
+        return h('div', [
+          h(UiDropdownMenu, null, {
+            default: () => [
+              h(UiDropdownMenuTrigger, { 'as-child': true }, {
+                default: () => h(UiButton, { variant: 'ghost', size: 'icon-sm' }, {
+                  default: () => h(MoreHorizontal, { class: 'size-4' }),
+                }),
               }),
-            }),
-            h(UiDropdownMenuContent, { align: 'end', class: 'w-36' }, [
-              h(UiDropdownMenuItem, { onClick: () => navigateTo(`/warehouses/${w.id}`) }, [
-                h(Eye, { class: 'size-4' }), ' View',
-              ]),
-              h(UiDropdownMenuItem, { onClick: () => openEdit(w) }, [
-                h(Pencil, { class: 'size-4' }), ' Edit',
-              ]),
-              h(UiDropdownMenuSeparator),
-              h(UiDropdownMenuItem, { variant: 'destructive', onClick: () => openDelete(w) }, [
-                h(Trash2, { class: 'size-4' }), ' Delete',
-              ]),
-            ]),
-          ],
-        }),
-      ])
+              h(UiDropdownMenuContent, { align: 'end', class: 'w-36' }, items),
+            ],
+          }),
+        ])
+      },
     },
-  },
 ]
 
 onMounted(() => warehousesStore.fetchWarehouses())
@@ -146,7 +150,7 @@ onMounted(() => warehousesStore.fetchWarehouses())
   <div class="space-y-6">
     <PageHeader title="Warehouses" description="Manage storage locations and inventory">
       <template #actions>
-        <UiButton @click="showCreateDialog = true">Add Warehouse</UiButton>
+        <UiButton v-can="{ module: 'WAREHOUSES', action: 'CREATE' }" @click="showCreateDialog = true">Add Warehouse</UiButton>
       </template>
     </PageHeader>
 

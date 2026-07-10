@@ -9,6 +9,7 @@ import PageHeader from '~/components/shared/PageHeader.vue'
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
+  permission: { module: 'INVENTORY', action: 'READ' },
 })
 
 const stockStore = useStockStore()

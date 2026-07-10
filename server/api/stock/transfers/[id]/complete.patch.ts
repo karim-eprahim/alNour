@@ -1,4 +1,5 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'INVENTORY', 'UPDATE')
   const id = getRouterParam(event, 'id')
   const auth = event.context.auth
 
