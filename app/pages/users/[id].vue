@@ -52,7 +52,9 @@ const assignedPermissionIds = computed(() =>
 )
 
 const availablePermissions = computed(() =>
-  permsStore.permissions.filter((p) => !assignedPermissionIds.value.includes(p.id))
+  permsStore.permissions
+    .filter((p) => !assignedPermissionIds.value.includes(p.id))
+    .map(p => ({ ...p, _label: `${p.module?.name || p.moduleId} — ${p.action?.name || p.actionId} (${p.label})` }))
 )
 
 onMounted(async () => {
@@ -180,14 +182,8 @@ onMounted(async () => {
         <div class="space-y-4">
           <div class="space-y-2">
             <UiLabel for="assign-perm">Permission</UiLabel>
-            <UiSelect v-model="selectedPermissionId">
-              <UiSelectTrigger id="assign-perm"><UiSelectValue placeholder="Select permission..." /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="p in availablePermissions" :key="p.id" :value="p.id">
-                  {{ p.module?.name || p.moduleId }} — {{ p.action?.name || p.actionId }} ({{ p.label }})
-                </UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="selectedPermissionId" :items="availablePermissions" label-key="_label" placeholder="Select permission..." />
+
           </div>
           <UiDialogFooter>
             <UiButton variant="outline" @click="showAssignDialog = false">Cancel</UiButton>

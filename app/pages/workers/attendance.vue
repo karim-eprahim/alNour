@@ -25,6 +25,10 @@ const submitting = ref(false)
 
 const activeWorkers = computed(() => workersStore.workers.filter((w) => w.isActive))
 
+const batchItems = computed(() =>
+  productionStore.batches.map(b => ({ ...b, _label: `${b.batchNumber} — ${b.warehouse?.name || ''}` }))
+)
+
 function initRecords() {
   workerRecords.value = {}
   console.log(activeWorkers.value,"activeWorkers.value")
@@ -140,17 +144,7 @@ onMounted(load)
           </div>
           <div class="space-y-1">
             <UiLabel class="text-xs text-muted-foreground">Production Batch</UiLabel>
-            <UiSelect v-model="selectedBatchId">
-              <UiSelectTrigger class="w-56">
-                <UiSelectValue placeholder="No batch (attendance only)" />
-              </UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem value="__none__">No batch (attendance only)</UiSelectItem>
-                <UiSelectItem v-for="b in productionStore.batches" :key="b.id" :value="b.id">
-                  {{ b.batchNumber }} — {{ b.warehouse?.name }}
-                </UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="selectedBatchId" :items="batchItems" label-key="_label" placeholder="No batch (attendance only)" include-all all-value="__none__" all-label="No batch (attendance only)" class="w-56" />
           </div>
           <div class="flex items-end gap-1 pb-1">
             <UiButton variant="outline" size="sm" @click="setAllStatus('PRESENT')">All Present</UiButton>

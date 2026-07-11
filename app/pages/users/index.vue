@@ -55,6 +55,7 @@ const allRoles = computed(() => rolesStore.roles)
 watch([roleFilter, statusFilter], () => fetchUsers())
 
 async function fetchUsers() {
+  console.log('Fetching users with filters:', roleFilter.value, statusFilter.value)
   await usersStore.fetchUsers({ role: roleFilter.value === 'all' ? undefined : roleFilter.value, status: statusFilter.value === 'all' ? undefined : statusFilter.value })
 }
 
@@ -287,15 +288,7 @@ onMounted(() => {
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold">Users</h3>
           <div class="flex items-center gap-2">
-            <UiSelect v-model="roleFilter">
-              <UiSelectTrigger class="w-36">
-                <UiSelectValue placeholder="All roles" />
-              </UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem value="all">All roles</UiSelectItem>
-                <UiSelectItem v-for="r in allRoles" :key="r.id" :value="r.name">{{ r.name }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox class="w-50" v-model="roleFilter" :items="allRoles" label-key="name" value-key="id" placeholder="All roles" include-all />
             <UiSelect v-model="statusFilter">
               <UiSelectTrigger class="w-36">
                 <UiSelectValue placeholder="All statuses" />
@@ -387,12 +380,7 @@ onMounted(() => {
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
               <UiLabel for="create-role">Role</UiLabel>
-              <UiSelect v-model="createForm.roleId">
-                <UiSelectTrigger id="create-role"><UiSelectValue placeholder="Select role" /></UiSelectTrigger>
-                <UiSelectContent>
-                  <UiSelectItem v-for="r in allRoles" :key="r.id" :value="r.id">{{ r.name }}</UiSelectItem>
-                </UiSelectContent>
-              </UiSelect>
+              <LookupCombobox v-model="createForm.roleId" :items="allRoles" label-key="name" placeholder="Select role" />
             </div>
             <div class="space-y-2">
               <UiLabel for="create-phone">Phone</UiLabel>
@@ -430,12 +418,7 @@ onMounted(() => {
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
               <UiLabel for="edit-role">Role</UiLabel>
-              <UiSelect v-model="editForm.roleId">
-                <UiSelectTrigger id="edit-role"><UiSelectValue placeholder="Select role" /></UiSelectTrigger>
-                <UiSelectContent>
-                  <UiSelectItem v-for="r in allRoles" :key="r.id" :value="r.id">{{ r.name }}</UiSelectItem>
-                </UiSelectContent>
-              </UiSelect>
+              <LookupCombobox v-model="editForm.roleId" :items="allRoles" label-key="name" placeholder="Select role" />
             </div>
             <div class="space-y-2">
               <UiLabel for="edit-status">Status</UiLabel>
@@ -508,21 +491,11 @@ onMounted(() => {
         <form @submit.prevent="handleCreatePermission" class="space-y-4">
           <div class="space-y-2">
             <UiLabel for="perm-module">Module</UiLabel>
-            <UiSelect v-model="createPermissionForm.moduleId">
-              <UiSelectTrigger id="perm-module"><UiSelectValue placeholder="Select module" /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="m in permissionModules" :key="m.id" :value="m.id">{{ m.label }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="createPermissionForm.moduleId" :items="permissionModules" label-key="label" placeholder="Select module" />
           </div>
           <div class="space-y-2">
             <UiLabel for="perm-action">Action</UiLabel>
-            <UiSelect v-model="createPermissionForm.actionId">
-              <UiSelectTrigger id="perm-action"><UiSelectValue placeholder="Select action" /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="a in permissionActions" :key="a.id" :value="a.id">{{ a.label }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="createPermissionForm.actionId" :items="permissionActions" label-key="label" placeholder="Select action" />
           </div>
           <div class="space-y-2">
             <UiLabel for="perm-label">Label</UiLabel>

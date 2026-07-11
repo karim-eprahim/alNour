@@ -52,13 +52,7 @@ onMounted(load)
     </PageHeader>
 
     <div class="flex flex-wrap gap-3">
-      <UiSelect v-model="warehouseFilter">
-        <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Warehouses" /></UiSelectTrigger>
-        <UiSelectContent>
-          <UiSelectItem value="__all__">All Warehouses</UiSelectItem>
-          <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-        </UiSelectContent>
-      </UiSelect>
+      <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All Warehouses" include-all all-value="__all__" all-label="All Warehouses" class="w-44" />
       <div class="flex items-center gap-2">
         <UiLabel class="text-sm sr-only">From</UiLabel>
         <UiInput v-model="startDate" type="date" class="w-40" />

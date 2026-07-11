@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     ]
   }
   if (query.role) {
-    where.role = { name: query.role }
+    where.roleId = query.role
   }
   if (query.status) where.status = query.status
 

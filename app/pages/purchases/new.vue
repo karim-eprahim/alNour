@@ -42,6 +42,14 @@ function removeWeightTicket(index: number) {
   form.weightTickets.splice(index, 1)
 }
 
+const supplierItems = computed(() =>
+  suppliersStore.suppliers.map(s => ({ ...s, _label: `${s.name}${s.company ? ` (${s.company})` : ''}` }))
+)
+
+const purchaseProductItems = computed(() =>
+  productsStore.products.map(p => ({ ...p, _label: `${p.name} (${p.sku})` }))
+)
+
 const calculatedTotal = computed(() => {
   return form.items.reduce((sum, item) => {
     const qty = item.quantity || 0
@@ -123,21 +131,11 @@ onMounted(async () => {
           <UiCardContent class="space-y-4">
             <div class="space-y-2">
               <UiLabel for="supplier">Supplier *</UiLabel>
-              <UiSelect v-model="form.supplierId">
-                <UiSelectTrigger id="supplier"><UiSelectValue placeholder="Select supplier..." /></UiSelectTrigger>
-                <UiSelectContent>
-                  <UiSelectItem v-for="s in suppliersStore.suppliers" :key="s.id" :value="s.id">{{ s.name }}{{ s.company ? ` (${s.company})` : '' }}</UiSelectItem>
-                </UiSelectContent>
-              </UiSelect>
+              <LookupCombobox v-model="form.supplierId" :items="supplierItems" label-key="_label" placeholder="Select supplier..." />
             </div>
             <div class="space-y-2">
               <UiLabel for="warehouse">Warehouse *</UiLabel>
-              <UiSelect v-model="form.warehouseId">
-                <UiSelectTrigger id="warehouse"><UiSelectValue placeholder="Select warehouse..." /></UiSelectTrigger>
-                <UiSelectContent>
-                  <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-                </UiSelectContent>
-              </UiSelect>
+              <LookupCombobox v-model="form.warehouseId" :items="warehousesStore.warehouses" placeholder="Select warehouse..." />
             </div>
             <div class="space-y-2">
               <UiLabel for="inv-date">Invoice Date</UiLabel>
@@ -226,12 +224,7 @@ onMounted(async () => {
                   </UiButton>
                 </UiTableCell>
                 <UiTableCell>
-                  <UiSelect v-model="item.productId">
-                    <UiSelectTrigger class="w-56"><UiSelectValue placeholder="Product..." /></UiSelectTrigger>
-                    <UiSelectContent>
-                      <UiSelectItem v-for="p in productsStore.products" :key="p.id" :value="p.id">{{ p.name }} ({{ p.sku }})</UiSelectItem>
-                    </UiSelectContent>
-                  </UiSelect>
+                  <LookupCombobox v-model="item.productId" :items="purchaseProductItems" label-key="_label" placeholder="Product..." class="w-56" />
                 </UiTableCell>
                 <UiTableCell>
                   <UiInput v-model="item.quantity as number" type="number" step="0.001" placeholder="0" class="w-24 text-right" />

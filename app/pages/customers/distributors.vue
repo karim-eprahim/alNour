@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/vue-table'
 import {
   UiBadge, UiButton, UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription,
   UiDialog, UiDialogContent, UiDialogHeader, UiDialogTitle, UiDialogDescription, UiDialogFooter,
-  UiInput, UiLabel, UiSelect, UiSelectTrigger, UiSelectContent, UiSelectItem, UiSelectValue,
+  UiInput, UiLabel,
 } from '#components'
 
 definePageMeta({
@@ -240,6 +240,14 @@ async function fetchWarehouses() {
   } catch {}
 }
 
+const loadProductItems = computed(() =>
+  products.value.map(p => ({ ...p, _label: `${p.name} (${p.sku})` }))
+)
+
+const returnProductItems = computed(() =>
+  availableCustodyProducts.value.map(p => ({ ...p, _label: `${p.name} (${p.sku})` }))
+)
+
 const availableCustodyProducts = computed(() => {
   if (!selectedDistributor.value) return []
   return selectedDistributor.value.custodies.map(c => c.product)
@@ -304,21 +312,11 @@ onMounted(async () => {
           </div>
           <div class="space-y-2">
             <UiLabel for="load-product">Product *</UiLabel>
-            <UiSelect v-model="loadForm.productId">
-              <UiSelectTrigger id="load-product"><UiSelectValue placeholder="Select product" /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="p in products" :key="p.id" :value="p.id">{{ p.name }} ({{ p.sku }})</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="loadForm.productId" :items="loadProductItems" label-key="_label" placeholder="Select product" />
           </div>
           <div class="space-y-2">
             <UiLabel for="load-warehouse">From Warehouse *</UiLabel>
-            <UiSelect v-model="loadForm.warehouseId">
-              <UiSelectTrigger id="load-warehouse"><UiSelectValue placeholder="Select warehouse" /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="w in warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="loadForm.warehouseId" :items="warehouses" placeholder="Select warehouse" />
           </div>
           <div class="space-y-2">
             <UiLabel for="load-qty">Quantity *</UiLabel>
@@ -356,30 +354,11 @@ onMounted(async () => {
           </div>
           <div class="space-y-2">
             <UiLabel for="return-product">Product *</UiLabel>
-            <UiSelect v-model="returnForm.productId">
-              <UiSelectTrigger id="return-product"><UiSelectValue placeholder="Select product on truck" /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem
-                  v-for="p in availableCustodyProducts"
-                  :key="p.id"
-                  :value="p.id"
-                >
-                  {{ p.name }} ({{ p.sku }})
-                </UiSelectItem>
-                <UiSelectItem v-if="availableCustodyProducts.length === 0" value="" disabled>
-                  No products on truck
-                </UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="returnForm.productId" :items="returnProductItems" label-key="_label" placeholder="Select product on truck" empty-message="No products on truck" />
           </div>
           <div class="space-y-2">
             <UiLabel for="return-warehouse">To Warehouse *</UiLabel>
-            <UiSelect v-model="returnForm.warehouseId">
-              <UiSelectTrigger id="return-warehouse"><UiSelectValue placeholder="Select warehouse" /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="w in warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="returnForm.warehouseId" :items="warehouses" placeholder="Select warehouse" />
           </div>
           <div class="space-y-2">
             <UiLabel for="return-qty">Quantity *</UiLabel>

@@ -69,15 +69,7 @@ onMounted(async () => {
               <UiSelectItem v-for="mt in MOVEMENT_TYPES" :key="mt.value" :value="mt.value">{{ mt.label }}</UiSelectItem>
             </UiSelectContent>
           </UiSelect>
-          <UiSelect v-model="warehouseFilter">
-            <UiSelectTrigger class="w-44">
-              <UiSelectValue placeholder="All warehouses" />
-            </UiSelectTrigger>
-            <UiSelectContent>
-              <UiSelectItem value="all">All warehouses</UiSelectItem>
-              <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-            </UiSelectContent>
-          </UiSelect>
+          <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All warehouses" include-all class="w-44" />
         </div>
       </UiCardHeader>
       <UiCardContent class="p-0">

@@ -78,15 +78,7 @@ onMounted(async () => {
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <UiSelect v-model="warehouseFilter">
-            <UiSelectTrigger class="w-44">
-              <UiSelectValue placeholder="All warehouses" />
-            </UiSelectTrigger>
-            <UiSelectContent>
-              <UiSelectItem value="all">All warehouses</UiSelectItem>
-              <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-            </UiSelectContent>
-          </UiSelect>
+          <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All warehouses" include-all class="w-44" />
         </div>
       </UiCardHeader>
       <UiCardContent>

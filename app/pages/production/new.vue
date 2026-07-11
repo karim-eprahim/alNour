@@ -121,12 +121,7 @@ onMounted(async () => {
           <UiCardContent class="space-y-4">
             <div class="space-y-2">
               <UiLabel for="warehouse">Warehouse *</UiLabel>
-              <UiSelect v-model="form.warehouseId">
-                <UiSelectTrigger id="warehouse"><UiSelectValue placeholder="Select warehouse..." /></UiSelectTrigger>
-                <UiSelectContent>
-                  <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-                </UiSelectContent>
-              </UiSelect>
+              <LookupCombobox v-model="form.warehouseId" :items="warehousesStore.warehouses" placeholder="Select warehouse..." />
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-2">
@@ -161,12 +156,7 @@ onMounted(async () => {
               <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-1">
                   <UiLabel class="text-xs">Product</UiLabel>
-                  <UiSelect v-model="c.productId">
-                    <UiSelectTrigger><UiSelectValue placeholder="Select..." /></UiSelectTrigger>
-                    <UiSelectContent>
-                      <UiSelectItem v-for="p in rawMaterials" :key="p.id" :value="p.id">{{ p.name }} ({{ p.sku }})</UiSelectItem>
-                    </UiSelectContent>
-                  </UiSelect>
+                  <LookupCombobox v-model="c.productId" :items="rawMaterials" label-key="name" placeholder="Select..." />
                 </div>
                 <div class="space-y-1">
                   <UiLabel class="text-xs">Quantity</UiLabel>
@@ -212,12 +202,7 @@ onMounted(async () => {
                   </UiButton>
                 </UiTableCell>
                 <UiTableCell>
-                  <UiSelect v-model="o.productId">
-                    <UiSelectTrigger class="w-56"><UiSelectValue placeholder="Select product..." /></UiSelectTrigger>
-                    <UiSelectContent>
-                      <UiSelectItem v-for="p in finishedProducts" :key="p.id" :value="p.id">{{ p.name }} ({{ p.sku }})</UiSelectItem>
-                    </UiSelectContent>
-                  </UiSelect>
+                  <LookupCombobox v-model="o.productId" :items="finishedProducts" label-key="name" placeholder="Select product..." class="w-56" />
                 </UiTableCell>
                 <UiTableCell>
                   <UiInput v-model="o.quantity as number" type="number" step="0.001" placeholder="0" class="w-24 text-right" />

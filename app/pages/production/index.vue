@@ -57,13 +57,7 @@ watch(page, load)
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <UiSelect v-model="warehouseFilter">
-            <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Warehouses" /></UiSelectTrigger>
-            <UiSelectContent>
-              <UiSelectItem value="__all__">All Warehouses</UiSelectItem>
-              <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-            </UiSelectContent>
-          </UiSelect>
+          <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All Warehouses" include-all all-value="__all__" all-label="All Warehouses" class="w-44" />
           <UiSelect v-model="statusFilter">
             <UiSelectTrigger class="w-40"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
             <UiSelectContent>

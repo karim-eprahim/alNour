@@ -18,6 +18,10 @@ const showCreateDialog = ref(false)
 const loading = ref(false)
 const transfers = ref<any[]>([])
 
+const transferProducts = computed(() =>
+  productsStore.products.map(p => ({ ...p, _label: `${p.name} (${p.sku})` }))
+)
+
 const createForm = reactive({
   fromWarehouseId: '',
   toWarehouseId: '',
@@ -144,21 +148,11 @@ onMounted(async () => {
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
               <UiLabel for="from-wh">From Warehouse</UiLabel>
-              <UiSelect v-model="createForm.fromWarehouseId">
-                <UiSelectTrigger id="from-wh"><UiSelectValue placeholder="Source..." /></UiSelectTrigger>
-                <UiSelectContent>
-                  <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-                </UiSelectContent>
-              </UiSelect>
+              <LookupCombobox v-model="createForm.fromWarehouseId" :items="warehousesStore.warehouses" placeholder="Source..." />
             </div>
             <div class="space-y-2">
               <UiLabel for="to-wh">To Warehouse</UiLabel>
-              <UiSelect v-model="createForm.toWarehouseId">
-                <UiSelectTrigger id="to-wh"><UiSelectValue placeholder="Destination..." /></UiSelectTrigger>
-                <UiSelectContent>
-                  <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-                </UiSelectContent>
-              </UiSelect>
+              <LookupCombobox v-model="createForm.toWarehouseId" :items="warehousesStore.warehouses" placeholder="Destination..." />
             </div>
           </div>
 
@@ -168,12 +162,7 @@ onMounted(async () => {
               <UiButton type="button" variant="outline" size="sm" @click="addItem">Add Item</UiButton>
             </div>
             <div v-for="(item, i) in createForm.items" :key="i" class="flex items-center gap-2">
-              <UiSelect v-model="item.productId" class="flex-1">
-                <UiSelectTrigger><UiSelectValue placeholder="Product..." /></UiSelectTrigger>
-                <UiSelectContent>
-                  <UiSelectItem v-for="p in productsStore.products" :key="p.id" :value="p.id">{{ p.name }} ({{ p.sku }})</UiSelectItem>
-                </UiSelectContent>
-              </UiSelect>
+              <LookupCombobox v-model="item.productId" :items="transferProducts" label-key="_label" placeholder="Product..." class="flex-1" />
               <UiInput v-model="item.quantity as number" type="number" step="0.001" placeholder="Qty" class="w-24" />
               <UiButton type="button" variant="ghost" size="icon-xs" class="text-destructive shrink-0" @click="removeItem(i)">
                 <X class="size-3.5" />

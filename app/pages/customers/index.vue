@@ -135,13 +135,7 @@ onMounted(load)
           </div>
           <div class="space-y-2 *:w-full">
             <UiLabel for="supplier-link">Link to Supplier <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
-            <UiSelect v-model="form.linkedSupplierId" @update:open="(isOpen) => isOpen && loadSupplierOptions()">
-              <UiSelectTrigger id="supplier-link"><UiSelectValue placeholder="Select a supplier..." /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem value="__all__">None</UiSelectItem>
-                <UiSelectItem v-for="s in supplierOptions" :key="s.id" :value="s.id">{{ s.name }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="form.linkedSupplierId" :items="supplierOptions" placeholder="Select a supplier..." include-all all-value="__all__" all-label="None" @open="loadSupplierOptions()" />
           </div>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showDialog = false">Cancel</UiButton>

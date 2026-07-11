@@ -232,12 +232,7 @@ onMounted(fetchProduct)
         <form class="space-y-4" @submit.prevent="handleMovement">
           <div class="space-y-2">
             <UiLabel for="mov-warehouse">Warehouse</UiLabel>
-            <UiSelect v-model="movementForm.warehouseId">
-              <UiSelectTrigger id="mov-warehouse"><UiSelectValue placeholder="Select warehouse..." /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="movementForm.warehouseId" :items="warehousesStore.warehouses" placeholder="Select warehouse..." />
           </div>
           <div class="space-y-2">
             <UiLabel for="mov-type">Movement Type</UiLabel>

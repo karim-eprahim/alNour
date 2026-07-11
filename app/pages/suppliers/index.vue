@@ -227,13 +227,7 @@ onMounted(() => suppliersStore.fetchSuppliers())
           </div>
           <div class="space-y-2 *:w-full">
             <UiLabel for="create-customer-link">Link to Customer <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
-            <UiSelect style="width: 100%;" v-model="createForm.linkedCustomerId" @update:open="(isOpen) => isOpen && loadCustomerOptions()" class="w-full">
-              <UiSelectTrigger id="create-customer-link"><UiSelectValue placeholder="Select a customer..." /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem value="__all__">None</UiSelectItem>
-                <UiSelectItem v-for="c in customerOptions" :key="c.id" :value="c.id">{{ c.name }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="createForm.linkedCustomerId" :items="customerOptions" placeholder="Select a customer..." include-all all-value="__all__" all-label="None" class="w-full" @open="loadCustomerOptions()" />
           </div>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showCreateDialog = false">Cancel</UiButton>
@@ -274,13 +268,7 @@ onMounted(() => suppliersStore.fetchSuppliers())
           </div>
           <div class="space-y-2 *:w-full">
             <UiLabel for="edit-customer-link">Link to Customer<span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
-            <UiSelect style="width: 100%;" v-model="editForm.linkedCustomerId" @update:open="(isOpen) => isOpen && loadCustomerOptions()" class="w-full">
-              <UiSelectTrigger id="edit-customer-link"><UiSelectValue placeholder="Select a customer..." /></UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem value="__all__">None</UiSelectItem>
-                <UiSelectItem v-for="c in customerOptions" :key="c.id" :value="c.id">{{ c.name }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="editForm.linkedCustomerId" :items="customerOptions" placeholder="Select a customer..." include-all all-value="__all__" all-label="None" class="w-full" @open="loadCustomerOptions()" />
           </div>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showEditDialog = false">Cancel</UiButton>

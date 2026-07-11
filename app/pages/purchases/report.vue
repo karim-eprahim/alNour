@@ -100,24 +100,8 @@ onMounted(async () => {
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <UiSelect v-model="supplierFilter">
-            <UiSelectTrigger class="w-44">
-              <UiSelectValue placeholder="All suppliers" />
-            </UiSelectTrigger>
-            <UiSelectContent>
-              <UiSelectItem value="all">All suppliers</UiSelectItem>
-              <UiSelectItem v-for="s in suppliersStore.suppliers" :key="s.id" :value="s.id">{{ s.name }}</UiSelectItem>
-            </UiSelectContent>
-          </UiSelect>
-          <UiSelect v-model="warehouseFilter">
-            <UiSelectTrigger class="w-44">
-              <UiSelectValue placeholder="All warehouses" />
-            </UiSelectTrigger>
-            <UiSelectContent>
-              <UiSelectItem value="all">All warehouses</UiSelectItem>
-              <UiSelectItem v-for="w in warehousesStore.warehouses" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-            </UiSelectContent>
-          </UiSelect>
+          <LookupCombobox v-model="supplierFilter" :items="suppliersStore.suppliers" placeholder="All suppliers" include-all class="w-44" />
+          <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All warehouses" include-all class="w-44" />
           <UiInput v-model="startDate" type="date" class="w-40" placeholder="Start date" />
           <UiInput v-model="endDate" type="date" class="w-40" placeholder="End date" />
         </div>

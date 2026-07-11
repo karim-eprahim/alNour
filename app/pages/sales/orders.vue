@@ -54,13 +54,7 @@ onMounted(load)
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <UiSelect v-model="customerFilter">
-            <UiSelectTrigger class="w-44"><UiSelectValue placeholder="All Customers" /></UiSelectTrigger>
-            <UiSelectContent>
-              <UiSelectItem value="__all__">All Customers</UiSelectItem>
-              <UiSelectItem v-for="c in customersStore.customers" :key="c.id" :value="c.id">{{ c.name }}</UiSelectItem>
-            </UiSelectContent>
-          </UiSelect>
+          <LookupCombobox v-model="customerFilter" :items="customersStore.customers" placeholder="All Customers" include-all all-value="__all__" all-label="All Customers" class="w-44" />
           <UiSelect v-model="statusFilter">
             <UiSelectTrigger class="w-36"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
             <UiSelectContent>

@@ -78,15 +78,7 @@ onMounted(fetchData)
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <UiSelect v-model="workerFilter">
-            <UiSelectTrigger class="w-56">
-              <UiSelectValue placeholder="All Workers" />
-            </UiSelectTrigger>
-            <UiSelectContent>
-              <UiSelectItem value="__all__">All Workers</UiSelectItem>
-              <UiSelectItem v-for="w in workersList" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-            </UiSelectContent>
-          </UiSelect>
+          <LookupCombobox v-model="workerFilter" :items="workersList" placeholder="All Workers" include-all all-value="__all__" all-label="All Workers" class="w-56" />
         </div>
       </UiCardHeader>
       <UiCardContent>
@@ -115,14 +107,7 @@ onMounted(fetchData)
         <form class="space-y-4" @submit.prevent="handleCreate">
           <div class="space-y-2">
             <UiLabel for="adv-worker">Worker *</UiLabel>
-            <UiSelect v-model="createForm.workerId">
-              <UiSelectTrigger id="adv-worker">
-                <UiSelectValue placeholder="Select worker" />
-              </UiSelectTrigger>
-              <UiSelectContent>
-                <UiSelectItem v-for="w in workersList" :key="w.id" :value="w.id">{{ w.name }}</UiSelectItem>
-              </UiSelectContent>
-            </UiSelect>
+            <LookupCombobox v-model="createForm.workerId" :items="workersList" placeholder="Select worker" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
