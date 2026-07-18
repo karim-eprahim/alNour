@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { FileText, Plus, Search } from '@lucide/vue'
+import { fetchSuppliersLookupApi } from '@/modules/suppliers/api'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
@@ -38,11 +40,7 @@ async function fetchData() {
 const totalPages = computed(() => Math.ceil(purchasesStore.total / 20))
 
 onMounted(async () => {
-  await Promise.all([
-    fetchData(),
-    suppliersStore.fetchSuppliers(),
-    warehousesStore.fetchWarehouses(),
-  ])
+  await fetchData()
 })
 </script>
 
@@ -60,8 +58,8 @@ onMounted(async () => {
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
           <UiInput v-model="search" placeholder="Search by invoice # or supplier..." class="max-w-xs" />
-          <LookupCombobox v-model="supplierFilter" :items="suppliersStore.suppliers" placeholder="All suppliers" include-all class="w-44" />
-          <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All warehouses" include-all class="w-44" />
+          <LookupCombobox v-model="supplierFilter" :endpoint="fetchSuppliersLookupApi" placeholder="All suppliers" include-all class="w-44" />
+          <LookupCombobox v-model="warehouseFilter" :endpoint="fetchWarehousesLookupApi" placeholder="All warehouses" include-all class="w-44" />
         </div>
       </UiCardHeader>
       <UiCardContent class="p-0">

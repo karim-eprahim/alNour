@@ -2,6 +2,7 @@
 import { DollarSign } from '@lucide/vue'
 import type { InvoiceActions } from '@/modules/sales/components/column'
 import { getInvoiceColumns } from '@/modules/sales/components/column'
+import { fetchCustomersLookupApi } from '@/modules/customers/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -58,15 +59,12 @@ const invoiceActions: InvoiceActions = {
 const columns = getInvoiceColumns(invoiceActions)
 
 async function load() {
-  await Promise.all([
-    salesStore.fetchInvoices({
-      status: statusFilter.value !== '__all__' ? statusFilter.value : undefined,
-      customerId: customerFilter.value !== '__all__' ? customerFilter.value : undefined,
-      page: page.value,
-      limit,
-    }),
-    customersStore.fetchCustomers({ limit: 100 }),
-  ])
+  await salesStore.fetchInvoices({
+    status: statusFilter.value !== '__all__' ? statusFilter.value : undefined,
+    customerId: customerFilter.value !== '__all__' ? customerFilter.value : undefined,
+    page: page.value,
+    limit,
+  })
 }
 
 watch([statusFilter, customerFilter], () => { page.value = 1; load() })
@@ -85,7 +83,7 @@ onMounted(load)
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <LookupCombobox v-model="customerFilter" :items="customersStore.customers" placeholder="All Customers" include-all all-value="__all__" all-label="All Customers" class="w-44" />
+          <LookupCombobox v-model="customerFilter" :endpoint="fetchCustomersLookupApi" placeholder="All Customers" include-all all-value="__all__" all-label="All Customers" class="w-44" />
           <UiSelect v-model="statusFilter">
             <UiSelectTrigger class="w-32"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
             <UiSelectContent>

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Plus, X, ShoppingCart, ArrowLeft, DollarSign } from '@lucide/vue'
 import PageHeader from '~/components/shared/PageHeader.vue'
+import { fetchCustomersLookupApi, fetchDistributorsLookupApi } from '@/modules/customers/api'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
+import { fetchProductsLookupApi } from '@/modules/products/api'
 import { toast } from 'vue-sonner'
 
 definePageMeta({
@@ -25,9 +28,7 @@ const form = reactive({
   items: [] as { productId: string; quantity: number | null; unitPrice: number | null }[],
 })
 
-const sellableProductItems = computed(() =>
-  sellableProducts.value.map(p => ({ ...p, _label: `${p.name} (${p.sku})` }))
-)
+
 
 const sellableProducts = computed(() =>
   productsStore.products.filter((p) => p.type === 'PACKAGED_CHARCOAL' || p.type === 'OTHER')
@@ -85,11 +86,7 @@ async function handleSubmit() {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    customersStore.fetchCustomers({ limit: 200 }),
-    warehousesStore.fetchWarehouses(),
-    productsStore.fetchProducts(),
-  ])
+  // LookupCombobox fetches data on demand via endpoints
 })
 </script>
 
@@ -112,11 +109,11 @@ onMounted(async () => {
           <UiCardContent class="space-y-4">
             <div class="space-y-2">
               <UiLabel for="customer">Customer *</UiLabel>
-              <LookupCombobox v-model="form.customerId" :items="customersStore.customers" placeholder="Select customer..." />
+              <LookupCombobox v-model="form.customerId" :endpoint="fetchCustomersLookupApi" placeholder="Select customer..." />
             </div>
             <div class="space-y-2">
               <UiLabel for="warehouse">Warehouse *</UiLabel>
-              <LookupCombobox v-model="form.warehouseId" :items="warehousesStore.warehouses" placeholder="Select warehouse..." />
+              <LookupCombobox v-model="form.warehouseId" :endpoint="fetchWarehousesLookupApi" placeholder="Select warehouse..." />
             </div>
             <UiSeparator />
             <div class="space-y-2">
@@ -190,7 +187,7 @@ onMounted(async () => {
                     </UiButton>
                   </UiTableCell>
                   <UiTableCell>
-                    <LookupCombobox v-model="item.productId" :items="sellableProductItems" label-key="_label" placeholder="Select..." class="w-56" />
+                    <LookupCombobox v-model="item.productId" :endpoint="fetchProductsLookupApi" label-key="_label" placeholder="Select..." class="w-56" />
                   </UiTableCell>
                   <UiTableCell>
                     <UiInput v-model="item.quantity as number" type="number" step="0.001" placeholder="0" class="w-24 text-right" />

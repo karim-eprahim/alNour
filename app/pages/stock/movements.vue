@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { History, ArrowUp, ArrowDown, Filter } from '@lucide/vue'
 import { MOVEMENT_TYPES } from '@/modules/stock/type'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
@@ -41,8 +42,6 @@ const totalPages = computed(() => Math.ceil(stockStore.totalMovements / limit))
 onMounted(async () => {
   await Promise.all([
     fetchData(),
-    warehousesStore.fetchWarehouses(),
-    productsStore.fetchProducts(),
   ])
 })
 </script>
@@ -69,7 +68,7 @@ onMounted(async () => {
               <UiSelectItem v-for="mt in MOVEMENT_TYPES" :key="mt.value" :value="mt.value">{{ mt.label }}</UiSelectItem>
             </UiSelectContent>
           </UiSelect>
-          <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All warehouses" include-all class="w-44" />
+          <LookupCombobox v-model="warehouseFilter" :endpoint="fetchWarehousesLookupApi" placeholder="All warehouses" include-all class="w-44" />
         </div>
       </UiCardHeader>
       <UiCardContent class="p-0">

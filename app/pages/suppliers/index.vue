@@ -6,6 +6,7 @@ import type { Supplier } from '@/modules/suppliers/type'
 import { usePermissions } from '~/composables/usePermissions'
 import { NuxtLink, UiBadge, UiButton, UiDropdownMenu, UiDropdownMenuTrigger, UiDropdownMenuContent, UiDropdownMenuItem, UiDropdownMenuSeparator } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
+import { fetchCustomersLookupApi } from '@/modules/customers/api'
 import { toast } from 'vue-sonner'
 
 
@@ -227,7 +228,7 @@ onMounted(() => suppliersStore.fetchSuppliers())
           </div>
           <div class="space-y-2 *:w-full">
             <UiLabel for="create-customer-link">Link to Customer <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
-            <LookupCombobox v-model="createForm.linkedCustomerId" :items="customerOptions" placeholder="Select a customer..." include-all all-value="__all__" all-label="None" class="w-full" @open="loadCustomerOptions()" />
+            <LookupCombobox v-model="createForm.linkedCustomerId" :endpoint="fetchCustomersLookupApi" placeholder="Select a customer..." include-all all-value="__all__" all-label="None" class="w-full" />
           </div>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showCreateDialog = false">Cancel</UiButton>
@@ -268,7 +269,7 @@ onMounted(() => suppliersStore.fetchSuppliers())
           </div>
           <div class="space-y-2 *:w-full">
             <UiLabel for="edit-customer-link">Link to Customer<span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
-            <LookupCombobox v-model="editForm.linkedCustomerId" :items="customerOptions" placeholder="Select a customer..." include-all all-value="__all__" all-label="None" class="w-full" @open="loadCustomerOptions()" />
+            <LookupCombobox v-model="editForm.linkedCustomerId" :endpoint="fetchCustomersLookupApi" placeholder="Select a customer..." include-all all-value="__all__" all-label="None" class="w-full" />
           </div>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showEditDialog = false">Cancel</UiButton>

@@ -3,6 +3,7 @@ import { h } from 'vue'
 import { Warehouse, Package } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { StockEntry } from '@/modules/stock/type'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
 import { NuxtLink, UiBadge } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
@@ -64,10 +65,7 @@ const columns: ColumnDef<StockEntry>[] = [
 ]
 
 onMounted(async () => {
-  await Promise.all([
-    fetchData(),
-    warehousesStore.fetchWarehouses(),
-  ])
+  await fetchData()
 })
 </script>
 
@@ -78,7 +76,7 @@ onMounted(async () => {
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All warehouses" include-all class="w-44" />
+          <LookupCombobox v-model="warehouseFilter" :endpoint="fetchWarehousesLookupApi" placeholder="All warehouses" include-all class="w-44" />
         </div>
       </UiCardHeader>
       <UiCardContent>

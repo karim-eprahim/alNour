@@ -2,6 +2,7 @@
 import { Plus } from '@lucide/vue'
 import type { OrderActions } from '@/modules/sales/components/column'
 import { getOrderColumns } from '@/modules/sales/components/column'
+import { fetchCustomersLookupApi } from '@/modules/customers/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
@@ -26,16 +27,12 @@ const orderActions: OrderActions = {
 const columns = getOrderColumns(orderActions)
 
 async function load() {
-  await Promise.all([
-    salesStore.fetchOrders({
-      customerId: customerFilter.value !== '__all__' ? customerFilter.value : undefined,
-      status: statusFilter.value !== '__all__' ? statusFilter.value : undefined,
-      page: page.value,
-      limit,
-    }),
-    customersStore.fetchCustomers({ limit: 100 }),
-    warehousesStore.fetchWarehouses(),
-  ])
+  await salesStore.fetchOrders({
+    customerId: customerFilter.value !== '__all__' ? customerFilter.value : undefined,
+    status: statusFilter.value !== '__all__' ? statusFilter.value : undefined,
+    page: page.value,
+    limit,
+  })
 }
 
 watch([customerFilter, statusFilter], () => { page.value = 1; load() })
@@ -54,7 +51,7 @@ onMounted(load)
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <LookupCombobox v-model="customerFilter" :items="customersStore.customers" placeholder="All Customers" include-all all-value="__all__" all-label="All Customers" class="w-44" />
+          <LookupCombobox v-model="customerFilter" :endpoint="fetchCustomersLookupApi" placeholder="All Customers" include-all all-value="__all__" all-label="All Customers" class="w-44" />
           <UiSelect v-model="statusFilter">
             <UiSelectTrigger class="w-36"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
             <UiSelectContent>

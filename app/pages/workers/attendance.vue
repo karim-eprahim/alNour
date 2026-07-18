@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Check, X, Calendar } from '@lucide/vue'
+import { fetchProductionLookupApi } from '@/modules/production/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -25,9 +26,7 @@ const submitting = ref(false)
 
 const activeWorkers = computed(() => workersStore.workers.filter((w) => w.isActive))
 
-const batchItems = computed(() =>
-  productionStore.batches.map(b => ({ ...b, _label: `${b.batchNumber} — ${b.warehouse?.name || ''}` }))
-)
+
 
 function initRecords() {
   workerRecords.value = {}
@@ -47,7 +46,7 @@ watch(activeWorkers, initRecords, { immediate: true })
 async function load() {
   await Promise.all([
     workersStore.fetchWorkers({ isActive: 'true', limit: 100 }),
-    productionStore.fetchBatches({ limit: 50 }),
+
   ])
   initRecords()
 }
@@ -144,7 +143,7 @@ onMounted(load)
           </div>
           <div class="space-y-1">
             <UiLabel class="text-xs text-muted-foreground">Production Batch</UiLabel>
-            <LookupCombobox v-model="selectedBatchId" :items="batchItems" label-key="_label" placeholder="No batch (attendance only)" include-all all-value="__none__" all-label="No batch (attendance only)" class="w-56" />
+            <LookupCombobox v-model="selectedBatchId" :endpoint="fetchProductionLookupApi" label-key="_label" placeholder="No batch (attendance only)" include-all all-value="__none__" all-label="No batch (attendance only)" class="w-56" />
           </div>
           <div class="flex items-end gap-1 pb-1">
             <UiButton variant="outline" size="sm" @click="setAllStatus('PRESENT')">All Present</UiButton>

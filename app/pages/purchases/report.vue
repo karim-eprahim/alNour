@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { FileText, TrendingUp, DollarSign, ArrowUpRight, Calendar } from '@lucide/vue'
+import { fetchSuppliersLookupApi } from '@/modules/suppliers/api'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
@@ -40,11 +42,7 @@ async function fetchReport() {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    fetchReport(),
-    suppliersStore.fetchSuppliers(),
-    warehousesStore.fetchWarehouses(),
-  ])
+  await fetchReport()
 })
 </script>
 
@@ -100,8 +98,8 @@ onMounted(async () => {
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <LookupCombobox v-model="supplierFilter" :items="suppliersStore.suppliers" placeholder="All suppliers" include-all class="w-44" />
-          <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All warehouses" include-all class="w-44" />
+          <LookupCombobox v-model="supplierFilter" :endpoint="fetchSuppliersLookupApi" placeholder="All suppliers" include-all class="w-44" />
+          <LookupCombobox v-model="warehouseFilter" :endpoint="fetchWarehousesLookupApi" placeholder="All warehouses" include-all class="w-44" />
           <UiInput v-model="startDate" type="date" class="w-40" placeholder="Start date" />
           <UiInput v-model="endDate" type="date" class="w-40" placeholder="End date" />
         </div>

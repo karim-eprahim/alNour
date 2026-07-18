@@ -18,6 +18,7 @@ import {
   updateRoleApi,
   createPermissionApi,
   fetchPermissionOptionsApi,
+  fetchRolesLookupApi,
 } from '~/modules/permissions/api'
 import type { PermissionGroup } from '~/modules/permissions/type'
 
@@ -288,7 +289,7 @@ onMounted(() => {
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold">Users</h3>
           <div class="flex items-center gap-2">
-            <LookupCombobox class="w-50" v-model="roleFilter" :items="allRoles" label-key="name" value-key="id" placeholder="All roles" include-all />
+            <LookupCombobox class="w-50" v-model="roleFilter" :endpoint="fetchRolesLookupApi" placeholder="All roles" include-all />
             <UiSelect v-model="statusFilter">
               <UiSelectTrigger class="w-36">
                 <UiSelectValue placeholder="All statuses" />
@@ -380,7 +381,7 @@ onMounted(() => {
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
               <UiLabel for="create-role">Role</UiLabel>
-              <LookupCombobox v-model="createForm.roleId" :items="allRoles" label-key="name" placeholder="Select role" />
+              <LookupCombobox v-model="createForm.roleId" :endpoint="fetchRolesLookupApi" placeholder="Select role" />
             </div>
             <div class="space-y-2">
               <UiLabel for="create-phone">Phone</UiLabel>
@@ -418,7 +419,7 @@ onMounted(() => {
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
               <UiLabel for="edit-role">Role</UiLabel>
-              <LookupCombobox v-model="editForm.roleId" :items="allRoles" label-key="name" placeholder="Select role" />
+              <LookupCombobox v-model="editForm.roleId" :endpoint="fetchRolesLookupApi" placeholder="Select role" />
             </div>
             <div class="space-y-2">
               <UiLabel for="edit-status">Status</UiLabel>

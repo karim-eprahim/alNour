@@ -3,6 +3,7 @@ import type { Product, ProductType } from '@/modules/products/type'
 import type { ProductActions } from '@/modules/products/components/column'
 import { getProductColumns } from '@/modules/products/components/column'
 import { PRODUCT_TYPES } from '@/modules/products/type'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -136,7 +137,6 @@ async function handleDelete() {
 
 onMounted(() => {
   fetchData()
-  warehousesStore.fetchWarehouses()
 })
 </script>
 
@@ -161,7 +161,7 @@ onMounted(() => {
               <UiSelectItem v-for="t in PRODUCT_TYPES" :key="t.value" :value="t.value">{{ t.label }}</UiSelectItem>
             </UiSelectContent>
           </UiSelect>
-          <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All warehouses" include-all class="w-44" />
+          <LookupCombobox v-model="warehouseFilter" :endpoint="fetchWarehousesLookupApi" placeholder="All warehouses" include-all class="w-44" />
         </div>
       </UiCardHeader>
       <UiCardContent>
@@ -241,7 +241,7 @@ onMounted(() => {
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-2">
                 <UiLabel for="create-warehouse">Warehouse</UiLabel>
-                <LookupCombobox v-model="createForm.warehouseId" :items="warehousesStore.warehouses" placeholder="Select warehouse" />
+                <LookupCombobox v-model="createForm.warehouseId" :endpoint="fetchWarehousesLookupApi" placeholder="Select warehouse" />
               </div>
               <div class="space-y-2">
                 <UiLabel for="create-initial-qty">Initial Quantity</UiLabel>

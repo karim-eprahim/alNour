@@ -2,6 +2,8 @@
 import { ArrowLeftRight, Warehouse, Check, X } from '@lucide/vue'
 import { MOVEMENT_TYPES } from '@/modules/stock/type'
 import { createTransferApi, completeTransferApi } from '@/modules/stock/api'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
+import { fetchProductsLookupApi } from '@/modules/products/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -18,9 +20,7 @@ const showCreateDialog = ref(false)
 const loading = ref(false)
 const transfers = ref<any[]>([])
 
-const transferProducts = computed(() =>
-  productsStore.products.map(p => ({ ...p, _label: `${p.name} (${p.sku})` }))
-)
+
 
 const createForm = reactive({
   fromWarehouseId: '',
@@ -72,11 +72,7 @@ async function handleComplete(id: string) {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    fetchTransfers(),
-    warehousesStore.fetchWarehouses(),
-    productsStore.fetchProducts(),
-  ])
+  await fetchTransfers()
 })
 </script>
 
@@ -148,11 +144,11 @@ onMounted(async () => {
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
               <UiLabel for="from-wh">From Warehouse</UiLabel>
-              <LookupCombobox v-model="createForm.fromWarehouseId" :items="warehousesStore.warehouses" placeholder="Source..." />
+              <LookupCombobox v-model="createForm.fromWarehouseId" :endpoint="fetchWarehousesLookupApi" placeholder="Source..." />
             </div>
             <div class="space-y-2">
               <UiLabel for="to-wh">To Warehouse</UiLabel>
-              <LookupCombobox v-model="createForm.toWarehouseId" :items="warehousesStore.warehouses" placeholder="Destination..." />
+              <LookupCombobox v-model="createForm.toWarehouseId" :endpoint="fetchWarehousesLookupApi" placeholder="Destination..." />
             </div>
           </div>
 
@@ -162,7 +158,7 @@ onMounted(async () => {
               <UiButton type="button" variant="outline" size="sm" @click="addItem">Add Item</UiButton>
             </div>
             <div v-for="(item, i) in createForm.items" :key="i" class="flex items-center gap-2">
-              <LookupCombobox v-model="item.productId" :items="transferProducts" label-key="_label" placeholder="Product..." class="flex-1" />
+              <LookupCombobox v-model="item.productId" :endpoint="fetchProductsLookupApi" label-key="_label" placeholder="Product..." class="flex-1" />
               <UiInput v-model="item.quantity as number" type="number" step="0.001" placeholder="Qty" class="w-24" />
               <UiButton type="button" variant="ghost" size="icon-xs" class="text-destructive shrink-0" @click="removeItem(i)">
                 <X class="size-3.5" />

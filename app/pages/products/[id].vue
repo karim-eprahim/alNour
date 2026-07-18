@@ -2,6 +2,7 @@
 import { ArrowLeft, Package, Warehouse, ArrowRightLeft, History } from '@lucide/vue'
 import type { StockMovement, MovementType } from '@/modules/stock/type'
 import { MOVEMENT_TYPES } from '@/modules/stock/type'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -232,7 +233,7 @@ onMounted(fetchProduct)
         <form class="space-y-4" @submit.prevent="handleMovement">
           <div class="space-y-2">
             <UiLabel for="mov-warehouse">Warehouse</UiLabel>
-            <LookupCombobox v-model="movementForm.warehouseId" :items="warehousesStore.warehouses" placeholder="Select warehouse..." />
+            <LookupCombobox v-model="movementForm.warehouseId" :endpoint="fetchWarehousesLookupApi" placeholder="Select warehouse..." />
           </div>
           <div class="space-y-2">
             <UiLabel for="mov-type">Movement Type</UiLabel>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Plus } from '@lucide/vue'
 import { getAdvanceColumns } from '@/modules/workers/components/column'
+import { fetchWorkersLookupApi } from '@/modules/workers/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
@@ -37,7 +38,7 @@ async function fetchData() {
       page: page.value,
       limit,
     }),
-    workersStore.fetchWorkers({ limit: 100 }),
+
   ])
 }
 
@@ -78,7 +79,7 @@ onMounted(fetchData)
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <LookupCombobox v-model="workerFilter" :items="workersList" placeholder="All Workers" include-all all-value="__all__" all-label="All Workers" class="w-56" />
+          <LookupCombobox v-model="workerFilter" :endpoint="fetchWorkersLookupApi" placeholder="All Workers" include-all all-value="__all__" all-label="All Workers" class="w-56" />
         </div>
       </UiCardHeader>
       <UiCardContent>
@@ -107,7 +108,7 @@ onMounted(fetchData)
         <form class="space-y-4" @submit.prevent="handleCreate">
           <div class="space-y-2">
             <UiLabel for="adv-worker">Worker *</UiLabel>
-            <LookupCombobox v-model="createForm.workerId" :items="workersList" placeholder="Select worker" />
+            <LookupCombobox v-model="createForm.workerId" :endpoint="fetchWorkersLookupApi" placeholder="Select worker" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-2">
