@@ -1,5 +1,7 @@
 import bcrypt from 'bcryptjs'
 
+const ADMIN_ROLE = 'ADMIN'
+
 export default defineEventHandler(async (event) => {
   await requirePermission(event, 'USERS', 'UPDATE')
   const id = getRouterParam(event, 'id')
@@ -28,22 +30,64 @@ export default defineEventHandler(async (event) => {
     data.password = await bcrypt.hash(body.password, 12)
   }
 
-  const user = await prisma.user.update({
-    where: { id },
-    data,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      avatar: true,
-      roleId: true,
-      role: { select: { id: true, name: true, label: true } },
-      status: true,
-      lastLogin: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+  if (body.warehouseIds) {
+    const existingWarehouses = await prisma.warehouse.count({
+      where: { id: { in: body.warehouseIds } },
+    })
+    if (existingWarehouses !== body.warehouseIds.length) {
+      throw createError({ statusCode: 400, statusMessage: 'One or more warehouses not found' })
+    }
+  }
+
+  const roleName = body.roleId
+    ? (await prisma.role.findUnique({ where: { id: body.roleId }, select: { name: true } }))?.name
+    : null
+  const resolvedRoleName = roleName || (await prisma.role.findUnique({ where: { id: existing.roleId }, select: { name: true } }))?.name || ''
+  const isAdmin = resolvedRoleName === ADMIN_ROLE
+
+  if (!isAdmin && body.warehouseIds !== undefined && body.warehouseIds.length === 0) {
+    throw createError({ statusCode: 400, statusMessage: 'At least one warehouse is required for non-admin users' })
+  }
+
+  const user = await prisma.$transaction(async (tx) => {
+    const updated = await tx.user.update({
+      where: { id },
+      data,
+      select: { id: true, roleId: true },
+    })
+
+    if (body.warehouseIds !== undefined) {
+      await tx.userWarehouse.deleteMany({ where: { userId: id } })
+
+      if (!isAdmin && body.warehouseIds.length > 0) {
+        await tx.userWarehouse.createMany({
+          data: body.warehouseIds.map((warehouseId: string) => ({
+            userId: id,
+            warehouseId,
+          })),
+        })
+      }
+    }
+
+    return tx.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        avatar: true,
+        roleId: true,
+        role: { select: { id: true, name: true, label: true } },
+        status: true,
+        lastLogin: true,
+        createdAt: true,
+        updatedAt: true,
+        userWarehouses: {
+          include: { warehouse: { select: { id: true, name: true } } },
+        },
+      },
+    })
   })
 
   return { user }

@@ -6,6 +6,13 @@ export interface RoleBrief {
   label?: string | null
 }
 
+export interface UserWarehouse {
+  warehouse: {
+    id: string
+    name: string
+  }
+}
+
 export interface User {
   id: string
   name: string
@@ -18,6 +25,7 @@ export interface User {
   lastLogin?: string | null
   createdAt: string
   updatedAt: string
+  userWarehouses?: UserWarehouse[]
 }
 
 export interface CreateUserPayload {
@@ -26,6 +34,7 @@ export interface CreateUserPayload {
   password: string
   phone?: string
   roleId: string
+  warehouseIds?: string[]
 }
 
 export interface UpdateUserPayload {
@@ -36,6 +45,7 @@ export interface UpdateUserPayload {
   roleId?: string
   status?: UserStatus
   password?: string
+  warehouseIds?: string[]
 }
 
 export interface UsersListResponse {

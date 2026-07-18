@@ -121,6 +121,15 @@ onMounted(async () => {
                 <p class="text-xs font-medium text-muted-foreground">Created</p>
                 <p class="text-sm">{{ new Date(usersStore.currentUser.createdAt).toLocaleDateString() }}</p>
               </div>
+              <div class="space-y-1 sm:col-span-2">
+                <p class="text-xs font-medium text-muted-foreground">Assigned Warehouses</p>
+                <div v-if="usersStore.currentUser.userWarehouses && usersStore.currentUser.userWarehouses.length > 0" class="flex flex-wrap gap-1">
+                  <UiBadge v-for="uw in usersStore.currentUser.userWarehouses" :key="uw.warehouse.id" variant="secondary" class="text-xs">
+                    {{ uw.warehouse.name }}
+                  </UiBadge>
+                </div>
+                <p v-else class="text-sm text-muted-foreground">No warehouses assigned (admin)</p>
+              </div>
             </div>
           </UiCardContent>
         </UiCard>

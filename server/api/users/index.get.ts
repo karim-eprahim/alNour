@@ -29,6 +29,9 @@ export default defineEventHandler(async (event) => {
         lastLogin: true,
         createdAt: true,
         updatedAt: true,
+        userWarehouses: {
+          include: { warehouse: { select: { id: true, name: true } } },
+        },
       },
       orderBy: { createdAt: 'desc' },
     }),

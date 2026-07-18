@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { Plus, Shield, Pencil, Trash2, Loader2, Save } from '@lucide/vue'
+import { Plus, Shield, Pencil, Trash2, Loader2, Save, ChevronsUpDownIcon, XIcon } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import type { User, UserStatus } from '@/modules/users/type'
 import type { UserActions } from '@/modules/users/components/column'
@@ -20,6 +20,7 @@ import {
   fetchPermissionOptionsApi,
   fetchRolesLookupApi,
 } from '~/modules/permissions/api'
+import { fetchWarehousesApi } from '~/modules/warehouses/api'
 import type { PermissionGroup } from '~/modules/permissions/type'
 
 definePageMeta({
@@ -51,6 +52,31 @@ const deletingUser = ref<User | null>(null)
 const createForm = reactive({ name: '', email: '', password: '', phone: '', roleId: '' })
 const editForm = reactive({ name: '', email: '', phone: '', roleId: '', status: 'ACTIVE' as UserStatus })
 
+const warehouses = ref<{ id: string; name: string }[]>([])
+const createWarehouseIds = ref<string[]>([])
+const editWarehouseIds = ref<string[]>([])
+const showCreateWarehousePicker = ref(false)
+const showEditWarehousePicker = ref(false)
+
+async function fetchWarehouses() {
+  try {
+    const data = await fetchWarehousesApi()
+    warehouses.value = data.warehouses
+  } catch {}
+}
+
+function toggleCreateWarehouse(id: string) {
+  const idx = createWarehouseIds.value.indexOf(id)
+  if (idx === -1) createWarehouseIds.value.push(id)
+  else createWarehouseIds.value.splice(idx, 1)
+}
+
+function toggleEditWarehouse(id: string) {
+  const idx = editWarehouseIds.value.indexOf(id)
+  if (idx === -1) editWarehouseIds.value.push(id)
+  else editWarehouseIds.value.splice(idx, 1)
+}
+
 const allRoles = computed(() => rolesStore.roles)
 
 watch([roleFilter, statusFilter], () => fetchUsers())
@@ -62,7 +88,7 @@ async function fetchUsers() {
 
 async function handleCreate() {
   try {
-    await usersStore.createUser(createForm as any)
+    await usersStore.createUser({ ...createForm, warehouseIds: createWarehouseIds.value } as any)
     showCreateDialog.value = false
     resetCreateForm()
   } catch {}
@@ -74,6 +100,7 @@ function resetCreateForm() {
   createForm.password = ''
   createForm.phone = ''
   createForm.roleId = ''
+  createWarehouseIds.value = []
 }
 
 function openEdit(user: User) {
@@ -83,13 +110,14 @@ function openEdit(user: User) {
   editForm.phone = user.phone ?? ''
   editForm.roleId = user.roleId
   editForm.status = user.status
+  editWarehouseIds.value = (user.userWarehouses || []).map(uw => uw.warehouse.id)
   showEditDialog.value = true
 }
 
 async function handleEdit() {
   if (!editingUser.value) return
   try {
-    await usersStore.updateUser(editingUser.value.id, editForm)
+    await usersStore.updateUser(editingUser.value.id, { ...editForm, warehouseIds: editWarehouseIds.value })
     showEditDialog.value = false
     editingUser.value = null
   } catch {}
@@ -266,6 +294,7 @@ async function handleDeleteRole() {
 onMounted(() => {
   fetchUsers()
   fetchRoles()
+  fetchWarehouses()
 })
 </script>
 
@@ -388,6 +417,53 @@ onMounted(() => {
               <UiInput id="create-phone" v-model="createForm.phone" placeholder="Optional" />
             </div>
           </div>
+          <div class="space-y-2">
+            <UiLabel>Warehouses</UiLabel>
+            <UiButton variant="outline" class="w-full justify-between font-normal" @click="showCreateWarehousePicker = true">
+              <span v-if="createWarehouseIds.length === 0" class="text-muted-foreground">Select warehouses...</span>
+              <span v-else>{{ createWarehouseIds.length }} warehouse{{ createWarehouseIds.length !== 1 ? 's' : '' }} selected</span>
+              <ChevronsUpDownIcon class="size-4 shrink-0 opacity-50" />
+            </UiButton>
+            <div v-if="createWarehouseIds.length > 0" class="flex flex-wrap gap-1 mt-1">
+              <UiBadge
+                v-for="id in createWarehouseIds"
+                :key="id"
+                variant="secondary"
+                class="cursor-pointer gap-1"
+                @click="toggleCreateWarehouse(id)"
+              >
+                {{ warehouses.find(w => w.id === id)?.name || id }}
+                <XIcon class="size-3" />
+              </UiBadge>
+            </div>
+          </div>
+
+          <UiDialog :open="showCreateWarehousePicker" @update:open="showCreateWarehousePicker = $event">
+            <UiDialogContent class="sm:max-w-sm">
+              <UiDialogHeader>
+                <UiDialogTitle>Select Warehouses</UiDialogTitle>
+                <UiDialogDescription>Choose which warehouses this user can access</UiDialogDescription>
+              </UiDialogHeader>
+              <div class="space-y-1 max-h-80 overflow-y-auto py-2">
+                <div
+                  v-for="w in warehouses"
+                  :key="w.id"
+                  class="flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors select-none"
+                  :class="{ 'border-primary/30 bg-primary/5': createWarehouseIds.includes(w.id) }"
+                  @click="toggleCreateWarehouse(w.id)"
+                >
+                  <UiCheckbox :model-value="createWarehouseIds.includes(w.id)" />
+                  <span class="text-sm">{{ w.name }}</span>
+                </div>
+                <div v-if="warehouses.length === 0" class="py-3 text-center text-sm text-muted-foreground">
+                  No warehouses available
+                </div>
+              </div>
+              <UiDialogFooter>
+                <UiButton @click="showCreateWarehousePicker = false">Done</UiButton>
+              </UiDialogFooter>
+            </UiDialogContent>
+          </UiDialog>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showCreateDialog = false">Cancel</UiButton>
             <UiButton type="submit" :disabled="usersStore.loading">Create</UiButton>
@@ -431,6 +507,53 @@ onMounted(() => {
               </UiSelect>
             </div>
           </div>
+          <div class="space-y-2">
+            <UiLabel>Warehouses</UiLabel>
+            <UiButton variant="outline" class="w-full justify-between font-normal" @click="showEditWarehousePicker = true">
+              <span v-if="editWarehouseIds.length === 0" class="text-muted-foreground">Select warehouses...</span>
+              <span v-else>{{ editWarehouseIds.length }} warehouse{{ editWarehouseIds.length !== 1 ? 's' : '' }} selected</span>
+              <ChevronsUpDownIcon class="size-4 shrink-0 opacity-50" />
+            </UiButton>
+            <div v-if="editWarehouseIds.length > 0" class="flex flex-wrap gap-1 mt-1">
+              <UiBadge
+                v-for="id in editWarehouseIds"
+                :key="id"
+                variant="secondary"
+                class="cursor-pointer gap-1"
+                @click="toggleEditWarehouse(id)"
+              >
+                {{ warehouses.find(w => w.id === id)?.name || id }}
+                <XIcon class="size-3" />
+              </UiBadge>
+            </div>
+          </div>
+
+          <UiDialog :open="showEditWarehousePicker" @update:open="showEditWarehousePicker = $event">
+            <UiDialogContent class="sm:max-w-sm">
+              <UiDialogHeader>
+                <UiDialogTitle>Select Warehouses</UiDialogTitle>
+                <UiDialogDescription>Choose which warehouses this user can access</UiDialogDescription>
+              </UiDialogHeader>
+              <div class="space-y-1 max-h-80 overflow-y-auto py-2">
+                <div
+                  v-for="w in warehouses"
+                  :key="w.id"
+                  class="flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors select-none"
+                  :class="{ 'border-primary/30 bg-primary/5': editWarehouseIds.includes(w.id) }"
+                  @click="toggleEditWarehouse(w.id)"
+                >
+                  <UiCheckbox :model-value="editWarehouseIds.includes(w.id)" />
+                  <span class="text-sm">{{ w.name }}</span>
+                </div>
+                <div v-if="warehouses.length === 0" class="py-3 text-center text-sm text-muted-foreground">
+                  No warehouses available
+                </div>
+              </div>
+              <UiDialogFooter>
+                <UiButton @click="showEditWarehousePicker = false">Done</UiButton>
+              </UiDialogFooter>
+            </UiDialogContent>
+          </UiDialog>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showEditDialog = false">Cancel</UiButton>
             <UiButton type="submit" :disabled="usersStore.loading">Save</UiButton>
