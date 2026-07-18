@@ -3,8 +3,16 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const where: any = {}
 
+  if (query.warehouseId) {
+    await validateWarehouseAccess(event, query.warehouseId as string)
+    where.warehouseId = query.warehouseId
+  } else {
+    const warehouseIds = await getAccessibleWarehouseIds(event)
+    if (warehouseIds !== null) {
+      where.warehouseId = { in: warehouseIds }
+    }
+  }
   if (query.supplierId) where.supplierId = query.supplierId
-  if (query.warehouseId) where.warehouseId = query.warehouseId
   if (query.startDate) {
     where.invoiceDate = { ...(where.invoiceDate || {}), gte: new Date(query.startDate as string) }
   }

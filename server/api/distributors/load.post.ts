@@ -10,6 +10,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'warehouseId is required' })
   }
 
+  await validateWarehouseAccess(event, body.warehouseId)
+
   const quantity = parseFloat(body.quantity)
   if (isNaN(quantity) || quantity <= 0) {
     throw createError({ statusCode: 400, statusMessage: 'Quantity must be a positive number' })

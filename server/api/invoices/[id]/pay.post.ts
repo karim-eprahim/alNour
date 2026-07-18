@@ -9,9 +9,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const invoice = await prisma.$transaction(async (tx) => {
-    const inv = await tx.invoice.findUnique({ where: { id } })
+    const inv = await tx.invoice.findUnique({
+      where: { id },
+      include: { salesOrder: { select: { warehouseId: true } } },
+    })
     if (!inv) {
       throw createError({ statusCode: 404, statusMessage: 'Invoice not found' })
+    }
+
+    if (inv.salesOrder?.warehouseId) {
+      await validateWarehouseAccess(event, inv.salesOrder.warehouseId)
     }
 
     const amount = parseFloat(body.amount)

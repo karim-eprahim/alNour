@@ -11,6 +11,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Production batch not found' })
   }
 
+  await validateWarehouseAccess(event, batch.warehouseId)
+
   const date = body.date ? new Date(body.date) : new Date()
   date.setHours(0, 0, 0, 0)
 

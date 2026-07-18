@@ -3,6 +3,13 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const where: any = {}
 
+  const warehouseIds = await getAccessibleWarehouseIds(event)
+  if (warehouseIds !== null) {
+    where.purchaseInvoice = {
+      warehouseId: { in: warehouseIds },
+    }
+  }
+
   if (query.purchaseInvoiceId) where.purchaseInvoiceId = query.purchaseInvoiceId
 
   const limit = parseInt(query.limit as string) || 50
@@ -16,6 +23,7 @@ export default defineEventHandler(async (event) => {
         purchaseInvoice: {
           select: {
             invoiceNumber: true,
+            warehouseId: true,
             supplier: { select: { id: true, name: true } },
           },
         },

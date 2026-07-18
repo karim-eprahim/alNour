@@ -8,6 +8,8 @@ export default defineEventHandler(async (event) => {
   const canViewFinancial = isAdmin || isAccountant || true
   const canViewStock = isAdmin || isStorekeeper || true
 
+  const warehouseIds = await getAccessibleWarehouseIds(event)
+
   const data: any = {
     userRole,
     financials: null,
@@ -40,15 +42,22 @@ export default defineEventHandler(async (event) => {
   // 2. FINANCIALS — ADMIN / MANAGER / ACCOUNTANT
   // ──────────────────────────────────────────────
   if (canViewFinancial) {
+    const invoiceWhere: any = { status: { not: 'CANCELLED' } }
+    const productionWhere: any = { status: { not: 'CANCELLED' } }
+    if (warehouseIds !== null) {
+      invoiceWhere.salesOrder = { warehouseId: { in: warehouseIds } }
+      productionWhere.warehouseId = { in: warehouseIds }
+    }
+
     const [invoiceAgg, cogsAgg, laborAgg, expenseAgg, recentExpenses, recentInvoices] =
       await Promise.all([
         prisma.invoice.aggregate({
           _sum: { totalAmount: true, paidAmount: true },
-          where: { status: { not: 'CANCELLED' } },
+          where: invoiceWhere,
         }),
         prisma.productionBatch.aggregate({
           _sum: { rawMaterialsCost: true },
-          where: { status: { not: 'CANCELLED' } },
+          where: productionWhere,
         }),
         prisma.workerDailyWage.aggregate({
           _sum: { dailyWage: true },
@@ -64,7 +73,7 @@ export default defineEventHandler(async (event) => {
         prisma.invoice.findMany({
           take: 5,
           orderBy: { createdAt: 'desc' },
-          where: { status: { not: 'CANCELLED' } },
+          where: invoiceWhere,
           select: {
             id: true,
             invoiceNumber: true,
@@ -102,7 +111,6 @@ export default defineEventHandler(async (event) => {
   // 3. INVENTORY & WAREHOUSE — ADMIN / MANAGER / STOREKEEPER
   // ──────────────────────────────────────────────
   if (canViewStock) {
-    const warehouseIds = await getAccessibleWarehouseIds(event)
     const stockWhere: any = {}
     const movementWhere: any = {}
     if (warehouseIds !== null) {

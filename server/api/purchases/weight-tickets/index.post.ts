@@ -11,6 +11,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Purchase invoice not found' })
   }
 
+  await validateWarehouseAccess(event, invoice.warehouseId)
+
   const netWeight = parseFloat(body.grossWeight) - parseFloat(body.tareWeight)
 
   const ticket = await prisma.weightTicket.create({

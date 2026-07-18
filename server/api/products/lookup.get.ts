@@ -4,7 +4,13 @@ export default defineEventHandler(async (event) => {
   const where: any = {}
   Object.assign(where, buildSearchWhere(q, ['name', 'nameAr', 'sku']))
   if (warehouseId) {
+    await validateWarehouseAccess(event, warehouseId)
     where.stocks = { some: { warehouseId } }
+  } else {
+    const warehouseIds = await getAccessibleWarehouseIds(event)
+    if (warehouseIds !== null) {
+      where.stocks = { some: { warehouseId: { in: warehouseIds } } }
+    }
   }
   const result = await paginatedLookup(prisma.product, {
     where,

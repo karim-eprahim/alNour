@@ -1,8 +1,17 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'INVENTORY', 'READ')
   const query = getQuery(event)
   const where: any = {}
 
-  if (query.warehouseId) where.warehouseId = query.warehouseId
+  if (query.warehouseId) {
+    await validateWarehouseAccess(event, query.warehouseId as string)
+    where.warehouseId = query.warehouseId
+  } else {
+    const warehouseIds = await getAccessibleWarehouseIds(event)
+    if (warehouseIds !== null) {
+      where.warehouseId = { in: warehouseIds }
+    }
+  }
   if (query.productType) {
     const products = await prisma.product.findMany({
       where: { type: query.productType as any },
@@ -33,9 +42,7 @@ export default defineEventHandler(async (event) => {
     _count: true,
   })
 
-  const movementCount = await prisma.stockMovement.count({
-    where: query.warehouseId ? { warehouseId: query.warehouseId as string } : {},
-  })
+  const movementCount = await prisma.stockMovement.count({ where })
 
   return {
     stocks,

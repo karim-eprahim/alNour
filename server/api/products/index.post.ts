@@ -6,6 +6,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Name (en), Name (ar), and type are required' })
   }
 
+  if (body.warehouseId) {
+    await validateWarehouseAccess(event, body.warehouseId)
+  }
+
   const prefixMap: Record<string, string> = {
     RAW_CHARCOAL: 'RC',
     PACKAGED_CHARCOAL: 'PC',

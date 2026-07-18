@@ -1,9 +1,16 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'PURCHASES', 'READ')
   const query = getQuery(event)
   const where: any = {}
 
+  const warehouseIds = await getAccessibleWarehouseIds(event)
+  if (query.warehouseId) {
+    await validateWarehouseAccess(event, query.warehouseId as string)
+    where.warehouseId = query.warehouseId
+  } else if (warehouseIds !== null) {
+    where.warehouseId = { in: warehouseIds }
+  }
   if (query.supplierId) where.supplierId = query.supplierId
-  if (query.warehouseId) where.warehouseId = query.warehouseId
   if (query.startDate) {
     where.invoiceDate = { ...(where.invoiceDate || {}), gte: new Date(query.startDate as string) }
   }
@@ -45,7 +52,11 @@ export default defineEventHandler(async (event) => {
       id: true,
       name: true,
       purchaseInvoices: {
-        where: { invoiceDate: { ...(query.startDate ? { gte: new Date(query.startDate as string) } : {}), ...(query.endDate ? { lte: new Date(query.endDate as string) } : {}) } },
+        where: {
+          ...(warehouseIds !== null ? { warehouseId: { in: warehouseIds } } : {}),
+          ...(query.startDate ? { invoiceDate: { gte: new Date(query.startDate as string) } } : {}),
+          ...(query.endDate ? { invoiceDate: { lte: new Date(query.endDate as string) } } : {}),
+        },
         select: { totalAmount: true, paidAmount: true },
       },
     },

@@ -4,10 +4,21 @@ export default defineEventHandler(async (event) => {
   const endDate = query.endDate ? new Date(query.endDate as string) : new Date()
 
   const dateFilter = { gte: startDate, lte: endDate }
+  const warehouseIds = await getAccessibleWarehouseIds(event)
+
+  const invoiceWhere: any = { createdAt: dateFilter, status: { not: 'CANCELLED' } }
+  const productionWhere: any = { createdAt: dateFilter, status: { not: 'CANCELLED' } }
+  const purchaseWhere: any = { invoiceDate: dateFilter }
+
+  if (warehouseIds !== null) {
+    invoiceWhere.salesOrder = { warehouseId: { in: warehouseIds } }
+    productionWhere.warehouseId = { in: warehouseIds }
+    purchaseWhere.warehouseId = { in: warehouseIds }
+  }
 
   // Revenue from confirmed invoices
   const invoices = await prisma.invoice.findMany({
-    where: { createdAt: dateFilter, status: { not: 'CANCELLED' } },
+    where: invoiceWhere,
     select: { totalAmount: true, paidAmount: true },
   })
   const totalRevenue = invoices.reduce((s, i) => s + i.totalAmount.toNumber(), 0)
@@ -16,7 +27,7 @@ export default defineEventHandler(async (event) => {
 
   // COGS = raw materials consumed in production batches
   const batches = await prisma.productionBatch.findMany({
-    where: { createdAt: dateFilter, status: { not: 'CANCELLED' } },
+    where: productionWhere,
     select: { rawMaterialsCost: true, laborCost: true, otherCosts: true, totalBatchCost: true },
   })
   const totalRawMaterialsCost = batches.reduce((s, b) => s + b.rawMaterialsCost.toNumber(), 0)
@@ -37,7 +48,7 @@ export default defineEventHandler(async (event) => {
 
   // Purchase costs (raw material purchases)
   const purchaseAgg = await prisma.purchaseInvoice.aggregate({
-    where: { invoiceDate: dateFilter },
+    where: purchaseWhere,
     _sum: { totalAmount: true, paidAmount: true },
   })
   const totalPurchaseCost = purchaseAgg._sum.totalAmount?.toNumber() || 0

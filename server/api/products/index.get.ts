@@ -12,7 +12,13 @@ export default defineEventHandler(async (event) => {
   }
   if (query.type) where.type = query.type
   if (query.warehouseId) {
+    await validateWarehouseAccess(event, query.warehouseId as string)
     where.stocks = { some: { warehouseId: query.warehouseId } }
+  } else {
+    const warehouseIds = await getAccessibleWarehouseIds(event)
+    if (warehouseIds !== null) {
+      where.stocks = { some: { warehouseId: { in: warehouseIds } } }
+    }
   }
 
   const [products, total] = await Promise.all([

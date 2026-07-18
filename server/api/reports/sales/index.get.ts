@@ -1,6 +1,12 @@
 export default defineEventHandler(async (event) => {
+  await requirePermission(event, 'SALES', 'READ')
   const query = getQuery(event)
   const where: any = { status: { not: 'CANCELLED' as const } }
+
+  const warehouseIds = await getAccessibleWarehouseIds(event)
+  if (warehouseIds !== null) {
+    where.salesOrder = { warehouseId: { in: warehouseIds } }
+  }
 
   if (query.startDate) {
     where.createdAt = { ...(where.createdAt || {}), gte: new Date(query.startDate as string) }
