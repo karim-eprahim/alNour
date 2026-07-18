@@ -1,3 +1,4 @@
+import type { LookupResponse, LookupQuery } from '@/types/lookup'
 import type { Supplier, CreateSupplierPayload, UpdateSupplierPayload, LedgerEntry } from './type'
 
 export async function fetchSuppliersApi(params?: { search?: string }): Promise<{ suppliers: Supplier[]; total: number }> {
@@ -22,4 +23,8 @@ export async function deleteSupplierApi(id: string): Promise<void> {
 
 export async function addLedgerEntryApi(supplierId: string, payload: { amount: number; type: 'DEBIT' | 'CREDIT'; description?: string }): Promise<{ entry: LedgerEntry }> {
   return $fetch(`/api/suppliers/${supplierId}/ledger`, { method: 'POST', body: payload })
+}
+
+export async function fetchSuppliersLookupApi(params?: LookupQuery): Promise<LookupResponse> {
+  return $fetch<LookupResponse>('/api/suppliers/lookup', { params })
 }

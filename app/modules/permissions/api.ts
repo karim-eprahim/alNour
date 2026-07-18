@@ -1,3 +1,4 @@
+import type { LookupResponse, LookupQuery } from '@/types/lookup'
 import type {
   Permission,
   CreatePermissionPayload,
@@ -84,4 +85,8 @@ export async function saveRolePermissionsApi(roleId: string, permissionIds: stri
 
 export async function fetchPermissionOptionsApi(): Promise<{ modules: ModuleInfo[]; actions: ActionInfo[] }> {
   return $fetch<{ modules: ModuleInfo[]; actions: ActionInfo[] }>('/api/permissions/options')
+}
+
+export async function fetchRolesLookupApi(params?: LookupQuery): Promise<LookupResponse> {
+  return $fetch<LookupResponse>('/api/roles/lookup', { params })
 }

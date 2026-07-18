@@ -2,7 +2,8 @@
 import { Plus, X, Scale, ArrowLeft, Package } from '@lucide/vue'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
-
+import { fetchSuppliersLookupApi } from '~/modules/suppliers/api'
+import { fetchWarehousesLookupApi } from '~/modules/warehouses/api'
 
 definePageMeta({
   layout: 'dashboard',
@@ -131,11 +132,12 @@ onMounted(async () => {
           <UiCardContent class="space-y-4">
             <div class="space-y-2">
               <UiLabel for="supplier">Supplier *</UiLabel>
-              <LookupCombobox v-model="form.supplierId" :items="supplierItems" label-key="_label" placeholder="Select supplier..." />
+              <LookupCombobox v-model="form.supplierId" :endpoint="fetchSuppliersLookupApi"
+/>
             </div>
             <div class="space-y-2">
               <UiLabel for="warehouse">Warehouse *</UiLabel>
-              <LookupCombobox v-model="form.warehouseId" :items="warehousesStore.warehouses" placeholder="Select warehouse..." />
+              <LookupCombobox v-model="form.warehouseId" :endpoint="fetchWarehousesLookupApi" placeholder="Select warehouse..." />
             </div>
             <div class="space-y-2">
               <UiLabel for="inv-date">Invoice Date</UiLabel>

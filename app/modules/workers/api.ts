@@ -1,3 +1,4 @@
+import type { LookupResponse, LookupQuery } from '@/types/lookup'
 import type {
   Worker,
   Attendance,
@@ -86,4 +87,8 @@ export async function fetchWorkerReportApi(id: string, params?: {
   endDate?: string
 }): Promise<{ report: WorkerReport }> {
   return $fetch(`/api/workers/report/${id}`, { params })
+}
+
+export async function fetchWorkersLookupApi(params?: LookupQuery): Promise<LookupResponse> {
+  return $fetch<LookupResponse>('/api/workers/lookup', { params })
 }

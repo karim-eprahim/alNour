@@ -1,3 +1,4 @@
+import type { LookupResponse, LookupQuery } from '@/types/lookup'
 import type {
   CreateWarehousePayload,
   UpdateWarehousePayload,
@@ -29,4 +30,8 @@ export async function updateWarehouseApi(id: string, payload: UpdateWarehousePay
 
 export async function deleteWarehouseApi(id: string): Promise<void> {
   await $fetch(`/api/warehouses/${id}`, { method: 'DELETE' })
+}
+
+export async function fetchWarehousesLookupApi(params?: LookupQuery): Promise<LookupResponse> {
+  return $fetch<LookupResponse>('/api/warehouses/lookup', { params })
 }

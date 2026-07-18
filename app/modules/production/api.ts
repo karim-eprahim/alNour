@@ -1,3 +1,4 @@
+import type { LookupResponse, LookupQuery } from '@/types/lookup'
 import type { ProductionBatch, CreateProductionPayload, UpdateProductionPayload, ProductionReportSummary } from './type'
 
 export async function fetchProductionBatchesApi(params?: {
@@ -37,4 +38,8 @@ export async function fetchProductionReportApi(params?: {
   endDate?: string
 }): Promise<{ batches: ProductionBatch[]; summary: ProductionReportSummary }> {
   return $fetch('/api/production/report', { params })
+}
+
+export async function fetchProductionLookupApi(params?: LookupQuery): Promise<LookupResponse> {
+  return $fetch<LookupResponse>('/api/production/lookup', { params })
 }

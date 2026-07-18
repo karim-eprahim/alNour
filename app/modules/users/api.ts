@@ -1,3 +1,4 @@
+import type { LookupResponse, LookupQuery } from '@/types/lookup'
 import type {
   CreateUserPayload,
   UpdateUserPayload,
@@ -29,4 +30,8 @@ export async function updateUserApi(id: string, payload: UpdateUserPayload): Pro
 
 export async function deleteUserApi(id: string): Promise<void> {
   await $fetch<{ success: boolean }>(`/api/users/${id}`, { method: 'DELETE' })
+}
+
+export async function fetchUsersLookupApi(params?: LookupQuery): Promise<LookupResponse> {
+  return $fetch<LookupResponse>('/api/users/lookup', { params })
 }

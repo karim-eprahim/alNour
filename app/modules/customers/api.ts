@@ -1,3 +1,4 @@
+import type { LookupResponse, LookupQuery } from '@/types/lookup'
 import type { Customer, CreateCustomerPayload } from './type'
 
 export async function fetchCustomersApi(params?: {
@@ -22,4 +23,12 @@ export async function updateCustomerApi(id: string, payload: Partial<CreateCusto
 
 export async function deleteCustomerApi(id: string): Promise<void> {
   await $fetch(`/api/customers/${id}`, { method: 'DELETE' })
+}
+
+export async function fetchCustomersLookupApi(params?: LookupQuery): Promise<LookupResponse> {
+  return $fetch<LookupResponse>('/api/customers/lookup', { params })
+}
+
+export async function fetchDistributorsLookupApi(params?: LookupQuery): Promise<LookupResponse> {
+  return $fetch<LookupResponse>('/api/distributors/lookup', { params })
 }
