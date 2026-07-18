@@ -132,8 +132,7 @@ onMounted(async () => {
           <UiCardContent class="space-y-4">
             <div class="space-y-2">
               <UiLabel for="supplier">Supplier *</UiLabel>
-              <LookupCombobox v-model="form.supplierId" :endpoint="fetchSuppliersLookupApi"
-/>
+              <LookupCombobox v-model="form.supplierId" :endpoint="fetchSuppliersLookupApi"/>
             </div>
             <div class="space-y-2">
               <UiLabel for="warehouse">Warehouse *</UiLabel>
@@ -226,7 +225,7 @@ onMounted(async () => {
                   </UiButton>
                 </UiTableCell>
                 <UiTableCell>
-                  <LookupCombobox v-model="item.productId" :items="purchaseProductItems" label-key="_label" placeholder="Product..." class="w-56" />
+                  <LookupCombobox v-model="item.productId" :endpoint="fetchProductsLookupApi" label-key="_label" placeholder="Product..." class="w-56" />
                 </UiTableCell>
                 <UiTableCell>
                   <UiInput v-model="item.quantity as number" type="number" step="0.001" placeholder="0" class="w-24 text-right" />

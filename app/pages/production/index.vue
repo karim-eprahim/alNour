@@ -57,7 +57,7 @@ watch(page, load)
     <UiCard>
       <UiCardHeader class="pb-3">
         <div class="flex items-center gap-2">
-          <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All Warehouses" include-all all-value="__all__" all-label="All Warehouses" class="w-44" />
+          <LookupCombobox v-model="warehouseFilter" :endpoint="fetchWarehousesLookupApi" placeholder="All Warehouses" include-all all-value="__all__" all-label="All Warehouses" class="w-44" />
           <UiSelect v-model="statusFilter">
             <UiSelectTrigger class="w-40"><UiSelectValue placeholder="All Status" /></UiSelectTrigger>
             <UiSelectContent>

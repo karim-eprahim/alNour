@@ -135,7 +135,7 @@ onMounted(load)
           </div>
           <div class="space-y-2 *:w-full">
             <UiLabel for="supplier-link">Link to Supplier <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
-            <LookupCombobox v-model="form.linkedSupplierId" :items="supplierOptions" placeholder="Select a supplier..." include-all all-value="__all__" all-label="None" @open="loadSupplierOptions()" />
+            <LookupCombobox v-model="form.linkedSupplierId" :endpoint="fetchSuppliersLookupApi" placeholder="Select a supplier..." include-all all-value="__all__" all-label="None"/>
           </div>
           <UiDialogFooter>
             <UiButton type="button" variant="outline" @click="showDialog = false">Cancel</UiButton>

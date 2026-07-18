@@ -52,7 +52,7 @@ onMounted(load)
     </PageHeader>
 
     <div class="flex flex-wrap gap-3">
-      <LookupCombobox v-model="warehouseFilter" :items="warehousesStore.warehouses" placeholder="All Warehouses" include-all all-value="__all__" all-label="All Warehouses" class="w-44" />
+      <LookupCombobox v-model="warehouseFilter" :endpoint="fetchWarehousesLookupApi" placeholder="All Warehouses" include-all all-value="__all__" all-label="All Warehouses" class="w-44" />
       <div class="flex items-center gap-2">
         <UiLabel class="text-sm sr-only">From</UiLabel>
         <UiInput v-model="startDate" type="date" class="w-40" />

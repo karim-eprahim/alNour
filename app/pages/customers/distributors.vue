@@ -312,11 +312,11 @@ onMounted(async () => {
           </div>
           <div class="space-y-2">
             <UiLabel for="load-product">Product *</UiLabel>
-            <LookupCombobox v-model="loadForm.productId" :items="loadProductItems" label-key="_label" placeholder="Select product" />
+            <LookupCombobox v-model="loadForm.productId" :endpoint="fetchProductsLookupApi" label-key="_label" placeholder="Select product" />
           </div>
           <div class="space-y-2">
             <UiLabel for="load-warehouse">From Warehouse *</UiLabel>
-            <LookupCombobox v-model="loadForm.warehouseId" :items="warehouses" placeholder="Select warehouse" />
+            <LookupCombobox v-model="loadForm.warehouseId" :endpoint="fetchWarehousesLookupApi" placeholder="Select warehouse" />
           </div>
           <div class="space-y-2">
             <UiLabel for="load-qty">Quantity *</UiLabel>
@@ -354,11 +354,11 @@ onMounted(async () => {
           </div>
           <div class="space-y-2">
             <UiLabel for="return-product">Product *</UiLabel>
-            <LookupCombobox v-model="returnForm.productId" :items="returnProductItems" label-key="_label" placeholder="Select product on truck" empty-message="No products on truck" />
+            <LookupCombobox v-model="returnForm.productId" :endpoint="fetchProductsLookupApi" label-key="_label" placeholder="Select product on truck" empty-message="No products on truck" />
           </div>
           <div class="space-y-2">
             <UiLabel for="return-warehouse">To Warehouse *</UiLabel>
-            <LookupCombobox v-model="returnForm.warehouseId" :items="warehouses" placeholder="Select warehouse" />
+            <LookupCombobox v-model="returnForm.warehouseId" :endpoint="fetchWarehousesLookupApi" placeholder="Select warehouse" />
           </div>
           <div class="space-y-2">
             <UiLabel for="return-qty">Quantity *</UiLabel>
