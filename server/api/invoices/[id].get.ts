@@ -5,10 +5,14 @@ export default defineEventHandler(async (event) => {
     where: { id },
     include: {
       customer: { select: { id: true, name: true, phone: true } },
+      warehouse: { select: { id: true, name: true } },
       salesOrder: {
-        select: { id: true, orderNumber: true, warehouseId: true, items: { include: { product: { select: { id: true, name: true, sku: true } } } } },
+        select: { id: true, orderNumber: true, items: { include: { product: { select: { id: true, name: true, sku: true } } } } },
       },
       createdBy: { select: { id: true, name: true } },
+      items: {
+        include: { product: { select: { id: true, name: true, sku: true, image: true } } },
+      },
       payments: {
         include: { createdBy: { select: { id: true, name: true } } },
         orderBy: { createdAt: 'desc' },
@@ -19,9 +23,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Invoice not found' })
   }
 
-  if (invoice.salesOrder?.warehouseId) {
-    await validateWarehouseAccess(event, invoice.salesOrder.warehouseId)
-  }
+  await validateWarehouseAccess(event, invoice.warehouseId)
 
   return { invoice }
 })

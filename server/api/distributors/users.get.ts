@@ -10,6 +10,7 @@ export default defineEventHandler(async () => {
       roleId: true,
       role: { select: { id: true, name: true } },
       status: true,
+      cashOnHand: true,
       createdAt: true,
       custodies: {
         include: {

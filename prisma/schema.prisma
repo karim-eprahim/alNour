@@ -43,6 +43,12 @@ enum MovementType {
   ADJUSTMENT
   DISTRIBUTOR_LOAD
   DISTRIBUTOR_RETURN
+  DISTRIBUTOR_SALE
+}
+
+enum SaleSource {
+  OFFICE_ORDER
+  DIRECT_DISTRIBUTOR
 }
 
 enum TransferStatus {
@@ -77,9 +83,27 @@ enum BatchStatus {
 
 enum OrderStatus {
   PENDING
-  CONFIRMED
+  ASSIGNED
+  ACCEPTED
+  OUT_FOR_DELIVERY
+  DELIVERED
   COMPLETED
   CANCELLED
+}
+
+enum DistributorOperationType {
+  LOAD
+  SALE
+  RETURN
+  ADJUSTMENT
+  LOST
+  DAMAGED
+}
+
+enum CashMovementType {
+  PAYMENT_COLLECTED
+  CASH_HANDOVER
+  ADJUSTMENT
 }
 
 enum InvoiceStatus {
@@ -118,21 +142,24 @@ model User {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  role            Role                   @relation(fields: [roleId], references: [id])
-  permissions     UserPermission[]
-  userWarehouses  UserWarehouse[]
-  locations       UserLocation[]
-  auditLogs       AuditLog[]
-  syncRecords     SyncQueue[]
-  movements       StockMovement[]
-  transfersFrom   StockTransfer[]        @relation("TransferredBy")
-  salesOrders     SalesOrder[]
-  invoices        Invoice[]
-  payments        Payment[]
-  expenses        Expense[]
-  custodies       DistributorCustody[]
-  distributorOps  DistributorOperation[]
-  ledgerEntries   LedgerEntry[]          @relation("DistributorLedger")
+  role                Role                      @relation(fields: [roleId], references: [id])
+  permissions         UserPermission[]
+  userWarehouses      UserWarehouse[]
+  locations           UserLocation[]
+  auditLogs           AuditLog[]
+  syncRecords         SyncQueue[]
+  movements           StockMovement[]
+  transfersFrom       StockTransfer[]           @relation("TransferredBy")
+  salesOrders         SalesOrder[]              @relation("CreatedSalesOrders")
+  assignedSalesOrders SalesOrder[]              @relation("AssignedDistributor")
+  invoices            Invoice[]
+  payments            Payment[]
+  expenses            Expense[]
+  custodies           DistributorCustody[]
+  distributorOps      DistributorOperation[]
+  cashMovements       DistributorCashMovement[]
+  cashOnHand          Decimal                   @default(0) @db.Decimal(12, 2)
+  ledgerEntries       LedgerEntry[]             @relation("DistributorLedger")
 
   @@index([email])
   @@map("users")
@@ -183,17 +210,17 @@ model Permission {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  module  Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  action  PermissionAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
-  roles   RolePermission[]
-  users   UserPermission[]
+  module Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  action PermissionAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  roles  RolePermission[]
+  users  UserPermission[]
 
   @@unique([moduleId, actionId])
   @@map("permissions")
 }
 
 model RolePermission {
-  id           String     @id @default(uuid())
+  id           String @id @default(uuid())
   roleId       String
   permissionId String
 
@@ -205,7 +232,7 @@ model RolePermission {
 }
 
 model UserPermission {
-  id           String     @id @default(uuid())
+  id           String @id @default(uuid())
   userId       String
   permissionId String
 
@@ -235,12 +262,13 @@ model Warehouse {
   productionBatches ProductionBatch[] @relation("BatchWarehouse")
   purchaseInvoices  PurchaseInvoice[]
   salesOrders       SalesOrder[]
+  invoices          Invoice[]
 
   @@map("warehouses")
 }
 
 model UserWarehouse {
-  id          String   @id @default(uuid())
+  id String @id @default(uuid())
 
   userId      String
   warehouseId String
@@ -276,6 +304,7 @@ model Product {
   purchaseInvoiceItems  PurchaseInvoiceItem[]
   distributorCustodies  DistributorCustody[]
   distributorOps        DistributorOperation[]
+  invoiceItems          InvoiceItem[]
 
   @@map("products")
 }
@@ -347,10 +376,10 @@ model StockTransferItem {
 // ============================================
 
 model DistributorCustody {
-  id            String  @id @default(uuid())
+  id            String   @id @default(uuid())
   distributorId String
   productId     String
-  quantity      Decimal @db.Decimal(12, 3)
+  quantity      Decimal  @db.Decimal(12, 3)
   updatedAt     DateTime @updatedAt
 
   distributor User    @relation(fields: [distributorId], references: [id], onDelete: Cascade)
@@ -361,17 +390,35 @@ model DistributorCustody {
 }
 
 model DistributorOperation {
-  id            String   @id @default(uuid())
+  id            String                   @id @default(uuid())
   distributorId String
   productId     String
-  quantity      Decimal  @db.Decimal(12, 3)
-  type          String
-  createdAt     DateTime @default(now())
+  quantity      Decimal                  @db.Decimal(12, 3)
+  type          DistributorOperationType
+  createdAt     DateTime                 @default(now())
 
   distributor User    @relation(fields: [distributorId], references: [id], onDelete: Cascade)
   product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("distributor_operations")
+}
+
+// ============================================
+// DISTRIBUTOR CASH ON HAND
+// ============================================
+
+model DistributorCashMovement {
+  id            String           @id @default(uuid())
+  distributorId String
+  amount        Decimal          @db.Decimal(12, 2)
+  type          CashMovementType
+  referenceId   String?
+  notes         String?
+  createdAt     DateTime         @default(now())
+
+  distributor User @relation(fields: [distributorId], references: [id])
+
+  @@map("distributor_cash_movements")
 }
 
 // ============================================
@@ -522,20 +569,23 @@ model Customer {
 }
 
 model SalesOrder {
-  id          String      @id @default(uuid())
-  orderNumber String      @unique
-  customerId  String
-  warehouseId String
-  createdById String
-  totalAmount Decimal     @db.Decimal(12, 2)
-  status      OrderStatus @default(PENDING)
-  createdAt   DateTime    @default(now())
+  id                    String      @id @default(uuid())
+  orderNumber           String      @unique
+  customerId            String
+  warehouseId           String
+  createdById           String
+  totalAmount           Decimal     @db.Decimal(12, 2)
+  status                OrderStatus @default(PENDING)
+  saleSource            SaleSource  @default(OFFICE_ORDER)
+  assignedDistributorId String?
+  createdAt             DateTime    @default(now())
 
-  customer  Customer         @relation(fields: [customerId], references: [id])
-  warehouse Warehouse        @relation(fields: [warehouseId], references: [id])
-  createdBy User             @relation(fields: [createdById], references: [id])
-  items     SalesOrderItem[]
-  invoices  Invoice[]
+  customer            Customer         @relation(fields: [customerId], references: [id])
+  warehouse           Warehouse        @relation(fields: [warehouseId], references: [id])
+  createdBy           User             @relation("CreatedSalesOrders", fields: [createdById], references: [id])
+  assignedDistributor User?            @relation("AssignedDistributor", fields: [assignedDistributorId], references: [id])
+  items               SalesOrderItem[]
+  invoices            Invoice[]
 
   @@map("sales_orders")
 }
@@ -557,20 +607,38 @@ model SalesOrderItem {
 model Invoice {
   id            String        @id @default(uuid())
   invoiceNumber String        @unique
-  salesOrderId  String
+  salesOrderId  String?
   customerId    String
+  warehouseId   String
   createdById   String
   totalAmount   Decimal       @db.Decimal(12, 2)
   paidAmount    Decimal       @db.Decimal(12, 2)
   status        InvoiceStatus @default(UNPAID)
+  saleSource    SaleSource    @default(OFFICE_ORDER)
   createdAt     DateTime      @default(now())
 
-  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id])
-  customer   Customer   @relation(fields: [customerId], references: [id])
-  createdBy  User       @relation(fields: [createdById], references: [id])
+  salesOrder SalesOrder?   @relation(fields: [salesOrderId], references: [id])
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  warehouse  Warehouse     @relation(fields: [warehouseId], references: [id])
+  createdBy  User          @relation(fields: [createdById], references: [id])
   payments   Payment[]
+  items      InvoiceItem[]
 
   @@map("invoices")
+}
+
+model InvoiceItem {
+  id         String  @id @default(uuid())
+  invoiceId  String
+  productId  String
+  quantity   Decimal @db.Decimal(12, 3)
+  unitPrice  Decimal @db.Decimal(12, 2)
+  totalPrice Decimal @db.Decimal(12, 2)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("invoice_items")
 }
 
 model Payment {

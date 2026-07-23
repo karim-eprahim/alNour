@@ -1,0 +1,156 @@
+import { d as defineEventHandler, r as readBody, c as createError } from '../../nitro/nitro.mjs';
+import { r as requirePermission } from '../../_/permissions.mjs';
+import { v as validateWarehouseAccess } from '../../_/warehouse-access.mjs';
+import { p as prisma } from '../../_/prisma.mjs';
+import 'node:http';
+import 'node:https';
+import 'node:events';
+import 'node:buffer';
+import 'node:fs';
+import 'node:path';
+import 'node:crypto';
+import 'node:url';
+import 'jsonwebtoken';
+import '@prisma/client';
+import '@prisma/adapter-pg';
+import 'pg';
+
+const index_post = defineEventHandler(async (event) => {
+  var _a;
+  await requirePermission(event, "SALES", "CREATE");
+  const body = await readBody(event);
+  const auth = event.context.auth;
+  await validateWarehouseAccess(event, body.warehouseId);
+  if (!body.customerId || !body.warehouseId || !((_a = body.items) == null ? void 0 : _a.length)) {
+    throw createError({ statusCode: 400, statusMessage: "customerId, warehouseId, and items are required" });
+  }
+  const hasDistributor = !!body.assignedDistributorId;
+  const order = await prisma.$transaction(async (tx) => {
+    const count = await tx.salesOrder.count();
+    const orderNumber = `SO-${String(count + 1).padStart(6, "0")}`;
+    let totalAmount = 0;
+    const itemsData = body.items.map((item) => {
+      const qty = parseFloat(item.quantity) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
+      const totalPrice = qty * unitPrice;
+      totalAmount += totalPrice;
+      return {
+        productId: item.productId,
+        quantity: qty,
+        unitPrice,
+        totalPrice
+      };
+    });
+    const orderStatus = hasDistributor ? "PENDING" : "DELIVERED";
+    const created = await tx.salesOrder.create({
+      data: {
+        orderNumber,
+        customerId: body.customerId,
+        warehouseId: body.warehouseId,
+        createdById: auth.userId,
+        totalAmount,
+        status: orderStatus,
+        saleSource: body.saleSource || "OFFICE_ORDER",
+        assignedDistributorId: body.assignedDistributorId || null,
+        items: { create: itemsData }
+      },
+      include: {
+        customer: { select: { id: true, name: true } },
+        warehouse: { select: { id: true, name: true } },
+        assignedDistributor: { select: { id: true, name: true } },
+        items: { include: { product: { select: { id: true, name: true, sku: true } } } }
+      }
+    });
+    if (hasDistributor) {
+      return created;
+    }
+    const invCount = await tx.invoice.count();
+    const invoiceNumber = `INV-${String(invCount + 1).padStart(6, "0")}`;
+    const paidAmount = body.paidAmount ? parseFloat(body.paidAmount) : 0;
+    const invoiceStatus = paidAmount >= totalAmount ? "PAID" : paidAmount > 0 ? "PARTIAL" : "UNPAID";
+    const invoice = await tx.invoice.create({
+      data: {
+        invoiceNumber,
+        salesOrderId: created.id,
+        customerId: body.customerId,
+        warehouseId: body.warehouseId,
+        createdById: auth.userId,
+        totalAmount,
+        paidAmount,
+        status: invoiceStatus,
+        saleSource: "OFFICE_ORDER",
+        items: {
+          create: itemsData.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice
+          }))
+        }
+      }
+    });
+    for (const item of itemsData) {
+      const stock = await tx.stock.findUnique({
+        where: {
+          warehouseId_productId: {
+            warehouseId: body.warehouseId,
+            productId: item.productId
+          }
+        }
+      });
+      const currentQty = stock ? stock.quantity.toNumber() : 0;
+      const newQty = currentQty - item.quantity;
+      if (newQty < 0) {
+        throw createError({ statusCode: 400, statusMessage: `Insufficient stock for product ${item.productId}` });
+      }
+      if (stock) {
+        await tx.stock.update({ where: { id: stock.id }, data: { quantity: newQty } });
+      }
+      await tx.stockMovement.create({
+        data: {
+          productId: item.productId,
+          warehouseId: body.warehouseId,
+          type: "SALE",
+          quantity: -item.quantity,
+          notes: `Sales order ${orderNumber}`,
+          referenceId: created.id,
+          createdById: auth.userId
+        }
+      });
+    }
+    if (paidAmount > 0) {
+      await tx.payment.create({
+        data: {
+          invoiceId: invoice.id,
+          createdById: auth.userId,
+          amount: paidAmount,
+          paymentMethod: body.paymentMethod || "CASH",
+          notes: body.paymentNotes || null
+        }
+      });
+    }
+    await tx.ledgerEntry.create({
+      data: {
+        customerId: body.customerId,
+        amount: totalAmount,
+        type: "DEBIT",
+        description: `Sales order ${orderNumber} / Invoice ${invoiceNumber}`
+      }
+    });
+    if (paidAmount > 0) {
+      await tx.ledgerEntry.create({
+        data: {
+          customerId: body.customerId,
+          amount: paidAmount,
+          type: "CREDIT",
+          description: `Payment for invoice ${invoiceNumber}`
+        }
+      });
+    }
+    return created;
+  });
+  return { order };
+});
+
+export { index_post as default };
+//# sourceMappingURL=index.post8.mjs.map

@@ -17,9 +17,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, statusMessage: 'Invoice not found' })
     }
 
-    if (inv.salesOrder?.warehouseId) {
-      await validateWarehouseAccess(event, inv.salesOrder.warehouseId)
-    }
+    await validateWarehouseAccess(event, inv.warehouseId)
 
     const amount = parseFloat(body.amount)
     const newPaid = inv.paidAmount.toNumber() + amount
@@ -39,6 +37,28 @@ export default defineEventHandler(async (event) => {
       where: { id },
       data: { paidAmount: newPaid, status: newStatus },
     })
+
+    const authUser = await tx.user.findUnique({
+      where: { id: auth.userId },
+      select: { id: true, role: { select: { name: true } } },
+    })
+
+    if (authUser?.role?.name === 'DISTRIBUTOR') {
+      await tx.user.update({
+        where: { id: auth.userId },
+        data: { cashOnHand: { increment: amount } },
+      })
+
+      await tx.distributorCashMovement.create({
+        data: {
+          distributorId: auth.userId,
+          amount,
+          type: 'PAYMENT_COLLECTED',
+          referenceId: id,
+          notes: `Payment collected for invoice ${inv.invoiceNumber}`,
+        },
+      })
+    }
 
     await tx.ledgerEntry.create({
       data: {

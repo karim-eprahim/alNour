@@ -2,15 +2,20 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const auth = event.context.auth
 
-  if (!body.distributorId || !body.productId || !body.quantity) {
-    throw createError({ statusCode: 400, statusMessage: 'distributorId, productId, and quantity are required' })
+  if (!body.productId || !body.quantity) {
+    throw createError({ statusCode: 400, statusMessage: 'productId and quantity are required' })
   }
 
   if (!body.warehouseId) {
     throw createError({ statusCode: 400, statusMessage: 'warehouseId is required' })
   }
 
-  await validateWarehouseAccess(event, body.warehouseId)
+  const distributorId = body.distributorId || auth.userId
+
+  if (distributorId !== auth.userId) {
+    await requirePermission(event, 'INVENTORY', 'UPDATE')
+    await validateWarehouseAccess(event, body.warehouseId)
+  }
 
   const quantity = parseFloat(body.quantity)
   if (isNaN(quantity) || quantity <= 0) {
@@ -21,7 +26,7 @@ export default defineEventHandler(async (event) => {
     const custody = await tx.distributorCustody.findUnique({
       where: {
         distributorId_productId: {
-          distributorId: body.distributorId,
+          distributorId,
           productId: body.productId,
         },
       },
@@ -72,7 +77,7 @@ export default defineEventHandler(async (event) => {
         warehouseId: body.warehouseId,
         type: 'DISTRIBUTOR_RETURN',
         quantity,
-        referenceId: body.distributorId,
+        referenceId: distributorId,
         notes: body.notes || `Returned from distributor truck`,
         createdById: auth.userId,
       },
@@ -80,7 +85,7 @@ export default defineEventHandler(async (event) => {
 
     const operation = await tx.distributorOperation.create({
       data: {
-        distributorId: body.distributorId,
+        distributorId,
         productId: body.productId,
         quantity,
         type: 'RETURN',

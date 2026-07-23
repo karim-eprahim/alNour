@@ -9,6 +9,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'customerId, warehouseId, and items are required' })
   }
 
+  const hasDistributor = !!body.assignedDistributorId
+
   const order = await prisma.$transaction(async (tx) => {
     const count = await tx.salesOrder.count()
     const orderNumber = `SO-${String(count + 1).padStart(6, '0')}`
@@ -27,6 +29,8 @@ export default defineEventHandler(async (event) => {
       }
     })
 
+    const orderStatus = hasDistributor ? 'PENDING' : 'DELIVERED'
+
     const created = await tx.salesOrder.create({
       data: {
         orderNumber,
@@ -34,15 +38,22 @@ export default defineEventHandler(async (event) => {
         warehouseId: body.warehouseId,
         createdById: auth.userId,
         totalAmount,
-        status: 'CONFIRMED',
+        status: orderStatus,
+        saleSource: body.saleSource || 'OFFICE_ORDER',
+        assignedDistributorId: body.assignedDistributorId || null,
         items: { create: itemsData },
       },
       include: {
         customer: { select: { id: true, name: true } },
         warehouse: { select: { id: true, name: true } },
+        assignedDistributor: { select: { id: true, name: true } },
         items: { include: { product: { select: { id: true, name: true, sku: true } } } },
       },
     })
+
+    if (hasDistributor) {
+      return created
+    }
 
     const invCount = await tx.invoice.count()
     const invoiceNumber = `INV-${String(invCount + 1).padStart(6, '0')}`
@@ -55,10 +66,20 @@ export default defineEventHandler(async (event) => {
         invoiceNumber,
         salesOrderId: created.id,
         customerId: body.customerId,
+        warehouseId: body.warehouseId,
         createdById: auth.userId,
         totalAmount,
         paidAmount,
         status: invoiceStatus,
+        saleSource: 'OFFICE_ORDER',
+        items: {
+          create: itemsData.map((item: any) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+          })),
+        },
       },
     })
 

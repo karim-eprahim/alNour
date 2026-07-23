@@ -5,13 +5,13 @@ export default defineEventHandler(async (event) => {
 
   const warehouseIds = await getAccessibleWarehouseIds(event)
   if (warehouseIds !== null) {
-    where.salesOrder = {
-      warehouseId: { in: warehouseIds },
-    }
+    where.warehouseId = { in: warehouseIds }
   }
 
   if (query.customerId) where.customerId = query.customerId
   if (query.status) where.status = query.status
+  if (query.saleSource) where.saleSource = query.saleSource
+  if (query.warehouseId) where.warehouseId = query.warehouseId
   if (query.search) {
     where.OR = [
       { invoiceNumber: { contains: query.search, mode: 'insensitive' } },
@@ -34,13 +34,17 @@ export default defineEventHandler(async (event) => {
       where,
       include: {
         customer: { select: { id: true, name: true } },
+        warehouse: { select: { id: true, name: true } },
         salesOrder: { select: { id: true, orderNumber: true } },
         createdBy: { select: { id: true, name: true } },
+        items: {
+          include: { product: { select: { id: true, name: true, sku: true } } },
+        },
         payments: {
           select: { id: true, amount: true, paymentMethod: true, createdAt: true },
           orderBy: { createdAt: 'desc' },
         },
-        _count: { select: { payments: true } },
+        _count: { select: { payments: true, items: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip,

@@ -7,6 +7,7 @@ export default defineEventHandler(async (event) => {
       customer: { select: { id: true, name: true, phone: true, address: true } },
       warehouse: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true } },
+      assignedDistributor: { select: { id: true, name: true, phone: true } },
       items: { include: { product: { select: { id: true, name: true, sku: true, image: true } } } },
       invoices: {
         include: {

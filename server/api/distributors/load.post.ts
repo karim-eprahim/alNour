@@ -2,13 +2,15 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const auth = event.context.auth
 
-  if (!body.distributorId || !body.productId || !body.quantity) {
-    throw createError({ statusCode: 400, statusMessage: 'distributorId, productId, and quantity are required' })
+  if (!body.productId || !body.quantity) {
+    throw createError({ statusCode: 400, statusMessage: 'productId and quantity are required' })
   }
 
   if (!body.warehouseId) {
     throw createError({ statusCode: 400, statusMessage: 'warehouseId is required' })
   }
+
+  const distributorId = body.distributorId || auth.userId
 
   await validateWarehouseAccess(event, body.warehouseId)
 
@@ -17,12 +19,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Quantity must be a positive number' })
   }
 
-  const distributor = await prisma.user.findUnique({
-    where: { id: body.distributorId },
-    select: { id: true, role: { select: { name: true } } },
-  })
-  if (!distributor || distributor.role?.name !== 'DISTRIBUTOR') {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid distributor' })
+  if (distributorId === auth.userId) {
+    await requirePermission(event, 'INVENTORY', 'UPDATE')
+  } else {
+    const distributor = await prisma.user.findUnique({
+      where: { id: distributorId },
+      select: { id: true, role: { select: { name: true } } },
+    })
+    if (!distributor || distributor.role?.name !== 'DISTRIBUTOR') {
+      throw createError({ statusCode: 400, statusMessage: 'Invalid distributor' })
+    }
   }
 
   const product = await prisma.product.findUnique({
@@ -59,7 +65,7 @@ export default defineEventHandler(async (event) => {
         warehouseId: body.warehouseId,
         type: 'DISTRIBUTOR_LOAD',
         quantity: -quantity,
-        referenceId: body.distributorId,
+        referenceId: distributorId,
         notes: body.notes || `Loaded onto distributor truck`,
         createdById: auth.userId,
       },
@@ -68,7 +74,7 @@ export default defineEventHandler(async (event) => {
     const custody = await tx.distributorCustody.upsert({
       where: {
         distributorId_productId: {
-          distributorId: body.distributorId,
+          distributorId,
           productId: body.productId,
         },
       },
@@ -76,15 +82,22 @@ export default defineEventHandler(async (event) => {
         quantity: { increment: quantity },
       },
       create: {
-        distributorId: body.distributorId,
+        distributorId,
         productId: body.productId,
         quantity,
       },
     })
 
+    if (body.salesOrderId) {
+      await tx.salesOrder.update({
+        where: { id: body.salesOrderId },
+        data: { status: 'ASSIGNED' },
+      })
+    }
+
     await tx.distributorOperation.create({
       data: {
-        distributorId: body.distributorId,
+        distributorId,
         productId: body.productId,
         quantity,
         type: 'LOAD',

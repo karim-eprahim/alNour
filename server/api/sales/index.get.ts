@@ -14,6 +14,8 @@ export default defineEventHandler(async (event) => {
   }
   if (query.customerId) where.customerId = query.customerId
   if (query.status) where.status = query.status
+  if (query.assignedDistributorId) where.assignedDistributorId = query.assignedDistributorId
+  if (query.saleSource) where.saleSource = query.saleSource
   if (query.search) {
     where.OR = [
       { orderNumber: { contains: query.search, mode: 'insensitive' } },
@@ -38,6 +40,7 @@ export default defineEventHandler(async (event) => {
         customer: { select: { id: true, name: true } },
         warehouse: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true } },
+        assignedDistributor: { select: { id: true, name: true } },
         items: {
           include: { product: { select: { id: true, name: true, sku: true } } },
         },
