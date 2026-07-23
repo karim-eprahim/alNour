@@ -1,0 +1,1 @@
+import{e as a,aZ as n,c as s,n as o,o as r}from"./BryIdayQ.js";const m=a({__name:"index",async setup(c){let e,t;return[e,t]=n(()=>o("/users",{replace:!0})),await e,t(),(_,p)=>(r(),s("div"))}});export{m as default};

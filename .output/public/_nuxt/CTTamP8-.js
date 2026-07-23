@@ -1,0 +1,1 @@
+import{a_ as u,s as i,a$ as n,n as o}from"./BryIdayQ.js";const h=u(async s=>{let e,a;if(["/auth/login","/auth/register"].includes(s.path))return;const t=i();if(t.isAuthenticated||([e,a]=n(()=>t.fetchUser()),await e,a()),!t.isAuthenticated)return o("/auth/login")});export{h as default};

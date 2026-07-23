@@ -1,0 +1,1 @@
+import{e as t,o as n,c as o,i as r,u as c,M as l,H as p}from"./BryIdayQ.js";const m=t({__name:"CardContent",props:{class:{type:[Boolean,null,String,Object,Array]}},setup(a){const s=a;return(e,d)=>(n(),o("div",{"data-slot":"card-content",class:r(c(l)("px-4 group-data-[size=sm]/card:px-3",s.class))},[p(e.$slots,"default")],2))}});export{m as _};

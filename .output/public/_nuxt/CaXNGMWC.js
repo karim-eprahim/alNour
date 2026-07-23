@@ -1,1 +1,0 @@
-import{aZ as i,u as r,a_ as u,n as s}from"./BFl_imWS.js";const c=i(async o=>{let e,a;{const t=r();if(t.isAuthenticated||([e,a]=u(()=>t.fetchUser()),await e,a()),!t.isAuthenticated)return s("/auth/login");if(t.userRole!=="DISTRIBUTOR")return s("/")}});export{c as default};

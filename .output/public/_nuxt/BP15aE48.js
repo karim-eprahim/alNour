@@ -1,0 +1,1 @@
+import{e as a,o,c as r,i as n,u as c,M as l,H as p}from"./BryIdayQ.js";const m=a({__name:"CardDescription",props:{class:{type:[Boolean,null,String,Object,Array]}},setup(e){const s=e;return(t,i)=>(o(),r("div",{"data-slot":"card-description",class:n(c(l)("text-muted-foreground text-sm",s.class))},[p(t.$slots,"default")],2))}});export{m as _};

@@ -1,1 +1,0 @@
-import{e as t,o,c as r,A as n,f as c,ab as l,a8 as p}from"./BFl_imWS.js";const m=t({__name:"CardDescription",props:{class:{type:[Boolean,null,String,Object,Array]}},setup(e){const s=e;return(a,d)=>(o(),r("div",{"data-slot":"card-description",class:n(c(l)("text-muted-foreground text-sm",s.class))},[p(a.$slots,"default")],2))}});export{m as _};
