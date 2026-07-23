@@ -1,1 +1,0 @@
-import{aY as s,u as i,aZ as n,n as o}from"./fDKu_r9f.js";const h=s(async u=>{let e,a;if(["/auth/login","/auth/register"].includes(u.path))return;const t=i();if(t.isAuthenticated||([e,a]=n(()=>t.fetchUser()),await e,a()),!t.isAuthenticated)return o("/auth/login")});export{h as default};

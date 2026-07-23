@@ -1,0 +1,1 @@
+import{j as r}from"./BFl_imWS.js";const c=[["path",{d:"m6 9 6 6 6-6",key:"qrunsl"}]],I=r("chevron-down",c);function a(n,o=Number.NEGATIVE_INFINITY,e=Number.POSITIVE_INFINITY){return Math.min(e,Math.max(o,n))}export{I as C,a as c};
