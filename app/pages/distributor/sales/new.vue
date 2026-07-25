@@ -123,7 +123,7 @@ const itemErrors = computed(() => {
   return saleItems.value.map((item, idx) => {
     if (!item.productId) return 'Select a product'
     if (!item.quantity || item.quantity <= 0) return 'Enter quantity'
-    if (item.quantity > item.availableQty) return `Only ${item.availableQty.toFixed(1)} available in custody`
+    if (item.quantity > item.availableQty) return `Only ${Number(item.availableQty).toFixed(1)} available in custody`
     if (!item.unitPrice || item.unitPrice <= 0) return 'Enter a valid price'
     return null
   })
@@ -268,7 +268,7 @@ onMounted(() => {
           </div>
           <h2 class="text-xl font-semibold">Invoice Created!</h2>
           <p class="mt-1 text-sm text-muted-foreground">{{ createdInvoice.invoiceNumber }}</p>
-          <p class="mt-1 text-sm font-medium">Total: {{ createdInvoice.totalAmount.toFixed(2) }} | Paid: {{ createdInvoice.paidAmount.toFixed(2) }}</p>
+          <p class="mt-1 text-sm font-medium">Total: {{ Number(createdInvoice.totalAmount).toFixed(2) }} | Paid: {{ Number(createdInvoice.paidAmount).toFixed(2) }}</p>
           <div class="mt-6 flex gap-3">
             <UiButton variant="outline" @click="navigateTo('/distributor/bills')">View Invoices</UiButton>
             <UiButton @click="navigateTo('/distributor/sales/new')">New Sale</UiButton>
