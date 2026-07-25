@@ -27,7 +27,7 @@ const { user } = storeToRefs(auth)
             <User class="size-7 text-primary" />
           </div>
           <div>
-            <UiCardTitle>{{ user?.fullName || 'Distributor' }}</UiCardTitle>
+            <UiCardTitle>{{ user?.name || 'Distributor' }}</UiCardTitle>
             <UiCardDescription>
               <span class="inline-flex items-center gap-1">
                 <BadgeCheck class="size-3" />
@@ -51,9 +51,9 @@ const { user } = storeToRefs(auth)
           <Phone class="size-4 text-muted-foreground shrink-0" />
           <span>{{ user.phone }}</span>
         </div>
-        <div v-if="user?.address" class="flex items-center gap-2 text-sm">
+        <div v-if="(user as any)?.address" class="flex items-center gap-2 text-sm">
           <MapPin class="size-4 text-muted-foreground shrink-0" />
-          <span class="truncate">{{ user.address }}</span>
+          <span class="truncate">{{ (user as any).address }}</span>
         </div>
       </UiCardContent>
     </UiCard>
@@ -69,8 +69,8 @@ const { user } = storeToRefs(auth)
         </div>
         <div v-else class="space-y-2">
           <div v-for="item in store.custody.items" :key="item.id" class="flex items-center justify-between border-b pb-2 text-sm last:border-0 last:pb-0">
-            <span class="truncate">{{ item.productName }}</span>
-            <span class="font-semibold shrink-0 ml-2">{{ item.quantity.toFixed(1) }}</span>
+            <span class="truncate">{{ item.product.name }}</span>
+            <span class="font-semibold shrink-0 ml-2">{{ Number(item.quantity).toFixed(1) }}</span>
           </div>
         </div>
       </UiCardContent>

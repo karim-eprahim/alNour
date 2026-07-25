@@ -96,7 +96,7 @@ const movementTypeColor = (type: string) => {
               </div>
             </div>
             <span :class="['text-sm font-semibold shrink-0 ml-2', m.type === 'CASH_HANDOVER' ? 'text-red-600' : 'text-green-600']">
-              {{ m.type === 'CASH_HANDOVER' ? '-' : '+' }}{{ m.amount.toFixed(2) }}
+              {{ m.type === 'CASH_HANDOVER' ? '-' : '+' }}{{ Number(m.amount).toFixed(2) }}
             </span>
           </div>
         </div>

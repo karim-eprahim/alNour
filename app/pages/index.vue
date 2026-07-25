@@ -149,7 +149,7 @@ onMounted(fetchDashboard)
               <div v-if="data.distributor.custodies?.length" class="mt-3 space-y-1 border-t pt-3">
                 <div v-for="c in data.distributor.custodies" :key="c.productId" class="flex justify-between text-xs">
                   <span class="text-muted-foreground">{{ c.productName }}</span>
-                  <span class="font-medium tabular-nums">{{ c.quantity.toFixed(3) }}</span>
+                  <span class="font-medium tabular-nums">{{ Number(c.quantity).toFixed(3) }}</span>
                 </div>
               </div>
             </UiCardContent>
@@ -205,12 +205,12 @@ onMounted(fetchDashboard)
               <div v-for="d in data.goodsInTransit.byDistributor" :key="d.name" class="rounded-lg border p-3">
                 <div class="flex items-center justify-between mb-1">
                   <p class="text-sm font-medium">{{ d.name }}</p>
-                  <span class="text-sm font-bold tabular-nums">{{ d.totalQty.toFixed(3) }}</span>
+                  <span class="text-sm font-bold tabular-nums">{{ Number(d.totalQty).toFixed(3) }}</span>
                 </div>
                 <div class="space-y-0.5">
                   <div v-for="p in d.products" :key="p.name" class="flex justify-between text-xs text-muted-foreground pl-2">
                     <span>{{ p.name }}</span>
-                    <span class="tabular-nums">{{ p.qty.toFixed(3) }}</span>
+                    <span class="tabular-nums">{{ Number(p.qty).toFixed(3) }}</span>
                   </div>
                 </div>
               </div>
@@ -293,35 +293,35 @@ onMounted(fetchDashboard)
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div class="rounded-lg border p-4">
                 <p class="text-sm text-muted-foreground flex items-center gap-1"><DollarSign class="size-3.5" /> Revenue</p>
-                <p class="text-xl font-bold text-green-600">{{ data.financials.totalRevenue.toFixed(2) }}</p>
-                <p class="text-xs text-muted-foreground">{{ data.financials.totalCollected.toFixed(2) }} collected</p>
+                <p class="text-xl font-bold text-green-600">{{ Number(data.financials.totalRevenue).toFixed(2) }}</p>
+                <p class="text-xs text-muted-foreground">{{ Number(data.financials.totalCollected).toFixed(2) }} collected</p>
               </div>
               <div class="rounded-lg border p-4">
                 <p class="text-sm text-muted-foreground flex items-center gap-1"><TrendingDown class="size-3.5" /> COGS</p>
-                <p class="text-xl font-bold text-amber-600">{{ data.financials.totalCogs.toFixed(2) }}</p>
+                <p class="text-xl font-bold text-amber-600">{{ Number(data.financials.totalCogs).toFixed(2) }}</p>
                 <p class="text-xs text-muted-foreground">Raw materials consumed</p>
               </div>
               <div class="rounded-lg border p-4">
                 <p class="text-sm text-muted-foreground flex items-center gap-1"><Briefcase class="size-3.5" /> Labor Costs</p>
-                <p class="text-xl font-bold text-orange-600">{{ data.financials.totalLaborCosts.toFixed(2) }}</p>
+                <p class="text-xl font-bold text-orange-600">{{ Number(data.financials.totalLaborCosts).toFixed(2) }}</p>
                 <p class="text-xs text-muted-foreground">Worker daily wages</p>
               </div>
               <div class="rounded-lg border p-4">
                 <p class="text-sm text-muted-foreground flex items-center gap-1"><Receipt class="size-3.5" /> Expenses</p>
-                <p class="text-xl font-bold text-destructive">{{ data.financials.totalExpenses.toFixed(2) }}</p>
+                <p class="text-xl font-bold text-destructive">{{ Number(data.financials.totalExpenses).toFixed(2) }}</p>
                 <p class="text-xs text-muted-foreground">Operating expenses</p>
               </div>
               <div class="rounded-lg border p-4">
                 <p class="text-sm text-muted-foreground flex items-center gap-1"><Scale class="size-3.5" /> Gross Profit</p>
                 <p class="text-xl font-bold" :class="data.financials.grossProfit >= 0 ? 'text-green-600' : 'text-destructive'">
-                  {{ data.financials.grossProfit.toFixed(2) }}
+                  {{ Number(data.financials.grossProfit).toFixed(2) }}
                 </p>
                 <p class="text-xs text-muted-foreground">Revenue − COGS</p>
               </div>
               <div class="rounded-lg border p-4">
                 <p class="text-sm text-muted-foreground flex items-center gap-1"><Scale class="size-3.5" /> Net Profit</p>
                 <p class="text-xl font-bold" :class="data.financials.netProfit >= 0 ? 'text-green-600' : 'text-destructive'">
-                  {{ data.financials.netProfit.toFixed(2) }}
+                  {{ Number(data.financials.netProfit).toFixed(2) }}
                 </p>
                 <p class="text-xs text-muted-foreground">Gross − Labor − Expenses</p>
               </div>

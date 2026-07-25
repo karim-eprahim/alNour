@@ -8,6 +8,8 @@ import {
   PlusCircle,
   CreditCard,
   Eye,
+  Users,
+  Clock,
 } from '@lucide/vue'
 
 definePageMeta({
@@ -18,16 +20,25 @@ definePageMeta({
 const store = useDistributorStore()
 const todaySales = ref(0)
 const outstandingCollections = ref(0)
+const recentCustomers = ref<any[]>([])
+
+async function loadRecentCustomers() {
+  try {
+    const data = await $fetch('/api/distributors/customers/recent')
+    recentCustomers.value = data.customers
+  } catch {
+    recentCustomers.value = []
+  }
+}
 
 async function loadDashboard() {
   await Promise.all([
     store.fetchCustody(),
     store.fetchCashOnHand(),
     store.fetchOrders({ status: 'ASSIGNED,ACCEPTED,OUT_FOR_DELIVERY', limit: 5 }),
+    loadRecentCustomers(),
   ])
 }
-
-console.log(store)
 
 onMounted(loadDashboard)
 </script>
@@ -87,29 +98,63 @@ onMounted(loadDashboard)
       </UiCard>
     </div>
 
-    <div v-if="store.orders.length > 0">
-      <UiCard>
-        <UiCardHeader>
-          <UiCardTitle class="text-base">Active Orders</UiCardTitle>
-          <UiCardDescription>Orders assigned to you that need delivery</UiCardDescription>
-        </UiCardHeader>
-        <UiCardContent class="space-y-3">
-          <div
-            v-for="order in store.orders.slice(0, 5)"
-            :key="order.id"
-            class="flex items-center justify-between rounded-lg border p-3"
-          >
-            <div class="min-w-0 flex-1">
-              <p class="text-sm font-medium truncate">{{ order.orderNumber }}</p>
-              <p class="text-xs text-muted-foreground truncate">{{ order.customer?.name }}</p>
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div v-if="store.orders.length > 0">
+        <UiCard>
+          <UiCardHeader>
+            <UiCardTitle class="text-base">Active Orders</UiCardTitle>
+            <UiCardDescription>Orders assigned to you that need delivery</UiCardDescription>
+          </UiCardHeader>
+          <UiCardContent class="space-y-3">
+            <div
+              v-for="order in store.orders.slice(0, 5)"
+              :key="order.id"
+              class="flex items-center justify-between rounded-lg border p-3"
+            >
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium truncate">{{ order.orderNumber }}</p>
+                <p class="text-xs text-muted-foreground truncate">{{ order.customer?.name }}</p>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <UiBadge variant="secondary" class="text-[10px]">{{ order.status }}</UiBadge>
+                <p class="text-sm font-semibold">{{ order.totalAmount.toFixed(2) }}</p>
+              </div>
             </div>
-            <div class="flex items-center gap-2 shrink-0">
-              <UiBadge variant="secondary" class="text-[10px]">{{ order.status }}</UiBadge>
-              <p class="text-sm font-semibold">{{ order.totalAmount.toFixed(2) }}</p>
+          </UiCardContent>
+        </UiCard>
+      </div>
+
+      <div v-if="recentCustomers.length > 0">
+        <UiCard>
+          <UiCardHeader>
+            <UiCardTitle class="flex items-center gap-2 text-base">
+              <Users class="size-4" /> Recent Customers
+            </UiCardTitle>
+            <UiCardDescription>Your most recent sales</UiCardDescription>
+          </UiCardHeader>
+          <UiCardContent class="space-y-2">
+            <div
+              v-for="c in recentCustomers.slice(0, 5)"
+              :key="c.id"
+              class="flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors hover:bg-accent/50"
+              @click="navigateTo(`/distributor/contacts/${c.id}`)"
+            >
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium truncate">{{ c.name }}</p>
+                <p class="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock class="size-3" /> {{ new Date(c.lastVisit).toLocaleDateString() }}
+                </p>
+              </div>
+              <div class="text-right shrink-0 ml-2">
+                <p class="text-sm font-semibold" :class="(c.balance || 0) > 0 ? 'text-green-600' : ''">
+                  {{ (c.balance || 0).toFixed(2) }}
+                </p>
+                <p class="text-xs text-muted-foreground">{{ c.invoiceCount || 0 }} invoices</p>
+              </div>
             </div>
-          </div>
-        </UiCardContent>
-      </UiCard>
+          </UiCardContent>
+        </UiCard>
+      </div>
     </div>
 
     <div class="grid gap-4 sm:grid-cols-3">

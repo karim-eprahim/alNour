@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type {
   DistributorCustodyItem,
   DistributorOrder,
@@ -18,6 +18,7 @@ import {
   payInvoiceApi,
   returnInventoryApi,
   fetchCashOnHandApi,
+  fetchRecentCustomersApi,
   fetchCashMovementsApi,
 } from './api'
 
@@ -32,6 +33,7 @@ export const useDistributorStore = defineStore('distributor', () => {
   const cashOnHand = ref(0)
   const cashMovements = ref<DistributorCashMovement[]>([])
   const cashMovementsTotal = ref(0)
+  const recentCustomers = ref<any[]>([])
   const loading = ref(false)
 
   async function fetchCustody() {
@@ -64,7 +66,7 @@ export const useDistributorStore = defineStore('distributor', () => {
     try {
       const data = await completeDeliveryApi(id, payload)
       const idx = orders.value.findIndex((o) => o.id === id)
-      if (idx !== -1) orders.value[idx].status = 'DELIVERED'
+      if (idx !== -1 && orders.value[idx]) orders.value[idx].status = 'DELIVERED'
       return data.invoice
     } finally {
       loading.value = false
@@ -129,6 +131,42 @@ export const useDistributorStore = defineStore('distributor', () => {
     }
   }
 
+  const custody = computed(() => {
+    if (custodies.value.length === 0) return null
+    return {
+      items: custodies.value,
+      warehouseName: '',
+    }
+  })
+
+  async function fetchRecentCustomers() {
+    try {
+      const data = await fetchRecentCustomersApi()
+      recentCustomers.value = data.customers
+    } catch {
+      recentCustomers.value = []
+    }
+  }
+
+  async function createReturn(payload: { warehouseId: string; notes?: string; items: { productId: string; quantity: number }[] }) {
+    loading.value = true
+    try {
+      const results = []
+      for (const item of payload.items) {
+        const data = await returnInventoryApi({
+          productId: item.productId,
+          warehouseId: payload.warehouseId,
+          quantity: item.quantity,
+          notes: payload.notes,
+        })
+        results.push(data)
+      }
+      return results
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function fetchCashOnHand() {
     try {
       const data = await fetchCashOnHandApi()
@@ -151,13 +189,15 @@ export const useDistributorStore = defineStore('distributor', () => {
   }
 
   return {
-    custodies, custodyTotalItems, custodyTotalValue,
+    custodies, custodyTotalItems, custodyTotalValue, custody,
     orders, ordersTotal,
     invoices, invoicesTotal,
     cashOnHand, cashMovements, cashMovementsTotal,
+    recentCustomers,
     loading,
-    fetchCustody, fetchOrders, completeDelivery, createDirectSale,
+    fetchCustody, fetchOrders, completeDelivery, createDirectSale, createReturn,
     fetchInvoices, payInvoice, returnInventory,
+    fetchRecentCustomers,
     fetchCashOnHand, fetchCashMovements,
   }
 })

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, PackageX, Plus, X } from '@lucide/vue'
 import type { LookupQuery, LookupResponse } from '@/types/lookup'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'distributor',
@@ -10,7 +11,9 @@ definePageMeta({
 const store = useDistributorStore()
 const productsStore = useProductsStore()
 
-const items = ref<{ productId: string; productName: string; quantity: number | null }[]>([])
+const warehouseEndpoint = (params?: LookupQuery): Promise<LookupResponse> => $fetch('/api/warehouses/lookup', { params })
+
+const items = ref<{ productId: string; productName: string; quantity?: number }[]>([])
 const warehouseId = ref('')
 const notes = ref('')
 const saving = ref(false)
@@ -20,7 +23,7 @@ const products = computed(() =>
 )
 
 function addItem() {
-  items.value.push({ productId: '', productName: '', quantity: null })
+  items.value.push({ productId: '', productName: '' })
 }
 
 function removeItem(index: number) {
@@ -29,7 +32,7 @@ function removeItem(index: number) {
 
 function selectProduct(index: number, productId: string) {
   const p = products.value.find((pr) => pr.id === productId)
-  if (p) {
+  if (p && items.value[index]) {
     items.value[index].productId = p.id
     items.value[index].productName = p.name
   }
@@ -87,7 +90,7 @@ onMounted(() => {
           <UiLabel>Warehouse</UiLabel>
           <LookupCombobox
             v-model="warehouseId"
-            :endpoint="(params: LookupQuery) => $fetch<LookupResponse>('/api/warehouses/lookup', { params })"
+            :endpoint="warehouseEndpoint"
             placeholder="Select warehouse"
             class="mt-1"
           />
@@ -104,7 +107,7 @@ onMounted(() => {
           <div v-for="(item, index) in items" :key="index" class="flex items-end gap-2 rounded-lg border p-3">
             <div class="flex-1">
               <UiLabel class="text-xs">Product</UiLabel>
-              <UiSelect :model-value="item.productId" @update:model-value="selectProduct(index, $event)">
+              <UiSelect :model-value="item.productId" @update:model-value="selectProduct(index, $event as string)">
                 <UiSelectTrigger class="mt-0.5">
                   <UiSelectValue placeholder="Select" />
                 </UiSelectTrigger>

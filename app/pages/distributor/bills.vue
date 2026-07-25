@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Receipt, Search, Filter, DollarSign, ArrowLeft, ChevronRight, Eye, Printer } from '@lucide/vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'distributor',
@@ -130,8 +131,8 @@ function printInvoice() {
               @click="viewDetail(inv)">
               <div class="col-span-3 font-medium truncate">{{ inv.invoiceNumber }}</div>
               <div class="col-span-3 truncate text-muted-foreground">{{ inv.customer?.name || '—' }}</div>
-              <div class="col-span-2 text-right font-semibold">{{ inv.totalAmount.toFixed(2) }}</div>
-              <div class="col-span-2 text-right text-muted-foreground">{{ inv.paidAmount.toFixed(2) }}</div>
+              <div class="col-span-2 text-right font-semibold">{{ Number(inv.totalAmount).toFixed(2) }}</div>
+              <div class="col-span-2 text-right text-muted-foreground">{{ Number(inv.paidAmount).toFixed(2) }}</div>
               <div class="col-span-1">
                 <UiBadge :variant="statusVariant(inv.status)" class="text-[10px]">{{ inv.status }}</UiBadge>
               </div>
@@ -152,8 +153,8 @@ function printInvoice() {
             </div>
             <p class="mt-1 text-xs text-muted-foreground truncate">{{ inv.customer?.name || '—' }}</p>
             <div class="mt-2 flex items-center justify-between text-sm">
-              <span class="text-muted-foreground">Total <strong>{{ inv.totalAmount.toFixed(2) }}</strong></span>
-              <span class="text-muted-foreground">Paid <strong>{{ inv.paidAmount.toFixed(2) }}</strong></span>
+              <span class="text-muted-foreground">Total <strong>{{ Number(inv.totalAmount).toFixed(2) }}</strong></span>
+              <span class="text-muted-foreground">Paid <strong>{{ Number(inv.paidAmount).toFixed(2) }}</strong></span>
             </div>
           </div>
         </div>
@@ -211,7 +212,7 @@ function printInvoice() {
             </div>
             <div class="flex justify-between pt-2 text-sm font-semibold">
               <span>Total</span>
-              <span>{{ selectedInvoice.totalAmount.toFixed(2) }}</span>
+              <span>{{ Number(selectedInvoice.totalAmount).toFixed(2) }}</span>
             </div>
           </UiCardContent>
         </UiCard>
@@ -231,7 +232,7 @@ function printInvoice() {
             </div>
             <div class="flex justify-between pt-2 text-sm border-t mt-2">
               <span class="text-muted-foreground">Total Paid</span>
-              <span class="font-semibold">{{ selectedInvoice.paidAmount.toFixed(2) }}</span>
+              <span class="font-semibold">{{ Number(selectedInvoice.paidAmount).toFixed(2) }}</span>
             </div>
             <div v-if="selectedInvoice.status !== 'PAID'" class="flex justify-between text-sm">
               <span class="text-muted-foreground">Remaining</span>

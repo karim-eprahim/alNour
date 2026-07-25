@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { Search, Plus, X, Check, CreditCard, ShoppingCart, ArrowLeft, DollarSign, ChevronRight, ChevronLeft, Package, User } from '@lucide/vue'
-import type { LookupQuery, LookupResponse } from '@/types/lookup'
+import { Search, Plus, X, Check, CreditCard, ShoppingCart, ArrowLeft, DollarSign, ChevronRight, ChevronLeft, Package, User, Users, Building2, Phone, MapPin } from '@lucide/vue'
+import type { LookupItem, LookupQuery, LookupResponse } from '@/types/lookup'
 import type { DistributorCustodyItem } from '@/modules/distributor/type'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'distributor',
@@ -9,6 +11,7 @@ definePageMeta({
 })
 
 const store = useDistributorStore()
+const customersStore = useCustomersStore()
 
 const isMobile = ref(false)
 function checkMobile() {
@@ -20,15 +23,18 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
 const step = ref(1)
 
 const customerSearch = ref('')
-const customerResults = ref<{ value: string; label: string }[]>([])
+const customerResults = ref<LookupItem[]>([])
 const customerLoading = ref(false)
-const selectedCustomer = ref<{ value: string; label: string } | null>(null)
+const selectedCustomer = ref<LookupItem | null>(null)
+const recentCustomers = ref<any[]>([])
 
 const warehouseId = ref('')
+const warehouses= computed(()=>fetchWarehousesLookupApi())
+console.log(warehouses.value)
 const warehouseLoading = ref(false)
 const custodyItems = ref<DistributorCustodyItem[]>([])
 
-const saleItems = ref<{ productId: string; productName: string; availableQty: number; quantity: number | null; unitPrice: number | null }[]>([])
+const saleItems = ref<{ productId: string; productName: string; availableQty: number; quantity?: number; unitPrice?: number }[]>([])
 
 const totalAmount = computed(() => saleItems.value.reduce((s, i) => s + (i.quantity || 0) * (i.unitPrice || 0), 0))
 
@@ -40,12 +46,24 @@ const paymentNotes = ref('')
 const saving = ref(false)
 const createdInvoice = ref<any>(null)
 
+const showCreateCustomer = ref(false)
+const createForm = reactive({ name: '', phone: '', address: '' })
+const creatingCustomer = ref(false)
+
 function debounce<T extends (...args: any[]) => any>(fn: T, ms: number) {
   let timer: ReturnType<typeof setTimeout>
   return (...args: Parameters<T>) => {
     clearTimeout(timer)
     timer = setTimeout(() => fn(...args), ms)
   }
+}
+
+async function loadRecentCustomers() {
+  recentCustomers.value = []
+  try {
+    const data = await $fetch('/api/distributors/customers/recent')
+    recentCustomers.value = data.customers
+  } catch {}
 }
 
 const searchCustomers = debounce(async (q: string) => {
@@ -57,10 +75,16 @@ const searchCustomers = debounce(async (q: string) => {
   } finally { customerLoading.value = false }
 }, 300)
 
-function selectCustomer(c: { value: string; label: string }) {
+function selectCustomer(c: LookupItem) {
   selectedCustomer.value = c
   customerSearch.value = c.label
   customerResults.value = []
+  loadCustody()
+}
+
+function selectRecentCustomer(c: any) {
+  selectedCustomer.value = { value: c.id, label: c.name, subtitle: c.phone }
+  customerSearch.value = c.name
   loadCustody()
 }
 
@@ -68,14 +92,15 @@ async function loadCustody() {
   await store.fetchCustody()
   if (store.custodies.length > 0) {
     custodyItems.value = store.custodies
-    if (!warehouseId.value) {
-      warehouseId.value = store.custodies[0].product?.name || ''
-    }
+    console.log('Custody items:', custodyItems.value)
+    // if (!warehouseId.value) {
+    //   warehouseId.value = store.custodies[0]?.product?.name || ''
+    // }
   }
 }
 
 function addItem() {
-  saleItems.value.push({ productId: '', productName: '', availableQty: 0, quantity: null, unitPrice: null })
+  saleItems.value.push({ productId: '', productName: '', availableQty: 0 })
 }
 
 function removeItem(index: number) {
@@ -84,12 +109,13 @@ function removeItem(index: number) {
 
 function selectProduct(index: number, productId: string) {
   const custody = custodyItems.value.find((c) => c.productId === productId)
-  if (custody) {
-    saleItems.value[index].productId = custody.productId
-    saleItems.value[index].productName = custody.product.name
-    saleItems.value[index].availableQty = custody.quantity
-    if (!saleItems.value[index].unitPrice) {
-      saleItems.value[index].unitPrice = custody.product.sellingPrice ? Number(custody.product.sellingPrice) : null
+  const item = saleItems.value[index]
+  if (custody && item) {
+    item.productId = custody.productId
+    item.productName = custody.product.name
+    item.availableQty = custody.quantity
+    if (!item.unitPrice) {
+      item.unitPrice = custody.product.sellingPrice ? Number(custody.product.sellingPrice) : undefined
     }
   }
 }
@@ -143,6 +169,35 @@ const finalPaymentMethod = computed(() => {
   return paymentMethod.value
 })
 
+async function handleCreateCustomer() {
+  if (!createForm.name.trim()) {
+    toast.error('Customer name is required')
+    return
+  }
+  creatingCustomer.value = true
+  try {
+    const data = await $fetch('/api/customers', {
+      method: 'POST',
+      body: {
+        name: createForm.name.trim(),
+        phone: createForm.phone || undefined,
+        address: createForm.address || undefined,
+      },
+    })
+    const newCust = data.customer
+    selectCustomer({ value: newCust.id, label: newCust.name, subtitle: newCust.phone ?? undefined })
+    showCreateCustomer.value = false
+    createForm.name = ''
+    createForm.phone = ''
+    createForm.address = ''
+    toast.success('Customer created')
+  } catch (err: any) {
+    toast.error(err?.message || 'Failed to create customer')
+  } finally {
+    creatingCustomer.value = false
+  }
+}
+
 async function handleCreate() {
   if (!selectedCustomer.value || saleItems.value.length === 0) return
   saving.value = true
@@ -176,6 +231,8 @@ const steps = [
 
 onMounted(() => {
   store.fetchCustody()
+  loadRecentCustomers()
+  fetchWarehousesLookupApi()
 })
 </script>
 
@@ -240,11 +297,35 @@ onMounted(() => {
             <UiCardHeader>
               <UiCardTitle class="flex items-center gap-2 text-base"><User class="size-4" /> Customer</UiCardTitle>
             </UiCardHeader>
+            <pre>{{ warehouses }}</pre>
+
+                                      <UiCardHeader>
+            <UiLabel>Warehouse</UiLabel>
+            <LookupCombobox
+            :autoSelectSingle="true"
+              v-model="warehouseId"
+              :endpoint="fetchWarehousesLookupApi"
+              :items="warehouses?.items"
+              placeholder="Select warehouse"
+              class="mt-1"
+            />
+          </UiCardHeader>
             <UiCardContent class="space-y-3">
               <div v-if="!selectedCustomer">
-                <div class="relative">
+                                <div class="relative mb-3">
                   <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <UiInput v-model="customerSearch" placeholder="Search customers..." class="pl-9" @input="searchCustomers(customerSearch)" />
+                  <UiInput v-model="customerSearch" placeholder="Search all customers..." class="pl-9" @input="searchCustomers(customerSearch)" />
+                </div>
+                <div v-if="recentCustomers.length > 0">
+                  <p class="text-xs font-medium text-muted-foreground mb-2">Recent Customers</p>
+                  <div class="space-y-1 mb-4 max-h-48 overflow-y-auto">
+                    <button v-for="c in recentCustomers" :key="c.id"
+                      class="w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent flex items-center justify-between"
+                      @click="selectRecentCustomer(c)">
+                      <span class="font-medium">{{ c.name }}</span>
+                      <span class="text-xs text-muted-foreground">{{ new Date(c.lastVisit).toLocaleDateString() }}</span>
+                    </button>
+                  </div>
                 </div>
                 <div v-if="customerLoading" class="mt-2 text-sm text-muted-foreground">Searching...</div>
                 <div v-else-if="customerResults.length" class="mt-2 space-y-1 max-h-48 overflow-y-auto">
@@ -252,10 +333,23 @@ onMounted(() => {
                     class="w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
                     @click="selectCustomer(c)">{{ c.label }}</button>
                 </div>
+
+                <div v-if="recentCustomers.length === 0 && customerResults.length === 0 && !customerLoading && customerSearch.length === 0" class="text-center py-6">
+                  <Users class="mx-auto mb-2 size-8 text-muted-foreground/60" />
+                  <p class="text-sm text-muted-foreground mb-3">No recent customers. Search or create a new one.</p>
+                  <UiButton size="sm" variant="outline" @click="showCreateCustomer = true">
+                    <Plus class="size-4" /> New Customer
+                  </UiButton>
+                </div>
+
+                <UiButton v-if="customerSearch.length > 0 && !customerLoading && customerResults.length === 0" size="sm" variant="outline" class="mt-2 w-full" @click="showCreateCustomer = true">
+                  <Plus class="size-4" /> Create "{{ customerSearch }}"
+                </UiButton>
               </div>
               <div v-else class="flex items-center justify-between rounded-lg border p-3">
                 <div>
                   <p class="text-sm font-medium">{{ selectedCustomer.label }}</p>
+                  <p v-if="selectedCustomer.subtitle" class="text-xs text-muted-foreground">{{ selectedCustomer.subtitle }}</p>
                 </div>
                 <UiButton variant="ghost" size="sm" @click="selectedCustomer = null; customerSearch = ''">Change</UiButton>
               </div>
@@ -285,13 +379,13 @@ onMounted(() => {
                 <div class="grid grid-cols-1 gap-2 sm:grid-cols-4">
                   <div class="sm:col-span-2">
                     <UiLabel class="text-xs">Product</UiLabel>
-                    <UiSelect :model-value="item.productId" @update:model-value="selectProduct(idx, $event)">
+                    <UiSelect :model-value="item.productId" @update:model-value="selectProduct(idx, $event as string)">
                       <UiSelectTrigger class="mt-0.5">
                         <UiSelectValue placeholder="Select product" />
                       </UiSelectTrigger>
                       <UiSelectContent>
                         <UiSelectItem v-for="c in custodyItems" :key="c.productId" :value="c.productId">
-                          {{ c.product.name }} ({{ c.quantity.toFixed(1) }} available)
+                          {{ c.product.name }} ({{ Number(c.quantity).toFixed(1) }} available)
                         </UiSelectItem>
                       </UiSelectContent>
                     </UiSelect>
@@ -305,11 +399,11 @@ onMounted(() => {
                     <UiInput v-model="item.unitPrice" type="number" min="0" step="0.01" placeholder="0.00" class="mt-0.5" />
                   </div>
                 </div>
-                <p v-if="item.quantity !== null && item.quantity > item.availableQty" class="text-xs text-red-500">
-                  Only {{ item.availableQty.toFixed(1) }} available in custody
+                <p v-if="item.quantity !== undefined && item.quantity > item.availableQty" class="text-xs text-red-500">
+                  Only {{ Number(item.availableQty).toFixed(1) }} available in custody
                 </p>
                 <p v-if="item.productId && item.quantity && item.unitPrice" class="text-xs text-muted-foreground text-right">
-                  Subtotal: {{ (item.quantity * item.unitPrice).toFixed(2) }}
+                  Subtotal: {{ Number(item.quantity * item.unitPrice).toFixed(2) }}
                 </p>
               </div>
 
@@ -331,7 +425,7 @@ onMounted(() => {
                 <UiButton
                   :variant="paymentOption === 'paid' ? 'default' : 'outline'"
                   size="sm" @click="paymentOption = 'paid'"
-                >Paid ({{ totalAmount.toFixed(2) }})</UiButton>
+                >Paid ({{ Number(totalAmount).toFixed(2) }})</UiButton>
                 <UiButton
                   :variant="paymentOption === 'partial' ? 'default' : 'outline'"
                   size="sm" @click="paymentOption = 'partial'"
@@ -345,7 +439,7 @@ onMounted(() => {
               <div v-if="paymentOption === 'partial'">
                 <UiLabel>Amount</UiLabel>
                 <UiInput v-model="paidAmount" type="number" min="0" :max="totalAmount" step="0.01" placeholder="Enter amount" class="mt-1" />
-                <p class="mt-1 text-xs text-muted-foreground">Max: {{ totalAmount.toFixed(2) }} | Remaining: {{ (totalAmount - (paidAmount || 0)).toFixed(2) }}</p>
+                <p class="mt-1 text-xs text-muted-foreground">Max: {{ Number(totalAmount).toFixed(2) }} | Remaining: {{ Number(totalAmount - (paidAmount || 0)).toFixed(2) }}</p>
               </div>
 
               <div v-if="paymentOption !== 'unpaid'">
@@ -390,12 +484,12 @@ onMounted(() => {
                 </div>
                 <div v-for="(item, idx) in saleItems" :key="idx" class="grid grid-cols-4 gap-2 border-b px-3 py-2 text-sm last:border-0">
                   <span class="col-span-2 truncate">{{ item.productName || '—' }}</span>
-                  <span class="text-right">{{ (item.quantity || 0).toFixed(1) }}</span>
-                  <span class="text-right font-medium">{{ ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2) }}</span>
+                  <span class="text-right">{{ Number(item.quantity || 0).toFixed(1) }}</span>
+                  <span class="text-right font-medium">{{ Number((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2) }}</span>
                 </div>
                 <div class="flex justify-between border-t px-3 py-2 text-sm font-semibold">
                   <span>Total</span>
-                  <span>{{ totalAmount.toFixed(2) }}</span>
+                  <span>{{ Number(totalAmount).toFixed(2) }}</span>
                 </div>
               </div>
 
@@ -406,7 +500,7 @@ onMounted(() => {
                 </div>
                 <div v-if="finalPaidAmount > 0" class="flex items-center justify-between text-sm">
                   <span class="text-muted-foreground">Amount Paid</span>
-                  <span class="font-medium text-green-600">{{ finalPaidAmount.toFixed(2) }}</span>
+                  <span class="font-medium text-green-600">{{ Number(finalPaidAmount).toFixed(2) }}</span>
                 </div>
                 <div v-if="finalPaidAmount > 0" class="flex items-center justify-between text-sm">
                   <span class="text-muted-foreground">Method</span>
@@ -436,5 +530,31 @@ onMounted(() => {
         </UiButton>
       </div>
     </template>
+
+    <UiSheet :open="showCreateCustomer" @update:open="showCreateCustomer = $event">
+      <UiSheetContent side="right" class="w-full sm:max-w-md">
+        <UiSheetHeader>
+          <UiSheetTitle>New Customer</UiSheetTitle>
+          <UiSheetDescription>Create a new customer</UiSheetDescription>
+        </UiSheetHeader>
+        <div class="mt-6 space-y-4">
+          <div>
+            <UiLabel>Name *</UiLabel>
+            <UiInput v-model="createForm.name" placeholder="Customer name" class="mt-1" />
+          </div>
+          <div>
+            <UiLabel>Phone</UiLabel>
+            <UiInput v-model="createForm.phone" placeholder="Phone number" class="mt-1" />
+          </div>
+          <div>
+            <UiLabel>Address</UiLabel>
+            <UiTextarea v-model="createForm.address" placeholder="Address" class="mt-1" />
+          </div>
+          <UiButton class="w-full" :disabled="creatingCustomer || !createForm.name.trim()" @click="handleCreateCustomer">
+            {{ creatingCustomer ? 'Creating...' : 'Create Customer' }}
+          </UiButton>
+        </div>
+      </UiSheetContent>
+    </UiSheet>
   </div>
 </template>

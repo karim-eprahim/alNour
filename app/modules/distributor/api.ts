@@ -61,6 +61,10 @@ export async function fetchCashOnHandApi(distributorId?: string): Promise<{ dist
   return $fetch('/api/distributors/cash', { params: { distributorId } })
 }
 
+export async function fetchRecentCustomersApi(): Promise<{ customers: any[] }> {
+  return $fetch('/api/distributors/customers/recent')
+}
+
 export async function fetchCashMovementsApi(params?: {
   type?: string
   page?: number

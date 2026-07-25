@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Plus, Search, Users, ShoppingCart, ArrowLeft, DollarSign } from '@lucide/vue'
-import type { LookupQuery, LookupResponse } from '@/types/lookup'
+import { Plus, Search, Users, ShoppingCart, ArrowLeft, DollarSign, X, UserPlus, Clock } from '@lucide/vue'
+import type { LookupItem, LookupQuery, LookupResponse } from '@/types/lookup'
 import { useDebounceFn } from '@vueuse/core'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'distributor',
@@ -11,11 +12,15 @@ definePageMeta({
 const store = useDistributorStore()
 const productsStore = useProductsStore()
 
-const customers = ref<{ value: string; label: string }[]>([])
+const recentCustomers = ref<any[]>([])
+const customers = ref<LookupItem[]>([])
 const customerSearch = ref('')
 const customerLoading = ref(false)
 
 const showSaleForm = ref(false)
+const showCreateSheet = ref(false)
+
+const warehouseEndpoint = (params?: LookupQuery): Promise<LookupResponse> => $fetch('/api/warehouses/lookup', { params })
 
 const salesForm = reactive({
   customerId: '',
@@ -23,11 +28,14 @@ const salesForm = reactive({
   warehouseId: '',
   paidAmount: 0,
   paymentMethod: 'CASH' as string,
-  items: [] as { productId: string; productName: string; quantity: number | null; unitPrice: number | null }[],
+  items: [] as { productId: string; productName: string; quantity?: number; unitPrice?: number }[],
 })
 
+const createForm = reactive({ name: '', phone: '', address: '' })
+const creatingCustomer = ref(false)
+
 const products = computed(() =>
-  productsStore.products.filter((p) => p.type === 'PACKAGED_CHARCOAL' || p.type === 'OTHER'),
+  productsStore.products
 )
 
 const calculatedTotal = computed(() =>
@@ -35,6 +43,15 @@ const calculatedTotal = computed(() =>
 )
 
 const saving = ref(false)
+
+async function loadRecentCustomers() {
+  try {
+    const data = await $fetch('/api/distributors/customers/recent')
+    recentCustomers.value = data.customers
+  } catch {
+    recentCustomers.value = []
+  }
+}
 
 async function searchCustomers(q: string) {
   if (q.length < 2) return
@@ -49,14 +66,20 @@ async function searchCustomers(q: string) {
 
 const debouncedSearch = useDebounceFn(searchCustomers, 300)
 
-function selectCustomer(c: { value: string; label: string }) {
+function selectCustomer(c: LookupItem) {
   salesForm.customerId = c.value
   salesForm.customerName = c.label
   showSaleForm.value = true
 }
 
+function selectRecentCustomer(c: any) {
+  salesForm.customerId = c.id
+  salesForm.customerName = c.name
+  showSaleForm.value = true
+}
+
 function addItem() {
-  salesForm.items.push({ productId: '', productName: '', quantity: null, unitPrice: null })
+  salesForm.items.push({ productId: '', productName: '' })
 }
 
 function removeItem(index: number) {
@@ -65,12 +88,42 @@ function removeItem(index: number) {
 
 function selectProduct(index: number, productId: string) {
   const p = products.value.find((pr) => pr.id === productId)
-  if (p) {
-    salesForm.items[index].productId = p.id
-    salesForm.items[index].productName = p.name
-    if (!salesForm.items[index].unitPrice) {
-      salesForm.items[index].unitPrice = p.sellingPrice ? Number(p.sellingPrice) : null
+  const item = salesForm.items[index]
+  if (p && item) {
+    item.productId = p.id
+    item.productName = p.name
+    if (!item.unitPrice) {
+      item.unitPrice = p.sellingPrice ? Number(p.sellingPrice) : undefined
     }
+  }
+}
+
+async function handleCreateCustomer() {
+  if (!createForm.name.trim()) {
+    toast.error('Customer name is required')
+    return
+  }
+  creatingCustomer.value = true
+  try {
+    const data = await $fetch('/api/customers', {
+      method: 'POST',
+      body: {
+        name: createForm.name.trim(),
+        phone: createForm.phone || undefined,
+        address: createForm.address || undefined,
+      },
+    })
+    const newCust = data.customer
+    selectCustomer({ value: newCust.id, label: newCust.name, subtitle: newCust.phone ?? undefined })
+    showCreateSheet.value = false
+    createForm.name = ''
+    createForm.phone = ''
+    createForm.address = ''
+    toast.success('Customer created')
+  } catch (err: any) {
+    toast.error(err?.message || 'Failed to create customer')
+  } finally {
+    creatingCustomer.value = false
   }
 }
 
@@ -106,6 +159,7 @@ async function handleCreateSale() {
     salesForm.items = []
     await store.fetchCustody()
     await store.fetchCashOnHand()
+    await loadRecentCustomers()
   } catch (err: any) {
     toast.error(err?.message || 'Failed to create sale')
   } finally {
@@ -115,6 +169,7 @@ async function handleCreateSale() {
 
 onMounted(() => {
   productsStore.fetchProducts()
+  loadRecentCustomers()
 })
 </script>
 
@@ -127,7 +182,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="!showSaleForm">
+    <div v-if="!showSaleForm && !showCreateSheet">
       <div class="relative mb-4">
         <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <UiInput
@@ -138,16 +193,49 @@ onMounted(() => {
         />
       </div>
 
+      <div v-if="recentCustomers.length > 0 && !customerSearch && customers.length === 0" class="mb-6">
+        <h3 class="flex items-center gap-1 text-sm font-medium text-muted-foreground mb-2">
+          <Clock class="size-3.5" /> Recent Customers
+        </h3>
+        <div class="space-y-1">
+          <button v-for="c in recentCustomers" :key="c.id"
+            class="w-full flex items-center justify-between rounded-lg border px-4 py-3 text-sm transition-colors hover:bg-accent/50"
+            @click="selectRecentCustomer(c)">
+            <div class="text-left">
+              <p class="font-medium">{{ c.name }}</p>
+              <p class="text-xs text-muted-foreground">{{ c.phone || '—' }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-muted-foreground">{{ new Date(c.lastVisit).toLocaleDateString() }}</p>
+              <p class="text-xs font-medium" :class="(c.balance || 0) > 0 ? 'text-green-600' : ''">
+                {{ (c.balance || 0).toFixed(2) }}
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <div v-if="customerLoading" class="flex justify-center py-8">
         <LoadingState />
       </div>
 
-      <div v-else-if="customers.length === 0" class="text-center py-8 text-sm text-muted-foreground">
+      <div v-else-if="customerSearch && customers.length === 0 && !customerLoading" class="text-center py-8">
         <Users class="mx-auto mb-2 size-8 text-muted-foreground/60" />
-        <p>Search for a customer to start</p>
+        <p class="text-sm text-muted-foreground mb-3">No customers found</p>
+        <UiButton size="sm" variant="outline" @click="showCreateSheet = true">
+          <UserPlus class="size-4" /> Create "{{ customerSearch }}"
+        </UiButton>
       </div>
 
-      <div v-else class="grid gap-2">
+      <div v-else-if="!customerSearch && recentCustomers.length === 0 && customers.length === 0" class="text-center py-8 text-sm text-muted-foreground">
+        <Users class="mx-auto mb-2 size-8 text-muted-foreground/60" />
+        <p>No customers yet</p>
+        <UiButton size="sm" class="mt-3" @click="showCreateSheet = true">
+          <UserPlus class="size-4" /> New Customer
+        </UiButton>
+      </div>
+
+      <div v-if="customers.length > 0" class="grid gap-2">
         <UiCard
           v-for="c in customers"
           :key="c.value"
@@ -163,6 +251,36 @@ onMounted(() => {
           </UiCardContent>
         </UiCard>
       </div>
+    </div>
+
+    <div v-else-if="showCreateSheet" class="max-w-md mx-auto space-y-6">
+      <div class="flex items-center gap-3">
+        <UiButton variant="ghost" size="icon" class="size-8 shrink-0" @click="showCreateSheet = false">
+          <ArrowLeft class="size-4" />
+        </UiButton>
+        <div>
+          <h2 class="text-lg font-semibold">New Customer</h2>
+        </div>
+      </div>
+      <UiCard>
+        <UiCardContent class="space-y-4 pt-6">
+          <div>
+            <UiLabel>Name *</UiLabel>
+            <UiInput v-model="createForm.name" placeholder="Customer name" class="mt-1" />
+          </div>
+          <div>
+            <UiLabel>Phone</UiLabel>
+            <UiInput v-model="createForm.phone" placeholder="Phone number" class="mt-1" />
+          </div>
+          <div>
+            <UiLabel>Address</UiLabel>
+            <UiTextarea v-model="createForm.address" placeholder="Address" class="mt-1" />
+          </div>
+          <UiButton class="w-full" :disabled="creatingCustomer || !createForm.name.trim()" @click="handleCreateCustomer">
+            {{ creatingCustomer ? 'Creating...' : 'Create & Continue' }}
+          </UiButton>
+        </UiCardContent>
+      </UiCard>
     </div>
 
     <div v-else class="space-y-6">
@@ -185,7 +303,7 @@ onMounted(() => {
             <UiLabel>Warehouse</UiLabel>
             <LookupCombobox
               v-model="salesForm.warehouseId"
-              :endpoint="(params: LookupQuery) => $fetch<LookupResponse>('/api/warehouses/lookup', { params })"
+              :endpoint="warehouseEndpoint"
               placeholder="Select warehouse"
               class="mt-1"
             />
@@ -202,7 +320,7 @@ onMounted(() => {
             <div v-for="(item, index) in salesForm.items" :key="index" class="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-end">
               <div class="flex-1">
                 <UiLabel class="text-xs">Product</UiLabel>
-                <UiSelect :model-value="item.productId" @update:model-value="selectProduct(index, $event)">
+                <UiSelect :model-value="item.productId" @update:model-value="selectProduct(index, $event as string)">
                   <UiSelectTrigger class="mt-0.5">
                     <UiSelectValue placeholder="Select product" />
                   </UiSelectTrigger>

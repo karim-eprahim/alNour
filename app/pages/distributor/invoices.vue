@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Receipt, Search, ArrowLeft, DollarSign } from '@lucide/vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'distributor',
@@ -86,8 +87,8 @@ const statusVariant = (s: string) => {
             </UiBadge>
           </div>
           <div class="mt-2 flex items-center justify-between text-sm">
-            <span class="text-muted-foreground">Total: <strong>{{ inv.totalAmount.toFixed(2) }}</strong></span>
-            <span class="text-muted-foreground">Paid: <strong>{{ inv.paidAmount.toFixed(2) }}</strong></span>
+            <span class="text-muted-foreground">Total: <strong>{{ Number(inv.totalAmount).toFixed(2) }}</strong></span>
+            <span class="text-muted-foreground">Paid: <strong>{{ Number(inv.paidAmount).toFixed(2) }}</strong></span>
           </div>
           <div v-if="inv.status !== 'PAID' && inv.status !== 'CANCELLED'" class="mt-2">
             <UiButton size="sm" class="w-full" @click="openPay(inv)">
@@ -113,13 +114,13 @@ const statusVariant = (s: string) => {
         <UiCardHeader>
           <UiCardTitle class="text-base">Record Payment</UiCardTitle>
           <UiCardDescription>
-            Total: {{ selectedInvoice.totalAmount.toFixed(2) }} | Remaining: {{ (selectedInvoice.totalAmount - selectedInvoice.paidAmount).toFixed(2) }}
+            Total: {{ Number(selectedInvoice.totalAmount).toFixed(2) }} | Remaining: {{ Number(selectedInvoice.totalAmount - selectedInvoice.paidAmount).toFixed(2) }}
           </UiCardDescription>
         </UiCardHeader>
         <UiCardContent class="space-y-4">
           <div>
             <UiLabel>Amount</UiLabel>
-            <UiInput v-model="payAmount" type="number" min="0" step="0.01" :max="selectedInvoice.totalAmount - selectedInvoice.paidAmount" class="mt-1" />
+            <UiInput v-model="payAmount" type="number" min="0" step="0.01" :max="Number(selectedInvoice.totalAmount) - Number(selectedInvoice.paidAmount)" class="mt-1" />
           </div>
           <UiButton class="w-full" :disabled="paying || payAmount <= 0" @click="handlePay">
             <DollarSign class="size-4" />

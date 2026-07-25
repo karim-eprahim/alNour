@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, Printer, DollarSign, Receipt, Building2, User, Package } from '@lucide/vue'
 import type { DistributorInvoice } from '@/modules/distributor/type'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'distributor',
@@ -98,7 +99,7 @@ const statusVariant = (s: string) => {
               </div>
               <div v-for="item in (invoice.items || [])" :key="item.id" class="grid grid-cols-4 gap-2 border-b px-3 py-2 text-sm last:border-0">
                 <span class="col-span-2 truncate">{{ item.product?.name || item.productId }}</span>
-                <span class="text-right">{{ item.quantity.toFixed(1) }}</span>
+                <span class="text-right">{{ Number(item.quantity).toFixed(1) }}</span>
                 <span class="text-right font-medium">{{ item.totalPrice.toFixed(2) }}</span>
               </div>
               <div class="flex justify-between px-3 py-2 text-sm font-semibold border-t">

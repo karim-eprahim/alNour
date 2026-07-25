@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (query.customerId) where.customerId = query.customerId
+  if (query.createdById) where.createdById = query.createdById
   if (query.status) where.status = query.status
   if (query.saleSource) where.saleSource = query.saleSource
   if (query.warehouseId) where.warehouseId = query.warehouseId

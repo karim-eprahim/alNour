@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Search, Plus, Pencil, ArrowUpDown, Phone, MapPin, ShoppingCart, Receipt, DollarSign, Wallet, ChevronRight } from '@lucide/vue'
 import type { Customer, CreateCustomerPayload } from '@/modules/customers/type'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'distributor',

@@ -149,7 +149,7 @@ onMounted(fetchDashboard)
               <div v-if="data.distributor.custodies?.length" class="mt-3 space-y-1 border-t pt-3">
                 <div v-for="c in data.distributor.custodies" :key="c.productId" class="flex justify-between text-xs">
                   <span class="text-muted-foreground">{{ c.productName }}</span>
-                  <span class="font-medium tabular-nums">{{ c.quantity.toFixed(3) }}</span>
+                  <span class="font-medium tabular-nums">{{ Number(c.quantity).toFixed(3) }}</span>
                 </div>
               </div>
             </UiCardContent>
@@ -205,12 +205,12 @@ onMounted(fetchDashboard)
               <div v-for="d in data.goodsInTransit.byDistributor" :key="d.name" class="rounded-lg border p-3">
                 <div class="flex items-center justify-between mb-1">
                   <p class="text-sm font-medium">{{ d.name }}</p>
-                  <span class="text-sm font-bold tabular-nums">{{ d.totalQty.toFixed(3) }}</span>
+                  <span class="text-sm font-bold tabular-nums">{{ Number(d.totalQty).toFixed(3) }}</span>
                 </div>
                 <div class="space-y-0.5">
                   <div v-for="p in d.products" :key="p.name" class="flex justify-between text-xs text-muted-foreground pl-2">
                     <span>{{ p.name }}</span>
-                    <span class="tabular-nums">{{ p.qty.toFixed(3) }}</span>
+                    <span class="tabular-nums">{{ Number(p.qty).toFixed(3) }}</span>
                   </div>
                 </div>
               </div>

@@ -87,9 +87,9 @@ onMounted(() => store.fetchCustody())
                     </div>
                   </UiTableCell>
                   <UiTableCell class="text-sm text-muted-foreground">{{ item.product.sku }}</UiTableCell>
-                  <UiTableCell class="text-right font-medium">{{ item.quantity.toFixed(1) }}</UiTableCell>
-                  <UiTableCell class="text-right">{{ item.product.sellingPrice?.toFixed(2) || '—' }}</UiTableCell>
-                  <UiTableCell class="text-right font-semibold">{{ (item.quantity * (item.product.sellingPrice || 0)).toFixed(2) }}</UiTableCell>
+                  <UiTableCell class="text-right font-medium">{{ Number(item.quantity).toFixed(1) }}</UiTableCell>
+                  <UiTableCell class="text-right">{{ Number(item.product.sellingPrice)?.toFixed(2) || '—' }}</UiTableCell>
+                  <UiTableCell class="text-right font-semibold">{{ (Number(item.quantity) * (Number(item.product.sellingPrice) || 0)).toFixed(2) }}</UiTableCell>
                 </UiTableRow>
               </UiTableBody>
             </UiTable>
@@ -107,10 +107,10 @@ onMounted(() => store.fetchCustody())
               <p class="text-sm font-medium truncate">{{ item.product.name }}</p>
               <p class="text-xs text-muted-foreground truncate">{{ item.product.nameAr }}</p>
               <div class="mt-2 flex items-center justify-between">
-                <span class="text-xs text-muted-foreground">Qty: <strong>{{ item.quantity.toFixed(1) }}</strong></span>
-                <span class="text-xs text-muted-foreground">Price: <strong>{{ item.product.sellingPrice?.toFixed(2) || '—' }}</strong></span>
+                <span class="text-xs text-muted-foreground">Qty: <strong>{{ Number(item.quantity).toFixed(1) }}</strong></span>
+                <span class="text-xs text-muted-foreground">Price: <strong>{{ Number(item.product.sellingPrice)?.toFixed(2) || '—' }}</strong></span>
               </div>
-              <p class="mt-1 text-sm font-semibold">Total: {{ (item.quantity * (item.product.sellingPrice || 0)).toFixed(2) }}</p>
+              <p class="mt-1 text-sm font-semibold">Total: {{ (Number(item.quantity) * (Number(item.product.sellingPrice) || 0)).toFixed(2) }}</p>
             </div>
           </UiCardContent>
         </UiCard>

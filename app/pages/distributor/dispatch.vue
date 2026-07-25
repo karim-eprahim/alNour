@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ClipboardList, Search, CheckCircle2, Truck, PackageCheck, Eye, ArrowLeft, DollarSign, CircleCheck } from '@lucide/vue'
+import { ClipboardList, Search, CheckCircle2, Truck, PackageCheck, Eye, ArrowLeft, DollarSign, CircleCheck, ChevronRight } from '@lucide/vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'distributor',
@@ -216,7 +217,7 @@ function getNextStatus(current: string): string | null {
           </div>
           <div v-for="item in selectedOrder.items" :key="item.id" class="grid grid-cols-4 gap-2 py-2 text-sm border-b last:border-0">
             <span class="col-span-2 truncate">{{ item.product?.name || item.productId }}</span>
-            <span class="text-right">{{ item.quantity.toFixed(1) }}</span>
+            <span class="text-right">{{ Number(item.quantity).toFixed(1) }}</span>
             <span class="text-right font-medium">{{ item.totalPrice.toFixed(2) }}</span>
           </div>
           <div class="flex justify-between pt-2 text-sm font-semibold">

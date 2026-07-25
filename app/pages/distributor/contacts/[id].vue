@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, Phone, MapPin, Wallet, ShoppingCart, Receipt, DollarSign, CreditCard, Calendar } from '@lucide/vue'
+import { ArrowLeft, Phone, MapPin, Wallet, ShoppingCart, Receipt, DollarSign, CreditCard, Calendar, User } from '@lucide/vue'
 import type { Customer } from '@/modules/customers/type'
 
 definePageMeta({
@@ -9,12 +9,14 @@ definePageMeta({
 
 const route = useRoute()
 const customersStore = useCustomersStore()
+const auth = useAuthStore()
 const store = useDistributorStore()
 
 const customer = ref<Customer | null>(null)
 const loading = ref(true)
-const activeTab = ref<'invoices' | 'orders' | 'ledger'>('invoices')
+const activeTab = ref<'invoices' | 'my-sales' | 'orders' | 'ledger'>('invoices')
 const invoices = ref<any[]>([])
+const mySales = ref<any[]>([])
 const orders = ref<any[]>([])
 const ledgerEntries = ref<any[]>([])
 const invoicesLoading = ref(false)
@@ -25,7 +27,7 @@ async function load() {
     const id = route.params.id as string
     await customersStore.fetchCustomer(id)
     customer.value = customersStore.currentCustomer
-    await Promise.all([loadInvoices(), loadOrders()])
+    await Promise.all([loadInvoices(), loadMySales(), loadOrders()])
   } finally {
     loading.value = false
   }
@@ -38,6 +40,17 @@ async function loadInvoices() {
     invoices.value = data.invoices || []
   } finally {
     invoicesLoading.value = false
+  }
+}
+
+async function loadMySales() {
+  try {
+    const data: any = await $fetch('/api/invoices', {
+      params: { customerId: route.params.id, createdById: auth.user?.id, limit: 50 },
+    })
+    mySales.value = data.invoices || []
+  } catch {
+    mySales.value = []
   }
 }
 
@@ -64,6 +77,16 @@ const statusVariant = (s: string) => {
   const map: Record<string, string> = { UNPAID: 'destructive', PARTIAL: 'default', PAID: 'success', CANCELLED: 'secondary', PENDING: 'secondary', CONFIRMED: 'default', COMPLETED: 'success' }
   return (map[s] || 'secondary') as any
 }
+
+const lastPurchaseDate = computed(() => {
+  if (mySales.value.length > 0) {
+    return new Date(mySales.value[0].createdAt).toLocaleDateString()
+  }
+  if (invoices.value.length > 0) {
+    return new Date(invoices.value[0].createdAt).toLocaleDateString()
+  }
+  return '—'
+})
 
 function goBack() {
   navigateTo('/distributor/contacts')
@@ -107,16 +130,21 @@ function goBack() {
           <div class="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
             <span class="flex items-center gap-1"><ShoppingCart class="size-3.5" /> {{ customer._count?.salesOrders || 0 }} orders</span>
             <span class="flex items-center gap-1"><Receipt class="size-3.5" /> {{ customer._count?.invoices || 0 }} invoices</span>
-            <span class="flex items-center gap-1"><Calendar class="size-3.5" /> Since {{ new Date(customer.createdAt).toLocaleDateString() }}</span>
+            <span class="flex items-center gap-1"><Calendar class="size-3.5" /> Last purchase: {{ lastPurchaseDate }}</span>
           </div>
         </UiCardHeader>
       </UiCard>
 
-      <div class="flex gap-1 border-b">
+      <div class="flex gap-1 border-b overflow-x-auto">
         <button
-          v-for="tab in [{ key: 'invoices', label: 'Invoices', icon: Receipt }, { key: 'orders', label: 'Orders', icon: ShoppingCart }, { key: 'ledger', label: 'Ledger', icon: CreditCard }]"
+          v-for="tab in [
+            { key: 'invoices', label: 'All Invoices', icon: Receipt },
+            { key: 'my-sales', label: 'My Sales', icon: User },
+            { key: 'orders', label: 'Orders', icon: ShoppingCart },
+            { key: 'ledger', label: 'Ledger', icon: CreditCard },
+          ]"
           :key="tab.key"
-          class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px"
+          class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap"
           :class="activeTab === tab.key ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'"
           @click="activeTab = tab.key as any; if (tab.key === 'ledger') loadLedger()"
         >
@@ -136,7 +164,24 @@ function goBack() {
             <p class="text-xs text-muted-foreground">{{ new Date(inv.createdAt).toLocaleDateString() }}</p>
           </div>
           <div class="flex items-center gap-2 shrink-0 ml-2">
-            <p class="font-semibold">{{ inv.totalAmount.toFixed(2) }}</p>
+            <p class="font-semibold">{{ Number(inv.totalAmount).toFixed(2) }}</p>
+            <UiBadge :variant="statusVariant(inv.status)" class="text-[10px]">{{ inv.status }}</UiBadge>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="activeTab === 'my-sales'" class="space-y-2">
+        <div v-if="mySales.length === 0" class="text-center py-8 text-sm text-muted-foreground">
+          <Receipt class="mx-auto mb-2 size-6 text-muted-foreground/60" />
+          <p>You haven't made any sales to this customer yet</p>
+        </div>
+        <div v-for="inv in mySales" :key="inv.id" class="flex items-center justify-between rounded-lg border p-3 text-sm">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium truncate">{{ inv.invoiceNumber }}</p>
+            <p class="text-xs text-muted-foreground">{{ new Date(inv.createdAt).toLocaleDateString() }}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0 ml-2">
+            <p class="font-semibold">{{ Number(inv.totalAmount).toFixed(2) }}</p>
             <UiBadge :variant="statusVariant(inv.status)" class="text-[10px]">{{ inv.status }}</UiBadge>
           </div>
         </div>
@@ -153,7 +198,7 @@ function goBack() {
             <p class="text-xs text-muted-foreground">{{ new Date(order.createdAt).toLocaleDateString() }}</p>
           </div>
           <div class="flex items-center gap-2 shrink-0 ml-2">
-            <p class="font-semibold">{{ order.totalAmount.toFixed(2) }}</p>
+            <p class="font-semibold">{{ Number(order.totalAmount).toFixed(2) }}</p>
             <UiBadge :variant="statusVariant(order.status)" class="text-[10px]">{{ order.status }}</UiBadge>
           </div>
         </div>
@@ -171,7 +216,7 @@ function goBack() {
             <p v-if="entry.notes" class="text-xs text-muted-foreground truncate">{{ entry.notes }}</p>
           </div>
           <span class="font-semibold shrink-0 ml-2" :class="entry.type === 'DEBIT' ? 'text-red-600' : 'text-green-600'">
-            {{ entry.type === 'DEBIT' ? '-' : '+' }}{{ entry.amount.toFixed(2) }}
+            {{ entry.type === 'DEBIT' ? '-' : '+' }}{{ Number(entry.amount).toFixed(2) }}
           </span>
         </div>
       </div>
