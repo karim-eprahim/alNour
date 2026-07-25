@@ -62,7 +62,7 @@ const movementTypeColor = (type: string) => {
         <Wallet class="size-5 text-green-500" />
       </UiCardHeader>
       <UiCardContent>
-        <p class="text-3xl font-bold text-green-600">{{ store.cashOnHand.toFixed(2) }}</p>
+        <p class="text-3xl font-bold text-green-600">{{ store.cashOnHand }}</p>
       </UiCardContent>
     </UiCard>
 

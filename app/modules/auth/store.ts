@@ -27,6 +27,11 @@ export const useAuthStore = defineStore(
         const data = await loginApi(payload);
         user.value = data.user;
         setPermissions(data.permissions);
+        if (data.user.role === "DISTRIBUTOR") {
+          navigateTo("/distributor");
+        } else {
+          navigateTo("/dashboard");
+        }
         return data;
       } catch (err: any) {
         const message =

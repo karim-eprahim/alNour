@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Plus, Search, Users, ShoppingCart, ArrowLeft, DollarSign } from '@lucide/vue'
 import type { LookupQuery, LookupResponse } from '@/types/lookup'
+import { useDebounceFn } from '@vueuse/core'
 
 definePageMeta({
   layout: 'distributor',

@@ -13,7 +13,6 @@ const password = ref('')
 async function handleLogin() {
   try {
     await auth.login({ email: email.value, password: password.value })
-    navigateTo('/')
   } catch {}
 }
 </script>

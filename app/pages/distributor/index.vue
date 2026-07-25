@@ -27,6 +27,8 @@ async function loadDashboard() {
   ])
 }
 
+console.log(store)
+
 onMounted(loadDashboard)
 </script>
 
@@ -46,7 +48,7 @@ onMounted(loadDashboard)
           <Package class="size-4 text-muted-foreground" />
         </UiCardHeader>
         <UiCardContent>
-          <p class="text-2xl font-bold">{{ store.custodyTotalItems.toFixed(1) }}</p>
+          <p class="text-2xl font-bold">{{ store.custodyTotalItems }}</p>
           <p class="text-xs text-muted-foreground">{{ store.custodies.length }} products</p>
         </UiCardContent>
       </UiCard>
@@ -57,7 +59,7 @@ onMounted(loadDashboard)
           <DollarSign class="size-4 text-green-500" />
         </UiCardHeader>
         <UiCardContent>
-          <p class="text-2xl font-bold text-green-600">{{ store.cashOnHand.toFixed(2) }}</p>
+          <p class="text-2xl font-bold text-green-600">{{ store.cashOnHand }}</p>
           <p class="text-xs text-muted-foreground">Available cash</p>
         </UiCardContent>
       </UiCard>

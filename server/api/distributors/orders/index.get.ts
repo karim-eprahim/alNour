@@ -8,7 +8,10 @@ export default defineEventHandler(async (event) => {
     assignedDistributorId: auth.userId,
   }
 
-  if (query.status) where.status = query.status
+  if (query.status) {
+    const statuses = (query.status as string).split(',')
+    where.status = { in: statuses }
+  }
   if (query.search) {
     where.OR = [
       { orderNumber: { contains: query.search, mode: 'insensitive' } },
