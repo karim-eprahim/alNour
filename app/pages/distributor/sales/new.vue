@@ -133,7 +133,7 @@ const canProceed = computed(() => {
   switch (step.value) {
     case 1: return !!selectedCustomer.value
     case 2: return saleItems.value.length > 0 && itemErrors.value.every((e) => e === null)
-    case 3: return paymentOption.value === 'unpaid' || (paidAmount.value > 0)
+    case 3: return paymentOption.value === 'paid' || paymentOption.value === 'unpaid' || (paidAmount.value > 0)
     case 4: return true
     default: return false
   }
@@ -152,7 +152,7 @@ function goToStep(s: number) {
   for (let i = step.value; i < s; i++) {
     if (i === 1 && !selectedCustomer.value) return
     if (i === 2 && (!saleItems.value.length || itemErrors.value.some((e) => e !== null))) return
-    if (i === 3 && paymentOption.value !== 'unpaid' && paidAmount.value <= 0) return
+    if (i === 3 && paymentOption.value === 'partial' && paidAmount.value <= 0) return
   }
   step.value = s
 }
