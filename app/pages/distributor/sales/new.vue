@@ -29,8 +29,7 @@ const selectedCustomer = ref<LookupItem | null>(null)
 const recentCustomers = ref<any[]>([])
 
 const warehouseId = ref('')
-const warehouses= computed(()=>fetchWarehousesLookupApi())
-console.log(warehouses.value)
+const warehouseItems = ref<LookupItem[]>([])
 const warehouseLoading = ref(false)
 const custodyItems = ref<DistributorCustodyItem[]>([])
 
@@ -229,10 +228,26 @@ const steps = [
   { num: 4, label: 'Review', icon: Check },
 ]
 
+async function loadWarehouses() {
+  warehouseLoading.value = true
+  try {
+    const data = await fetchWarehousesLookupApi()
+    warehouseItems.value = data.items
+    if (data.items.length === 1) {
+      const first = data.items[0]
+      if (first) warehouseId.value = first.value
+    }
+  } catch {
+    warehouseItems.value = []
+  } finally {
+    warehouseLoading.value = false
+  }
+}
+
 onMounted(() => {
   store.fetchCustody()
   loadRecentCustomers()
-  fetchWarehousesLookupApi()
+  loadWarehouses()
 })
 </script>
 
@@ -297,22 +312,20 @@ onMounted(() => {
             <UiCardHeader>
               <UiCardTitle class="flex items-center gap-2 text-base"><User class="size-4" /> Customer</UiCardTitle>
             </UiCardHeader>
-            <pre>{{ warehouses }}</pre>
-
-                                      <UiCardHeader>
-            <UiLabel>Warehouse</UiLabel>
-            <LookupCombobox
-            :autoSelectSingle="true"
-              v-model="warehouseId"
-              :endpoint="fetchWarehousesLookupApi"
-              :items="warehouses?.items"
-              placeholder="Select warehouse"
-              class="mt-1"
-            />
-          </UiCardHeader>
             <UiCardContent class="space-y-3">
+              <div>
+                <UiLabel>Warehouse</UiLabel>
+                <LookupCombobox
+                  :autoSelectSingle="true"
+                  v-model="warehouseId"
+                  :items="warehouseItems"
+                  placeholder="Select warehouse"
+                  class="mt-1"
+                />
+              </div>
+
               <div v-if="!selectedCustomer">
-                                <div class="relative mb-3">
+                <div class="relative mb-3">
                   <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <UiInput v-model="customerSearch" placeholder="Search all customers..." class="pl-9" @input="searchCustomers(customerSearch)" />
                 </div>
