@@ -69,7 +69,7 @@ const searchCustomers = debounce(async (q: string) => {
   if (q.length < 2) { customerResults.value = []; return }
   customerLoading.value = true
   try {
-    const data: LookupResponse = await $fetch('/api/customers/lookup', { params: { q, take: 20 } })
+    const data = await $fetch<LookupResponse>('/api/customers/lookup', { params: { q, take: 20 } })
     customerResults.value = data.items
   } finally { customerLoading.value = false }
 }, 300)
@@ -350,12 +350,12 @@ onMounted(() => {
                 <div v-if="recentCustomers.length === 0 && customerResults.length === 0 && !customerLoading && customerSearch.length === 0" class="text-center py-6">
                   <Users class="mx-auto mb-2 size-8 text-muted-foreground/60" />
                   <p class="text-sm text-muted-foreground mb-3">No recent customers. Search or create a new one.</p>
-                  <UiButton size="sm" variant="outline" @click="showCreateCustomer = true">
+                  <UiButton size="sm" variant="outline" @click="()=>{ createForm.name = customerSearch; showCreateCustomer = true }">
                     <Plus class="size-4" /> New Customer
                   </UiButton>
                 </div>
 
-                <UiButton v-if="customerSearch.length > 0 && !customerLoading && customerResults.length === 0" size="sm" variant="outline" class="mt-2 w-full" @click="showCreateCustomer = true">
+                <UiButton v-if="customerSearch.length > 0 && !customerLoading && customerResults.length === 0" size="sm" variant="outline" class="mt-2 w-full" @click="()=>{ createForm.name = customerSearch; showCreateCustomer = true }">
                   <Plus class="size-4" /> Create "{{ customerSearch }}"
                 </UiButton>
               </div>
@@ -550,7 +550,7 @@ onMounted(() => {
           <UiSheetTitle>New Customer</UiSheetTitle>
           <UiSheetDescription>Create a new customer</UiSheetDescription>
         </UiSheetHeader>
-        <div class="mt-6 space-y-4">
+        <div class="mt-6 space-y-4 px-4">
           <div>
             <UiLabel>Name *</UiLabel>
             <UiInput v-model="createForm.name" placeholder="Customer name" class="mt-1" />

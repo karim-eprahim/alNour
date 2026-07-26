@@ -18,11 +18,11 @@ export async function createCustomerApi(payload: CreateCustomerPayload): Promise
 }
 
 export async function updateCustomerApi(id: string, payload: Partial<CreateCustomerPayload>): Promise<{ customer: Customer }> {
-  return $fetch(`/api/customers/${id}`, { method: 'PATCH', body: payload })
+  return $fetch(`/api/customers/${id}` as string, { method: 'PATCH', body: payload })
 }
 
 export async function deleteCustomerApi(id: string): Promise<void> {
-  await $fetch(`/api/customers/${id}`, { method: 'DELETE' })
+  await $fetch(`/api/customers/${id}` as string, { method: 'DELETE' })
 }
 
 export async function fetchCustomersLookupApi(params?: LookupQuery): Promise<LookupResponse> {
