@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, Plus, Pencil, ArrowUpDown, Phone, MapPin, ShoppingCart, Receipt, DollarSign, Wallet, ChevronRight } from '@lucide/vue'
+import { Search, Plus, Pencil, ArrowUpDown, Phone, MapPin, ShoppingCart, Receipt, DollarSign, Wallet, ChevronRight, Users } from '@lucide/vue'
 import type { Customer, CreateCustomerPayload } from '@/modules/customers/type'
 import { toast } from 'vue-sonner'
 
@@ -211,7 +211,7 @@ function viewDetails(id: string) {
           <UiSheetTitle>New Customer</UiSheetTitle>
           <UiSheetDescription>Add a new customer to your list</UiSheetDescription>
         </UiSheetHeader>
-        <div class="mt-6 space-y-4">
+        <div class="mt-6 space-y-4 px-3">
           <div>
             <UiLabel>Name *</UiLabel>
             <UiInput v-model="form.name" placeholder="Customer name" class="mt-1" />

@@ -14,6 +14,7 @@ const store = useDistributorStore()
 
 const customer = ref<Customer | null>(null)
 const loading = ref(true)
+const loadError = ref(false)
 const activeTab = ref<'invoices' | 'my-sales' | 'orders' | 'ledger'>('invoices')
 const invoices = ref<any[]>([])
 const mySales = ref<any[]>([])
@@ -23,11 +24,14 @@ const invoicesLoading = ref(false)
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const id = route.params.id as string
     await customersStore.fetchCustomer(id)
     customer.value = customersStore.currentCustomer
     await Promise.all([loadInvoices(), loadMySales(), loadOrders()])
+  } catch {
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -38,6 +42,8 @@ async function loadInvoices() {
   try {
     const data: any = await $fetch('/api/invoices', { params: { customerId: route.params.id, limit: 50 } })
     invoices.value = data.invoices || []
+  } catch {
+    invoices.value = []
   } finally {
     invoicesLoading.value = false
   }
@@ -103,6 +109,12 @@ function goBack() {
 
     <div v-if="loading" class="flex justify-center py-12">
       <LoadingState />
+    </div>
+
+    <div v-else-if="loadError" class="flex flex-col items-center justify-center py-12 text-sm text-muted-foreground">
+      <User class="mb-2 size-8 text-muted-foreground/60" />
+      <p>Failed to load customer details</p>
+      <UiButton variant="outline" size="sm" class="mt-3" @click="load">Retry</UiButton>
     </div>
 
     <template v-else-if="customer">
