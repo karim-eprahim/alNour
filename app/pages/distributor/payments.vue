@@ -91,7 +91,7 @@ const movementTypeColor = (type: string) => {
               <component :is="movementTypeIcon(m.type)" :class="['size-5 shrink-0', movementTypeColor(m.type)]" />
               <div class="min-w-0">
                 <p class="text-sm font-medium truncate">{{ movementTypeLabel(m.type) }}</p>
-                <p v-if="m.notes" class="text-xs text-muted-foreground truncate">{{ m.notes }}</p>
+                <p v-if="m.notes" class="text-xs text-muted-foreground truncate w-40 md:w-full">{{ m.notes }}</p>
                 <p class="text-[10px] text-muted-foreground/60">{{ new Date(m.createdAt).toLocaleDateString() }}</p>
               </div>
             </div>

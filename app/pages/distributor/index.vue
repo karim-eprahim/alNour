@@ -158,7 +158,7 @@ onMounted(loadDashboard)
     </div>
 
     <div class="grid gap-4 sm:grid-cols-3">
-      <UiCard class="cursor-pointer transition-colors hover:bg-accent/50" @click="navigateTo('/distributor/customers')">
+      <UiCard class="cursor-pointer transition-colors hover:bg-accent/50" @click="navigateTo('/distributor/sales/new')">
         <UiCardContent class="flex flex-col items-center gap-2 py-6">
           <PlusCircle class="size-8 text-primary" />
           <p class="text-sm font-medium">New Sale</p>

@@ -35,7 +35,7 @@ export const useDistributorNavigation = () => {
   const mobileNav: DistributorNavItem[] = [
     { title: 'Dashboard', icon: LayoutDashboard, to: '/distributor' },
     { title: 'Stock', icon: Package, to: '/distributor/stock' },
-    { title: 'New Sale', icon: PlusCircle, to: '/distributor/customers' },
+    { title: 'New Sale', icon: PlusCircle, to: '/distributor/sales/new' },
     { title: 'Payments', icon: DollarSign, to: '/distributor/payments' },
     { title: 'Profile', icon: User, to: '/distributor/profile' },
   ]

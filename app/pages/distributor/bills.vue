@@ -207,8 +207,8 @@ function printInvoice() {
             </div>
             <div v-for="item in (selectedInvoice.items || [])" :key="item.id" class="grid grid-cols-4 gap-2 py-2 text-sm border-b last:border-0">
               <span class="col-span-2 truncate">{{ item.product?.name || item.productId }}</span>
-              <span class="text-right">{{ item.quantity.toFixed(1) }}</span>
-              <span class="text-right font-medium">{{ item.totalPrice.toFixed(2) }}</span>
+              <span class="text-right">{{ Number(item.quantity).toFixed(1) }}</span>
+              <span class="text-right font-medium">{{ Number(item.totalPrice).toFixed(2) }}</span>
             </div>
             <div class="flex justify-between pt-2 text-sm font-semibold">
               <span>Total</span>
@@ -228,7 +228,7 @@ function printInvoice() {
                 <p class="font-medium">{{ p.paymentMethod }}</p>
                 <p class="text-xs text-muted-foreground">{{ new Date(p.createdAt).toLocaleDateString() }}</p>
               </div>
-              <span class="font-semibold text-green-600">{{ p.amount.toFixed(2) }}</span>
+              <span class="font-semibold text-green-600">{{ Number(p.amount).toFixed(2) }}</span>
             </div>
             <div class="flex justify-between pt-2 text-sm border-t mt-2">
               <span class="text-muted-foreground">Total Paid</span>
@@ -236,7 +236,7 @@ function printInvoice() {
             </div>
             <div v-if="selectedInvoice.status !== 'PAID'" class="flex justify-between text-sm">
               <span class="text-muted-foreground">Remaining</span>
-              <span class="font-semibold text-red-600">{{ (selectedInvoice.totalAmount - selectedInvoice.paidAmount).toFixed(2) }}</span>
+              <span class="font-semibold text-red-600">{{ Number(selectedInvoice.totalAmount - selectedInvoice.paidAmount).toFixed(2) }}</span>
             </div>
           </UiCardContent>
         </UiCard>
@@ -245,7 +245,7 @@ function printInvoice() {
           <UiCard>
             <UiCardHeader>
               <UiCardTitle class="text-base">Collect Payment</UiCardTitle>
-              <UiCardDescription>Remaining: {{ (selectedInvoice.totalAmount - selectedInvoice.paidAmount).toFixed(2) }}</UiCardDescription>
+              <UiCardDescription>Remaining: {{ Number(selectedInvoice.totalAmount - selectedInvoice.paidAmount).toFixed(2) }}</UiCardDescription>
             </UiCardHeader>
             <UiCardContent class="space-y-4">
               <div>

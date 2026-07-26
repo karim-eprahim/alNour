@@ -329,6 +329,12 @@ onMounted(() => {
                   <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <UiInput v-model="customerSearch" placeholder="Search all customers..." class="pl-9" @input="searchCustomers(customerSearch)" />
                 </div>
+                <div v-if="customerLoading" class="mt-2 text-sm text-muted-foreground">Searching...</div>
+                <div v-else-if="customerResults.length" class="mt-2 space-y-1 max-h-48 overflow-y-auto">
+                  <button v-for="c in customerResults" :key="c.value"
+                    class="w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                    @click="selectCustomer(c)">{{ c.label }}</button>
+                </div>
                 <div v-if="recentCustomers.length > 0">
                   <p class="text-xs font-medium text-muted-foreground mb-2">Recent Customers</p>
                   <div class="space-y-1 mb-4 max-h-48 overflow-y-auto">
@@ -339,12 +345,6 @@ onMounted(() => {
                       <span class="text-xs text-muted-foreground">{{ new Date(c.lastVisit).toLocaleDateString() }}</span>
                     </button>
                   </div>
-                </div>
-                <div v-if="customerLoading" class="mt-2 text-sm text-muted-foreground">Searching...</div>
-                <div v-else-if="customerResults.length" class="mt-2 space-y-1 max-h-48 overflow-y-auto">
-                  <button v-for="c in customerResults" :key="c.value"
-                    class="w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
-                    @click="selectCustomer(c)">{{ c.label }}</button>
                 </div>
 
                 <div v-if="recentCustomers.length === 0 && customerResults.length === 0 && !customerLoading && customerSearch.length === 0" class="text-center py-6">
