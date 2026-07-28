@@ -13,7 +13,7 @@ export default defineNuxtConfig({
     { path: "~/components/distributor", pathPrefix: false }
   ],
   pinia: {
-    storesDirs: ["modules/auth", "modules/users", "modules/permissions", "modules/products", "modules/warehouses", "modules/stock", "modules/suppliers", "modules/purchases", "modules/production", "modules/customers", "modules/sales", "modules/workers", "modules/expenses", "modules/distributor"],
+    storesDirs: ["modules/auth", "modules/users", "modules/permissions", "modules/products", "modules/warehouses", "modules/stock", "modules/suppliers", "modules/purchases", "modules/production", "modules/customers", "modules/sales", "modules/workers", "modules/expenses", "modules/distributor", "modules/ledger"],
   },
   shadcn: {
     prefix: "Ui",
