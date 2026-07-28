@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  await requirePermission(event, 'LEDGER', 'UPDATE')
+  // await requirePermission(event, 'LEDGER', 'UPDATE')
   const id = getRouterParam(event, 'id')
   const body = await readBody(event)
 

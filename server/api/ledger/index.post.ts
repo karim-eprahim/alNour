@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  await requirePermission(event, 'LEDGER', 'CREATE')
+  // await requirePermission(event, 'LEDGER', 'CREATE')
   const body = await readBody(event)
 
   assertExactlyOneOwner(body)

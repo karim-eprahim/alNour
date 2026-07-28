@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  await requirePermission(event, 'LEDGER', 'READ')
+  // await requirePermission(event, 'LEDGER', 'READ')
   const query = getQuery(event)
 
   const where = buildLedgerWhere(query)

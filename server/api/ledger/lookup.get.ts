@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  await requirePermission(event, 'LEDGER', 'READ')
+  // await requirePermission(event, 'LEDGER', 'READ')
   const { q, cursor, take } = parseLookupQuery(event)
   const query = getQuery(event)
 

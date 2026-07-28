@@ -1,31 +1,119 @@
 <script setup lang="ts">
-import { ArrowLeft, FileText, Phone, MapPin, Link, ArrowLeftRight } from '@lucide/vue'
+import { h } from 'vue'
+import { ArrowLeft, ArrowLeftRight, FileText, Link, MapPin, Phone, Receipt, ShoppingCart, Wallet } from '@lucide/vue'
 import { getLedgerColumns } from '@/modules/customers/components/column'
+import { useTabData } from '@/modules/customers/composables/useCustomerTabs'
+import type { ColumnDef } from '@tanstack/vue-table'
 import { UiBadge } from '#components'
-import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
-  permission: {
-    module: 'CUSTOMERS',
-    action: 'READ'
-  }
+  permission: { module: 'CUSTOMERS', action: 'READ' },
 })
 
 const route = useRoute()
 const customersStore = useCustomersStore()
 
 const customer = computed(() => customersStore.currentCustomer)
-const ledgerColumns = getLedgerColumns()
-
-const showContraDialog = ref(false)
-const contraForm = reactive({ amount: null as number | null })
 
 const linkedSupplier = computed(() => (customer.value as any)?.linkedSupplier ?? null)
 const linkedSupplierBalance = computed(() => linkedSupplier.value?.balance ?? 0)
 const netBalance = computed(() => (customer.value as any)?.netBalance ?? (customer.value?.balance ?? 0))
+
+const showContraDialog = ref(false)
+const contraForm = reactive({ amount: null as number | null })
+
+const activeTab = ref('invoices')
+
+const { data: invoices, loading: invoicesLoading, load: loadInvoices } = useTabData<any[]>(async () => {
+  const data: any = await $fetch('/api/invoices', { params: { customerId: route.params.id, limit: 100 } })
+  return data.invoices || []
+})
+
+const { data: ledgerRaw, loading: ledgerLoading, load: loadLedger } = useTabData<{ entries: any[]; summary: any }>(async () => {
+  const [entriesData, summaryData] = await Promise.all([
+    $fetch('/api/ledger', { params: { customerId: route.params.id, limit: 100 } }),
+    $fetch('/api/ledger/summary', { params: { customerId: route.params.id } }),
+  ])
+  return { entries: (entriesData as any).entries || [], summary: summaryData as any }
+})
+
+const { data: orders, loading: ordersLoading, load: loadOrders } = useTabData<any[]>(async () => {
+  const data: any = await $fetch('/api/sales', { params: { customerId: route.params.id, limit: 100 } })
+  return data.orders || []
+})
+
+const ledgerEntries = computed(() => ledgerRaw.value?.entries ?? [])
+const ledgerSummary = computed(() => ledgerRaw.value?.summary ?? null)
+
+watch(activeTab, (tab) => {
+  if (tab === 'invoices') loadInvoices()
+  else if (tab === 'ledger') loadLedger()
+  else if (tab === 'orders') loadOrders()
+})
+
+onMounted(async () => {
+  await customersStore.fetchCustomer(route.params.id as string)
+  loadInvoices()
+})
+
+function statusVariant(s: string) {
+  const map: Record<string, string> = { UNPAID: 'destructive', PARTIAL: 'default', PAID: 'success', CANCELLED: 'secondary' }
+  return (map[s] || 'secondary') as any
+}
+
+const invoiceColumns: ColumnDef<any>[] = [
+  {
+    accessorKey: 'invoiceNumber',
+    header: 'Invoice',
+    cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.invoiceNumber),
+  },
+  {
+    accessorKey: 'createdAt',
+    header: 'Date',
+    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
+  },
+  {
+    accessorKey: 'totalAmount',
+    header: 'Total',
+    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalAmount).toFixed(2)),
+  },
+  {
+    accessorKey: 'paidAmount',
+    header: 'Paid',
+    cell: ({ row }) => h('span', { class: 'tabular-nums text-muted-foreground block' }, Number(row.original.paidAmount).toFixed(2)),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => h(UiBadge, { variant: statusVariant(row.original.status), class: 'text-[10px]' }, () => row.original.status),
+  },
+]
+
+const orderColumns: ColumnDef<any>[] = [
+  {
+    accessorKey: 'orderNumber',
+    header: 'Order',
+    cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.orderNumber),
+  },
+  {
+    accessorKey: 'createdAt',
+    header: 'Date',
+    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.createdAt).toLocaleDateString()),
+  },
+  {
+    accessorKey: 'totalAmount',
+    header: 'Total',
+    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalAmount).toFixed(2)),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.status),
+  },
+]
 
 async function handleContraSettlement() {
   if (!contraForm.amount && contraForm.amount !== 0) return
@@ -46,10 +134,6 @@ async function handleContraSettlement() {
     toast.error(e?.data?.statusMessage || 'Settlement failed')
   }
 }
-
-onMounted(async () => {
-  await customersStore.fetchCustomer(route.params.id as string)
-})
 </script>
 
 <template>
@@ -95,57 +179,160 @@ onMounted(async () => {
       </div>
     </div>
 
-    <UiCard v-if="customer">
-      <div class="grid gap-4 sm:grid-cols-3">
-        <UiCard>
-          <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
-            <UiCardTitle class="text-sm font-medium text-muted-foreground">Phone</UiCardTitle>
-            <Phone class="size-4 text-muted-foreground" />
-          </UiCardHeader>
-          <UiCardContent>
-            <p class="text-lg font-medium">{{ customer.phone || '—' }}</p>
-          </UiCardContent>
-        </UiCard>
-        <UiCard>
-          <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
-            <UiCardTitle class="text-sm font-medium text-muted-foreground">Address</UiCardTitle>
-            <MapPin class="size-4 text-muted-foreground" />
-          </UiCardHeader>
-          <UiCardContent>
-            <p class="text-lg font-medium">{{ customer.address || '—' }}</p>
-          </UiCardContent>
-        </UiCard>
-        <UiCard>
-          <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
-            <UiCardTitle class="text-sm font-medium text-muted-foreground">Orders / Invoices</UiCardTitle>
-            <FileText class="size-4 text-muted-foreground" />
-          </UiCardHeader>
-          <UiCardContent>
-            <p class="text-lg font-medium">{{ customer.salesOrders?.length || 0 }} / {{ customer.invoices?.length || 0 }}</p>
-          </UiCardContent>
-        </UiCard>
-      </div>
-
+    <div v-if="customer" class="grid gap-4 sm:grid-cols-3">
       <UiCard>
-        <UiCardHeader>
-          <UiCardTitle>Ledger Entries</UiCardTitle>
-          <UiCardDescription>Financial transactions history</UiCardDescription>
+        <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
+          <UiCardTitle class="text-sm font-medium text-muted-foreground">Phone</UiCardTitle>
+          <Phone class="size-4 text-muted-foreground" />
         </UiCardHeader>
         <UiCardContent>
-          <AppTable
-            :data="customer.ledgerEntries || []"
-            :columns="ledgerColumns"
-            :show-search="false"
-            :show-column-toggle="false"
-            :show-pagination="false"
-          >
-            <template #empty>
-              <EmptyState title="No transactions" description="No ledger entries recorded" />
-            </template>
-          </AppTable>
+          <p class="text-lg font-medium">{{ customer.phone || '—' }}</p>
         </UiCardContent>
       </UiCard>
-    </UiCard>
+      <UiCard>
+        <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
+          <UiCardTitle class="text-sm font-medium text-muted-foreground">Address</UiCardTitle>
+          <MapPin class="size-4 text-muted-foreground" />
+        </UiCardHeader>
+        <UiCardContent>
+          <p class="text-lg font-medium">{{ customer.address || '—' }}</p>
+        </UiCardContent>
+      </UiCard>
+      <UiCard>
+        <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
+          <UiCardTitle class="text-sm font-medium text-muted-foreground">Orders / Invoices</UiCardTitle>
+          <FileText class="size-4 text-muted-foreground" />
+        </UiCardHeader>
+        <UiCardContent>
+          <p class="text-lg font-medium">{{ customer._count?.salesOrders || 0 }} / {{ customer._count?.invoices || 0 }}</p>
+        </UiCardContent>
+      </UiCard>
+    </div>
+
+    <UiTabs v-model="activeTab" class="space-y-4">
+      <UiTabsList>
+        <UiTabsTrigger value="invoices">
+          <Receipt class="size-4" /> Invoices
+        </UiTabsTrigger>
+        <UiTabsTrigger value="ledger">
+          <Wallet class="size-4" /> Ledger
+        </UiTabsTrigger>
+        <UiTabsTrigger value="orders">
+          <ShoppingCart class="size-4" /> Orders
+        </UiTabsTrigger>
+      </UiTabsList>
+
+      <UiTabsContent value="invoices">
+        <UiCard>
+          <UiCardHeader>
+            <UiCardTitle>Invoices</UiCardTitle>
+            <UiCardDescription>All invoices for this customer</UiCardDescription>
+          </UiCardHeader>
+          <UiCardContent class="p-0">
+            <AppTable
+              :data="invoices || []"
+              :columns="invoiceColumns"
+              :loading="invoicesLoading"
+              :show-search="false"
+              :show-column-toggle="false"
+              :show-pagination="false"
+            >
+              <template #empty>
+                <EmptyState
+                  title="No invoices"
+                  description="No invoices have been created for this customer yet."
+                />
+              </template>
+            </AppTable>
+          </UiCardContent>
+        </UiCard>
+      </UiTabsContent>
+
+      <UiTabsContent value="ledger">
+        <div v-if="ledgerSummary" class="grid grid-cols-3 gap-3 mb-4">
+          <UiCard size="sm">
+            <UiCardContent class="flex items-center gap-3 p-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
+                <Wallet class="size-4 text-red-500" />
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-muted-foreground truncate">Total Debit</p>
+                <p class="text-sm font-semibold tabular-nums text-destructive">{{ ledgerSummary.totalDebit.toFixed(2) }}</p>
+              </div>
+            </UiCardContent>
+          </UiCard>
+          <UiCard size="sm">
+            <UiCardContent class="flex items-center gap-3 p-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-green-500/10">
+                <Wallet class="size-4 text-green-500" />
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-muted-foreground truncate">Total Credit</p>
+                <p class="text-sm font-semibold tabular-nums text-green-600">{{ ledgerSummary.totalCredit.toFixed(2) }}</p>
+              </div>
+            </UiCardContent>
+          </UiCard>
+          <UiCard size="sm">
+            <UiCardContent class="flex items-center gap-3 p-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-lg" :class="ledgerSummary.balance > 0 ? 'bg-orange-500/10' : 'bg-emerald-500/10'">
+                <Wallet class="size-4" :class="ledgerSummary.balance > 0 ? 'text-orange-500' : 'text-emerald-500'" />
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-muted-foreground truncate">Balance</p>
+                <p class="text-sm font-semibold tabular-nums" :class="ledgerSummary.balance > 0 ? 'text-destructive' : 'text-green-600'">{{ ledgerSummary.balance.toFixed(2) }}</p>
+              </div>
+            </UiCardContent>
+          </UiCard>
+        </div>
+
+        <UiCard>
+          <UiCardHeader>
+            <UiCardTitle>Ledger Entries</UiCardTitle>
+            <UiCardDescription>Financial transactions history</UiCardDescription>
+          </UiCardHeader>
+          <UiCardContent class="p-0">
+            <AppTable
+              :data="ledgerEntries"
+              :columns="getLedgerColumns()"
+              :loading="ledgerLoading"
+              :show-search="false"
+              :show-column-toggle="false"
+              :show-pagination="false"
+            >
+              <template #empty>
+                <EmptyState title="No transactions" description="No ledger entries recorded" />
+              </template>
+            </AppTable>
+          </UiCardContent>
+        </UiCard>
+      </UiTabsContent>
+
+      <UiTabsContent value="orders">
+        <UiCard>
+          <UiCardHeader>
+            <UiCardTitle>Orders</UiCardTitle>
+            <UiCardDescription>All sales orders for this customer</UiCardDescription>
+          </UiCardHeader>
+          <UiCardContent class="p-0">
+            <AppTable
+              :data="orders || []"
+              :columns="orderColumns"
+              :loading="ordersLoading"
+              :show-search="false"
+              :show-column-toggle="false"
+              :show-pagination="false"
+            >
+              <template #empty>
+                <EmptyState
+                  title="No orders"
+                  description="No sales orders have been created for this customer yet."
+                />
+              </template>
+            </AppTable>
+          </UiCardContent>
+        </UiCard>
+      </UiTabsContent>
+    </UiTabs>
 
     <UiDialog :open="showContraDialog" @update:open="showContraDialog = $event">
       <UiDialogContent class="sm:max-w-sm">
