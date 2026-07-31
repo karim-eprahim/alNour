@@ -8,7 +8,6 @@ import {
   getExpandedRowModel,
   FlexRender,
   type ColumnDef,
-  type Row,
   type SortingState,
   type ExpandedState,
   type PaginationState,
@@ -78,6 +77,18 @@ const table = useVueTable({
 const totalFiltered = computed(() => table.getFilteredRowModel().rows.length)
 const totalData = computed(() => props.data.length)
 
+const mobileRows = computed(() =>
+  table.getRowModel().rows.map((row) => {
+    const cells = row.getVisibleCells()
+    return {
+      row,
+      primary: cells[0],
+      actions: cells.find((c) => c.column.id === 'actions'),
+      secondary: cells.filter((c, i) => i !== 0 && c.column.id !== 'actions'),
+    }
+  }),
+)
+
 const columnLength = computed(() => table.getAllColumns().length)
 const pageCount = computed(() => {
   if (props.serverTotal) {
@@ -89,12 +100,12 @@ const pageCount = computed(() => {
 
 <template>
   <div>
-    <div v-if="showSearch || showColumnToggle" class="flex items-center justify-between pb-4">
+    <div v-if="showSearch || showColumnToggle" class="flex flex-wrap items-center justify-between gap-2 pb-4">
       <UiInput
         v-if="showSearch"
         v-model="globalFilter"
         :placeholder="searchPlaceholder"
-        class="max-w-sm"
+        class="w-full sm:max-w-sm"
       />
       <UiDropdownMenu v-if="showColumnToggle">
         <UiDropdownMenuTrigger as-child>
@@ -123,7 +134,7 @@ const pageCount = computed(() => {
       </UiDropdownMenu>
     </div>
 
-    <div class="rounded-md border">
+    <div class="hidden sm:block rounded-md border">
       <UiTable>
         <UiTableHeader>
           <UiTableRow>
@@ -205,9 +216,75 @@ const pageCount = computed(() => {
       </UiTable>
     </div>
 
+    <div class="grid gap-3 sm:hidden">
+      <template v-for="item in mobileRows" :key="item.row.id">
+        <div class="rounded-lg border bg-card p-4">
+          <div v-if="enableExpand && item.row.getCanExpand()" class="mb-2">
+            <UiButton variant="ghost" size="icon-xs" @click="item.row.toggleExpanded()">
+              <ChevronRight v-if="!item.row.getIsExpanded()" class="size-4" />
+              <ChevronDown v-else class="size-4" />
+            </UiButton>
+          </div>
+
+          <div v-if="item.primary" class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <slot
+                :name="`cell-${item.primary.column.id}`"
+                :row="item.row"
+                :cell="item.primary"
+                :get-value="item.primary.getValue"
+              >
+                <FlexRender :render="item.primary.column.columnDef.cell" :props="item.primary.getContext()" />
+              </slot>
+            </div>
+            <div v-if="item.actions" class="shrink-0">
+              <slot
+                :name="`cell-${item.actions.column.id}`"
+                :row="item.row"
+                :cell="item.actions"
+                :get-value="item.actions.getValue"
+              >
+                <FlexRender :render="item.actions.column.columnDef.cell" :props="item.actions.getContext()" />
+              </slot>
+            </div>
+          </div>
+
+          <div v-if="item.secondary.length" class="mt-3 space-y-2 border-t pt-3">
+            <div
+              v-for="cell in item.secondary"
+              :key="cell.id"
+              class="flex items-center justify-between gap-3 text-sm"
+            >
+              <span class="shrink-0 text-xs text-muted-foreground">
+                <template v-if="typeof cell.column.columnDef.header === 'string'">{{ cell.column.columnDef.header }}</template>
+              </span>
+              <span class="min-w-0 text-right">
+                <slot
+                  :name="`cell-${cell.column.id}`"
+                  :row="item.row"
+                  :cell="cell"
+                  :get-value="cell.getValue"
+                >
+                  <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                </slot>
+              </span>
+            </div>
+          </div>
+
+          <div v-if="enableExpand && item.row.getIsExpanded()" class="mt-3 border-t pt-3">
+            <slot name="expand" :row="item.row">
+              <div class="text-muted-foreground p-4 text-center text-sm">
+                No expand content provided.
+              </div>
+            </slot>
+          </div>
+        </div>
+      </template>
+    </div>
+
     <div
       v-if="showPagination && pageCount > 0"
-      class="flex items-center justify-between py-4"
+      class="flex flex-wrap items-center justify-between gap-3 py-4"
     >
       <p class="text-sm text-muted-foreground">
         {{ totalFiltered }} of {{ totalData }} row(s)

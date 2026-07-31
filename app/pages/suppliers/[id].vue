@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ArrowLeft, Building2, Phone, Mail, MapPin, FileText, CreditCard, ArrowUpRight, ArrowDownRight, Link, ArrowLeftRight } from '@lucide/vue'
-import PageHeader from '~/components/shared/PageHeader.vue'
+import { h } from 'vue'
+import { ArrowLeft, Building2, Phone, Mail, MapPin, FileText, CreditCard, Link, ArrowLeftRight, Wallet, Receipt } from '@lucide/vue'
+import { getLedgerColumns } from '@/modules/customers/components/column'
+import type { ColumnDef } from '@tanstack/vue-table'
 import { toast } from 'vue-sonner'
-
 
 definePageMeta({
   layout: 'dashboard',
@@ -12,9 +13,14 @@ definePageMeta({
 
 const route = useRoute()
 const supplierId = computed(() => route.params.id as string)
-
 const suppliersStore = useSuppliersStore()
 const { can } = usePermissions()
+
+const supplier = computed(() => suppliersStore.currentSupplier)
+
+const linkedCustomer = computed(() => (supplier.value as any)?.linkedCustomer ?? null)
+const linkedCustomerBalance = computed(() => linkedCustomer.value?.balance ?? 0)
+const netBalance = computed(() => (supplier.value as any)?.netBalance ?? 0)
 
 const activeTab = ref('invoices')
 const showLedgerDialog = ref(false)
@@ -26,17 +32,81 @@ const ledgerForm = reactive({ amount: null as number | null, type: 'DEBIT' as 'D
 const payForm = reactive({ amount: null as number | null, description: '' })
 const contraForm = reactive({ amount: null as number | null })
 
-async function fetchSupplier() {
+const { data: purchaseInvoices, loading: purchasesLoading, load: loadPurchases } = useTabData<any[]>(async () => {
+  const data: any = await $fetch('/api/purchases', { params: { supplierId: supplierId.value, limit: 100 } })
+  return data.invoices || []
+})
+
+const { data: ledgerRaw, loading: ledgerLoading, load: loadLedger } = useTabData<{ entries: any[]; summary: any }>(async () => {
+  const [entriesData, summaryData] = await Promise.all([
+    $fetch('/api/ledger', { params: { supplierId: supplierId.value, limit: 100 } }),
+    $fetch('/api/ledger/summary', { params: { supplierId: supplierId.value } }),
+  ])
+  return { entries: (entriesData as any).entries || [], summary: summaryData as any }
+})
+
+const ledgerEntries = computed(() => ledgerRaw.value?.entries ?? [])
+const ledgerSummary = computed(() => ledgerRaw.value?.summary ?? null)
+
+watch(activeTab, (tab) => {
+  if (tab === 'invoices') loadPurchases()
+  else if (tab === 'ledger') loadLedger()
+})
+
+onMounted(async () => {
   await suppliersStore.fetchSupplier(supplierId.value)
-}
+  loadPurchases()
+})
 
-const balance = computed(() => (suppliersStore.currentSupplier as any)?.balance ?? 0)
-const invoices = computed(() => (suppliersStore.currentSupplier as any)?.purchaseInvoices ?? [])
-const ledgerEntries = computed(() => (suppliersStore.currentSupplier as any)?.ledgerEntries ?? [])
-
-const linkedCustomer = computed(() => (suppliersStore.currentSupplier as any)?.linkedCustomer ?? null)
-const linkedCustomerBalance = computed(() => linkedCustomer.value?.balance ?? 0)
-const netBalance = computed(() => (suppliersStore.currentSupplier as any)?.netBalance ?? balance.value)
+const purchaseInvoiceColumns: ColumnDef<any>[] = [
+  {
+    accessorKey: 'invoiceNumber',
+    header: 'Invoice #',
+    cell: ({ row }) => h('span', { class: 'font-mono font-medium' }, row.original.invoiceNumber),
+  },
+  {
+    accessorKey: 'invoiceDate',
+    header: 'Date',
+    cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, new Date(row.original.invoiceDate).toLocaleDateString()),
+  },
+  {
+    accessorKey: 'warehouse',
+    header: 'Warehouse',
+    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.warehouse?.name || '—'),
+  },
+  {
+    accessorKey: 'totalAmount',
+    header: 'Amount',
+    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium block' }, Number(row.original.totalAmount).toFixed(2)),
+  },
+  {
+    accessorKey: 'paidAmount',
+    header: 'Paid',
+    cell: ({ row }) => h('span', { class: 'tabular-nums font-medium text-green-600 block' }, Number(row.original.paidAmount).toFixed(2)),
+  },
+  {
+    id: 'due',
+    header: 'Due',
+    cell: ({ row }) => {
+      const due = Number(row.original.totalAmount) - Number(row.original.paidAmount)
+      return h('span', { class: `tabular-nums font-medium block ${due > 0 ? 'text-destructive' : ''}` }, due.toFixed(2))
+    },
+  },
+  {
+    id: 'actions',
+    header: '',
+    cell: ({ row }) => {
+      const due = Number(row.original.totalAmount) - Number(row.original.paidAmount)
+      if (due <= 0 || !can('SUPPLIERS', 'UPDATE')) return null
+      return h('div', { class: 'text-right' }, [
+        h('button', {
+          class: 'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-green-600',
+          onClick: () => openPay(row.original),
+        }, [h(CreditCard, { class: 'size-3.5' })]),
+      ])
+    },
+  },
+]
 
 async function handleContraSettlement() {
   if (!contraForm.amount && contraForm.amount !== 0) return
@@ -52,7 +122,7 @@ async function handleContraSettlement() {
     showContraDialog.value = false
     contraForm.amount = null
     toast.success('Contra settlement completed')
-    fetchSupplier()
+    await suppliersStore.fetchSupplier(supplierId.value)
   } catch (e: any) {
     toast.error(e?.data?.statusMessage || 'Settlement failed')
   }
@@ -69,7 +139,7 @@ async function handleLedgerEntry() {
     showLedgerDialog.value = false
     ledgerForm.amount = null; ledgerForm.type = 'DEBIT'; ledgerForm.description = ''
     toast.success('Ledger entry added')
-    fetchSupplier()
+    loadLedger()
   } catch {}
 }
 
@@ -88,11 +158,9 @@ async function handlePay() {
     })
     showPayDialog.value = false; payingInvoice.value = null
     toast.success('Payment recorded')
-    fetchSupplier()
+    loadPurchases()
   } catch {}
 }
-
-onMounted(fetchSupplier)
 </script>
 
 <template>
@@ -106,8 +174,8 @@ onMounted(fetchSupplier)
           <Building2 class="size-4 text-muted-foreground" />
         </div>
         <div>
-          <h1 class="text-lg font-semibold">{{ suppliersStore.currentSupplier?.name || 'Loading...' }}</h1>
-          <p v-if="suppliersStore.currentSupplier?.company" class="text-xs text-muted-foreground">{{ suppliersStore.currentSupplier.company }}</p>
+          <h1 class="text-lg font-semibold">{{ supplier?.name || 'Loading...' }}</h1>
+          <p v-if="supplier?.company" class="text-xs text-muted-foreground">{{ supplier.company }}</p>
         </div>
       </div>
     </div>
@@ -121,7 +189,7 @@ onMounted(fetchSupplier)
         <div class="flex items-center gap-4">
           <div class="text-right">
             <p class="text-xs text-muted-foreground">Supplier Balance</p>
-            <p class="text-sm font-medium tabular-nums" :class="balance > 0 ? 'text-destructive' : 'text-green-600'">{{ Number(balance).toFixed(2) }}</p>
+            <p class="text-sm font-medium tabular-nums" :class="(supplier?.balance ?? 0) > 0 ? 'text-destructive' : 'text-green-600'">{{ Number(supplier?.balance ?? 0).toFixed(2) }}</p>
           </div>
           <div class="text-right">
             <p class="text-xs text-muted-foreground">Customer Balance</p>
@@ -146,8 +214,8 @@ onMounted(fetchSupplier)
           <UiCardTitle class="text-sm font-medium text-muted-foreground">Balance</UiCardTitle>
         </UiCardHeader>
         <UiCardContent>
-          <p class="text-2xl font-bold" :class="balance > 0 ? 'text-destructive' : balance < 0 ? 'text-green-600' : ''">
-            {{ Number(balance).toFixed(2) }}
+          <p class="text-2xl font-bold" :class="(supplier?.balance ?? 0) > 0 ? 'text-destructive' : (supplier?.balance ?? 0) < 0 ? 'text-green-600' : ''">
+            {{ Number(supplier?.balance ?? 0).toFixed(2) }}
           </p>
         </UiCardContent>
       </UiCard>
@@ -156,7 +224,7 @@ onMounted(fetchSupplier)
           <UiCardTitle class="text-sm font-medium text-muted-foreground">Invoices</UiCardTitle>
         </UiCardHeader>
         <UiCardContent>
-          <p class="text-2xl font-bold">{{ invoices.length }}</p>
+          <p class="text-2xl font-bold">{{ supplier?._count?.purchaseInvoices ?? 0 }}</p>
         </UiCardContent>
       </UiCard>
       <UiCard>
@@ -164,7 +232,7 @@ onMounted(fetchSupplier)
           <UiCardTitle class="text-sm font-medium text-muted-foreground">Total Purchases</UiCardTitle>
         </UiCardHeader>
         <UiCardContent>
-          <p class="text-2xl font-bold">{{ invoices.reduce((s: number, i: any) => s + Number(i.totalAmount), 0).toFixed(2) }}</p>
+          <p class="text-2xl font-bold">{{ Number((supplier as any)?.totalPurchases ?? 0).toFixed(2) }}</p>
         </UiCardContent>
       </UiCard>
       <UiCard>
@@ -172,21 +240,25 @@ onMounted(fetchSupplier)
           <UiCardTitle class="text-sm font-medium text-muted-foreground">Total Paid</UiCardTitle>
         </UiCardHeader>
         <UiCardContent>
-          <p class="text-2xl font-bold">{{ invoices.reduce((s: number, i: any) => s + Number(i.paidAmount), 0).toFixed(2) }}</p>
+          <p class="text-2xl font-bold">{{ Number((supplier as any)?.totalPaid ?? 0).toFixed(2) }}</p>
         </UiCardContent>
       </UiCard>
     </div>
 
-    <div v-if="suppliersStore.currentSupplier" class="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-      <span v-if="suppliersStore.currentSupplier.phone" class="flex items-center gap-1"><Phone class="size-3.5" /> {{ suppliersStore.currentSupplier.phone }}</span>
-      <span v-if="suppliersStore.currentSupplier.email" class="flex items-center gap-1"><Mail class="size-3.5" /> {{ suppliersStore.currentSupplier.email }}</span>
-      <span v-if="suppliersStore.currentSupplier.address" class="flex items-center gap-1"><MapPin class="size-3.5" /> {{ suppliersStore.currentSupplier.address }}</span>
+    <div v-if="supplier" class="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+      <span v-if="supplier.phone" class="flex items-center gap-1"><Phone class="size-3.5" /> {{ supplier.phone }}</span>
+      <span v-if="supplier.email" class="flex items-center gap-1"><Mail class="size-3.5" /> {{ supplier.email }}</span>
+      <span v-if="supplier.address" class="flex items-center gap-1"><MapPin class="size-3.5" /> {{ supplier.address }}</span>
     </div>
 
     <UiTabs v-model="activeTab" class="space-y-4">
       <UiTabsList>
-        <UiTabsTrigger value="invoices">Purchase Invoices</UiTabsTrigger>
-        <UiTabsTrigger value="ledger">Ledger</UiTabsTrigger>
+        <UiTabsTrigger value="invoices">
+          <Receipt class="size-4" /> Purchase Invoices
+        </UiTabsTrigger>
+        <UiTabsTrigger value="ledger">
+          <Wallet class="size-4" /> Ledger
+        </UiTabsTrigger>
       </UiTabsList>
 
       <UiTabsContent value="invoices">
@@ -201,50 +273,64 @@ onMounted(fetchSupplier)
             </UiButton>
           </UiCardHeader>
           <UiCardContent class="p-0">
-            <div v-if="invoices.length === 0" class="p-6">
-              <EmptyState title="No invoices" description="No purchase invoices recorded for this supplier yet" action="New Invoice" @action="navigateTo('/purchases/new')" />
-            </div>
-            <UiTable v-else>
-              <UiTableHeader>
-                <UiTableRow>
-                  <UiTableHead>Invoice #</UiTableHead>
-                  <UiTableHead>Date</UiTableHead>
-                  <UiTableHead>Warehouse</UiTableHead>
-                  <UiTableHead class="text-right">Amount</UiTableHead>
-                  <UiTableHead class="text-right">Paid</UiTableHead>
-                  <UiTableHead class="text-right">Due</UiTableHead>
-                  <UiTableHead class="w-20 text-right">Action</UiTableHead>
-                </UiTableRow>
-              </UiTableHeader>
-              <UiTableBody>
-                <UiTableRow v-for="inv in invoices" :key="inv.id">
-                  <UiTableCell>
-                    <NuxtLink :to="`/purchases/${inv.id}`" class="text-sm font-mono font-medium hover:underline">{{ inv.invoiceNumber }}</NuxtLink>
-                  </UiTableCell>
-                  <UiTableCell class="text-xs text-muted-foreground">{{ new Date(inv.invoiceDate).toLocaleDateString() }}</UiTableCell>
-                  <UiTableCell class="text-sm">{{ inv.warehouse?.name }}</UiTableCell>
-                  <UiTableCell class="text-right font-medium tabular-nums">{{ Number(inv.totalAmount).toFixed(2) }}</UiTableCell>
-                  <UiTableCell class="text-right font-medium tabular-nums text-green-600">{{ Number(inv.paidAmount).toFixed(2) }}</UiTableCell>
-                  <UiTableCell class="text-right font-medium tabular-nums" :class="Number(inv.totalAmount) - Number(inv.paidAmount) > 0 ? 'text-destructive' : ''">
-                    {{ (Number(inv.totalAmount) - Number(inv.paidAmount)).toFixed(2) }}
-                  </UiTableCell>
-                  <UiTableCell class="text-right">
-                    <UiButton
-                      v-if="Number(inv.totalAmount) > Number(inv.paidAmount) && can('SUPPLIERS', 'UPDATE')"
-                      variant="ghost" size="icon-xs" class="text-green-600"
-                      @click="openPay(inv)"
-                    >
-                      <CreditCard class="size-3.5" />
-                    </UiButton>
-                  </UiTableCell>
-                </UiTableRow>
-              </UiTableBody>
-            </UiTable>
+            <AppTable
+              :data="purchaseInvoices || []"
+              :columns="purchaseInvoiceColumns"
+              :loading="purchasesLoading"
+              :show-search="false"
+              :show-column-toggle="false"
+              :show-pagination="false"
+            >
+              <template #empty>
+                <EmptyState
+                  title="No invoices"
+                  description="No purchase invoices recorded for this supplier yet"
+                  action="New Invoice"
+                  @action="navigateTo('/purchases/new')"
+                />
+              </template>
+            </AppTable>
           </UiCardContent>
         </UiCard>
       </UiTabsContent>
 
       <UiTabsContent value="ledger">
+        <div v-if="ledgerSummary" class="grid grid-cols-3 gap-3 mb-4">
+          <UiCard size="sm">
+            <UiCardContent class="flex items-center gap-3 p-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
+                <Wallet class="size-4 text-red-500" />
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-muted-foreground truncate">Total Debit</p>
+                <p class="text-sm font-semibold tabular-nums text-destructive">{{ ledgerSummary.totalDebit.toFixed(2) }}</p>
+              </div>
+            </UiCardContent>
+          </UiCard>
+          <UiCard size="sm">
+            <UiCardContent class="flex items-center gap-3 p-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-green-500/10">
+                <Wallet class="size-4 text-green-500" />
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-muted-foreground truncate">Total Credit</p>
+                <p class="text-sm font-semibold tabular-nums text-green-600">{{ ledgerSummary.totalCredit.toFixed(2) }}</p>
+              </div>
+            </UiCardContent>
+          </UiCard>
+          <UiCard size="sm">
+            <UiCardContent class="flex items-center gap-3 p-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-lg" :class="ledgerSummary.balance > 0 ? 'bg-orange-500/10' : 'bg-emerald-500/10'">
+                <Wallet class="size-4" :class="ledgerSummary.balance > 0 ? 'text-orange-500' : 'text-emerald-500'" />
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-muted-foreground truncate">Balance</p>
+                <p class="text-sm font-semibold tabular-nums" :class="ledgerSummary.balance > 0 ? 'text-destructive' : 'text-green-600'">{{ ledgerSummary.balance.toFixed(2) }}</p>
+              </div>
+            </UiCardContent>
+          </UiCard>
+        </div>
+
         <UiCard>
           <UiCardHeader class="flex flex-row items-center justify-between">
             <div>
@@ -256,37 +342,18 @@ onMounted(fetchSupplier)
             </UiButton>
           </UiCardHeader>
           <UiCardContent class="p-0">
-            <div v-if="ledgerEntries.length === 0" class="p-6">
-              <EmptyState title="No ledger entries" description="Financial transactions will appear here" />
-            </div>
-            <UiTable v-else>
-              <UiTableHeader>
-                <UiTableRow>
-                  <UiTableHead>Date</UiTableHead>
-                  <UiTableHead>Type</UiTableHead>
-                  <UiTableHead>Description</UiTableHead>
-                  <UiTableHead class="text-right">Amount</UiTableHead>
-                </UiTableRow>
-              </UiTableHeader>
-              <UiTableBody>
-                <UiTableRow v-for="entry in ledgerEntries" :key="entry.id">
-                  <UiTableCell class="text-xs text-muted-foreground">{{ new Date(entry.createdAt).toLocaleString() }}</UiTableCell>
-                  <UiTableCell>
-                    <UiBadge :variant="entry.type === 'DEBIT' ? 'destructive' : 'default'" class="text-xs">
-                      <div class="flex items-center gap-1">
-                        <ArrowUpRight v-if="entry.type === 'DEBIT'" class="size-3" />
-                        <ArrowDownRight v-else class="size-3" />
-                        {{ entry.type }}
-                      </div>
-                    </UiBadge>
-                  </UiTableCell>
-                  <UiTableCell class="text-sm text-muted-foreground">{{ entry.description || '—' }}</UiTableCell>
-                  <UiTableCell class="text-right font-medium tabular-nums" :class="entry.type === 'DEBIT' ? 'text-destructive' : 'text-green-600'">
-                    {{ Number(entry.amount).toFixed(2) }}
-                  </UiTableCell>
-                </UiTableRow>
-              </UiTableBody>
-            </UiTable>
+            <AppTable
+              :data="ledgerEntries"
+              :columns="getLedgerColumns()"
+              :loading="ledgerLoading"
+              :show-search="false"
+              :show-column-toggle="false"
+              :show-pagination="false"
+            >
+              <template #empty>
+                <EmptyState title="No transactions" description="Financial transactions will appear here" />
+              </template>
+            </AppTable>
           </UiCardContent>
         </UiCard>
       </UiTabsContent>
@@ -329,10 +396,10 @@ onMounted(fetchSupplier)
       <UiDialogContent class="sm:max-w-sm">
         <UiDialogHeader>
           <UiDialogTitle>Contra Settlement (مقاصة مالية)</UiDialogTitle>
-          <UiDialogDescription>Settle outstanding balances between {{ suppliersStore.currentSupplier?.name }} and {{ linkedCustomer?.name }}</UiDialogDescription>
+          <UiDialogDescription>Settle outstanding balances between {{ supplier?.name }} and {{ linkedCustomer?.name }}</UiDialogDescription>
         </UiDialogHeader>
         <div class="space-y-3 text-sm">
-          <div class="flex justify-between"><span>Supplier Balance:</span><span :class="balance > 0 ? 'text-destructive' : 'text-green-600'" class="font-medium">{{ Number(balance).toFixed(2) }}</span></div>
+          <div class="flex justify-between"><span>Supplier Balance:</span><span :class="(supplier?.balance ?? 0) > 0 ? 'text-destructive' : 'text-green-600'" class="font-medium">{{ Number(supplier?.balance ?? 0).toFixed(2) }}</span></div>
           <div class="flex justify-between"><span>Customer Balance:</span><span :class="linkedCustomerBalance > 0 ? 'text-destructive' : 'text-green-600'" class="font-medium">{{ Number(linkedCustomerBalance).toFixed(2) }}</span></div>
           <div class="flex justify-between border-t pt-2"><span>Current Net:</span><span class="font-bold" :class="netBalance > 0 ? 'text-destructive' : netBalance < 0 ? 'text-green-600' : ''">{{ Number(netBalance).toFixed(2) }}</span></div>
         </div>

@@ -24,7 +24,7 @@ export const useDistributorNavigation = () => {
   const desktopNav: DistributorNavItem[] = [
     { title: 'Dashboard', icon: LayoutDashboard, to: '/distributor' },
     { title: 'My Stock', icon: Package, to: '/distributor/stock' },
-    { title: 'Customers', icon: Users, to: '/distributor/customers' },
+    { title: 'Customers', icon: Users, to: '/distributor/contacts' },
     { title: 'Orders', icon: ClipboardList, to: '/distributor/orders' },
     { title: 'Invoices', icon: Receipt, to: '/distributor/invoices' },
     { title: 'Payments', icon: DollarSign, to: '/distributor/payments' },

@@ -147,10 +147,10 @@ function goBack() {
         </UiCardHeader>
       </UiCard>
 
-      <div class="flex gap-1 border-b overflow-x-auto">
+      <div class="flex gap-1 border-b">
         <button
           v-for="tab in [
-            { key: 'invoices', label: 'All Invoices', icon: Receipt },
+            // { key: 'invoices', label: 'All Invoices', icon: Receipt },
             { key: 'my-sales', label: 'My Sales', icon: User },
             { key: 'orders', label: 'Orders', icon: ShoppingCart },
             { key: 'ledger', label: 'Ledger', icon: CreditCard },

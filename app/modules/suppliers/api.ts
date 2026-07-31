@@ -5,7 +5,7 @@ export async function fetchSuppliersApi(params?: { search?: string }): Promise<{
   return $fetch('/api/suppliers', { params })
 }
 
-export async function fetchSupplierApi(id: string): Promise<{ supplier: Supplier & { purchaseInvoices: any[]; ledgerEntries: LedgerEntry[] } }> {
+export async function fetchSupplierApi(id: string): Promise<{ supplier: Supplier & { totalPurchases: number; totalPaid: number } }> {
   return $fetch(`/api/suppliers/${id}`)
 }
 

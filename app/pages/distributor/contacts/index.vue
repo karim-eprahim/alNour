@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { Search, Plus, Pencil, ArrowUpDown, Phone, MapPin, ShoppingCart, Receipt, DollarSign, Wallet, ChevronRight, Users } from '@lucide/vue'
+import { h } from 'vue'
+import { Search, Plus, Pencil, Phone, MapPin, Users } from '@lucide/vue'
+import type { ColumnDef } from '@tanstack/vue-table'
 import type { Customer, CreateCustomerPayload } from '@/modules/customers/type'
+import { NuxtLink, UiButton } from '#components'
 import { toast } from 'vue-sonner'
 
 definePageMeta({
@@ -13,8 +16,6 @@ const customersStore = useCustomersStore()
 const search = ref('')
 const page = ref(1)
 const limit = 20
-const sortField = ref<'name' | 'balance' | 'createdAt'>('name')
-const sortDir = ref<'asc' | 'desc'>('asc')
 
 const showCreateSheet = ref(false)
 const showEditSheet = ref(false)
@@ -23,14 +24,64 @@ const editingCustomer = ref<Customer | null>(null)
 const form = reactive<CreateCustomerPayload>({ name: '', phone: '', address: '' })
 const formSaving = ref(false)
 
-const columns = [
-  { key: 'name', label: 'Name', sortable: true },
-  { key: 'phone', label: 'Phone', sortable: false },
-  { key: 'address', label: 'Address', sortable: false },
-  { key: 'balance', label: 'Balance', sortable: true },
-  { key: 'orders', label: 'Orders', sortable: false },
-  { key: 'invoices', label: 'Invoices', sortable: false },
-  { key: 'actions', label: '', sortable: false },
+const columns: ColumnDef<Customer>[] = [
+  {
+    accessorKey: 'name',
+    header: 'Name',
+    cell: ({ row }) => h(NuxtLink, { to: `/distributor/contacts/${row.original.id}`, class: 'font-medium hover:underline' }, row.original.name),
+  },
+  {
+    accessorKey: 'phone',
+    header: 'Phone',
+    enableSorting: false,
+    cell: ({ row }) => row.original.phone
+      ? h('div', { class: 'flex items-center gap-1 text-muted-foreground' }, [
+          h(Phone, { class: 'size-3 shrink-0' }),
+          row.original.phone,
+        ])
+      : h('span', { class: 'text-muted-foreground' }, '—'),
+  },
+  {
+    accessorKey: 'address',
+    header: 'Address',
+    enableSorting: false,
+    cell: ({ row }) => row.original.address
+      ? h('div', { class: 'flex items-center gap-1 text-muted-foreground' }, [
+          h(MapPin, { class: 'size-3 shrink-0' }),
+          h('span', { class: 'max-w-40 truncate' }, row.original.address),
+        ])
+      : h('span', { class: 'text-muted-foreground' }, '—'),
+  },
+  {
+    accessorKey: 'balance',
+    header: 'Balance',
+    cell: ({ row }) => {
+      const bal = row.original.balance || 0
+      return h('span', { class: `tabular-nums font-medium block ${bal > 0 ? 'text-green-600' : bal < 0 ? 'text-red-600' : ''}` }, bal.toFixed(2))
+    },
+  },
+  {
+    id: 'orders',
+    header: 'Orders',
+    enableSorting: false,
+    cell: ({ row }) => h('span', { class: 'tabular-nums text-muted-foreground block' }, String(row.original._count?.salesOrders ?? 0)),
+  },
+  {
+    id: 'invoices',
+    header: 'Invoices',
+    enableSorting: false,
+    cell: ({ row }) => h('span', { class: 'tabular-nums text-muted-foreground block' }, String(row.original._count?.invoices ?? 0)),
+  },
+  {
+    id: 'actions',
+    header: '',
+    enableSorting: false,
+    cell: ({ row }) => h('div', { class: 'flex justify-end' }, [
+      h(UiButton, { variant: 'ghost', size: 'icon', class: 'size-7', onClick: () => openEdit(row.original) }, {
+        default: () => h(Pencil, { class: 'size-3.5' }),
+      }),
+    ]),
+  },
 ]
 
 async function load() {
@@ -39,28 +90,6 @@ async function load() {
 
 watch([search, page], load)
 onMounted(load)
-
-function toggleSort(field: string) {
-  if (sortField.value === field) {
-    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortField.value = field as any
-    sortDir.value = 'asc'
-  }
-}
-
-const filteredCustomers = computed(() => {
-  let list = [...customersStore.customers]
-  const field = sortField.value
-  const dir = sortDir.value === 'asc' ? 1 : -1
-  list.sort((a, b) => {
-    const aVal = field === 'name' ? a.name : field === 'balance' ? (a.balance || 0) : new Date(a.createdAt).getTime()
-    const bVal = field === 'name' ? b.name : field === 'balance' ? (b.balance || 0) : new Date(b.createdAt).getTime()
-    if (typeof aVal === 'string') return aVal.localeCompare(bVal as string) * dir
-    return ((aVal as number) - (bVal as number)) * dir
-  })
-  return list
-})
 
 function openCreate() {
   form.name = ''
@@ -105,10 +134,6 @@ async function handleUpdate() {
     formSaving.value = false
   }
 }
-
-function viewDetails(id: string) {
-  navigateTo(`/distributor/contacts/${id}`)
-}
 </script>
 
 <template>
@@ -126,84 +151,24 @@ function viewDetails(id: string) {
       <UiInput v-model="search" placeholder="Search customers..." class="pl-9" />
     </div>
 
-    <div v-if="customersStore.loading" class="flex justify-center py-12">
-      <LoadingState />
-    </div>
-
-    <div v-else-if="customersStore.customers.length === 0" class="text-center py-12 text-sm text-muted-foreground">
-      <Users class="mx-auto mb-2 size-8 text-muted-foreground/60" />
-      <p>No customers found</p>
-    </div>
-
-    <template v-else>
-      <div class="hidden sm:block">
-        <div class="rounded-lg border">
-          <div class="grid grid-cols-12 gap-2 border-b bg-muted/50 px-4 py-2.5 text-xs font-medium text-muted-foreground">
-            <div class="col-span-3 flex cursor-pointer items-center gap-1 select-none" @click="toggleSort('name')">
-              Name <ArrowUpDown class="size-3" />
-            </div>
-            <div class="col-span-2">Phone</div>
-            <div class="col-span-3">Address</div>
-            <div class="col-span-1 flex cursor-pointer items-center gap-1 justify-end select-none" @click="toggleSort('balance')">
-              Balance <ArrowUpDown class="size-3" />
-            </div>
-            <div class="col-span-1 text-center">Orders</div>
-            <div class="col-span-1 text-center">Invoices</div>
-            <div class="col-span-1" />
-          </div>
-          <div
-            v-for="c in filteredCustomers"
-            :key="c.id"
-            class="grid grid-cols-12 gap-2 border-b px-4 py-3 text-sm transition-colors hover:bg-accent/50 cursor-pointer last:border-0 items-center"
-            @click="viewDetails(c.id)"
-          >
-            <div class="col-span-3 font-medium truncate">{{ c.name }}</div>
-            <div class="col-span-2 flex items-center gap-1 truncate text-muted-foreground">
-              <Phone class="size-3 shrink-0" />{{ c.phone || '—' }}
-            </div>
-            <div class="col-span-3 flex items-center gap-1 truncate text-muted-foreground">
-              <MapPin class="size-3 shrink-0" />{{ c.address || '—' }}
-            </div>
-            <div class="col-span-1 text-right font-semibold" :class="(c.balance || 0) > 0 ? 'text-green-600' : (c.balance || 0) < 0 ? 'text-red-600' : ''">
-              {{ (c.balance || 0).toFixed(2) }}
-            </div>
-            <div class="col-span-1 text-center text-muted-foreground">{{ c._count?.salesOrders || 0 }}</div>
-            <div class="col-span-1 text-center text-muted-foreground">{{ c._count?.invoices || 0 }}</div>
-            <div class="col-span-1 flex justify-end">
-              <UiButton variant="ghost" size="icon" class="size-7" @click.stop="openEdit(c)">
-                <Pencil class="size-3.5" />
-              </UiButton>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid gap-2 sm:hidden">
-        <UiCard v-for="c in filteredCustomers" :key="c.id" class="cursor-pointer transition-colors hover:bg-accent/50" @click="viewDetails(c.id)">
-          <UiCardContent class="p-4">
-            <div class="flex items-start justify-between">
-              <div class="min-w-0 flex-1">
-                <p class="text-sm font-medium truncate">{{ c.name }}</p>
-                <p v-if="c.phone" class="text-xs text-muted-foreground truncate">{{ c.phone }}</p>
-              </div>
-              <div class="flex items-center gap-1 shrink-0 ml-2">
-                <Wallet class="size-4 text-muted-foreground" />
-                <span class="text-sm font-semibold" :class="(c.balance || 0) > 0 ? 'text-green-600' : (c.balance || 0) < 0 ? 'text-red-600' : ''">
-                  {{ (c.balance || 0).toFixed(2) }}
-                </span>
-              </div>
-            </div>
-            <div v-if="c.address" class="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin class="size-3 shrink-0" />{{ c.address }}
-            </div>
-            <div class="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
-              <span class="flex items-center gap-1"><ShoppingCart class="size-3" /> {{ c._count?.salesOrders || 0 }} orders</span>
-              <span class="flex items-center gap-1"><Receipt class="size-3" /> {{ c._count?.invoices || 0 }} invoices</span>
-            </div>
-          </UiCardContent>
-        </UiCard>
-      </div>
-    </template>
+    <AppTable
+      :data="customersStore.customers"
+      :columns="columns"
+      :loading="customersStore.loading"
+      :show-search="false"
+      :show-column-toggle="false"
+      :show-pagination="false"
+    >
+      <template #empty>
+        <EmptyState
+          :icon="Users"
+          title="No customers found"
+          description="Add your first customer to get started"
+          action="New Customer"
+          @action="openCreate"
+        />
+      </template>
+    </AppTable>
 
     <UiSheet :open="showCreateSheet" @update:open="showCreateSheet = $event">
       <UiSheetContent side="right" class="w-full sm:max-w-md">
@@ -237,7 +202,7 @@ function viewDetails(id: string) {
           <UiSheetTitle>Edit Customer</UiSheetTitle>
           <UiSheetDescription>Update customer information</UiSheetDescription>
         </UiSheetHeader>
-        <div class="mt-6 space-y-4">
+        <div class="mt-6 space-y-4 px-3">
           <div>
             <UiLabel>Name *</UiLabel>
             <UiInput v-model="form.name" placeholder="Customer name" class="mt-1" />

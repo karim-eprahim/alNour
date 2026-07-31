@@ -2,7 +2,6 @@
 import { h } from 'vue'
 import { ArrowLeft, ArrowLeftRight, FileText, Link, MapPin, Phone, Receipt, ShoppingCart, Wallet } from '@lucide/vue'
 import { getLedgerColumns } from '@/modules/customers/components/column'
-import { useTabData } from '@/modules/customers/composables/useCustomerTabs'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { UiBadge } from '#components'
 import { toast } from 'vue-sonner'

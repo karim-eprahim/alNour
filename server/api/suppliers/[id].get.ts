@@ -5,18 +5,7 @@ export default defineEventHandler(async (event) => {
   const supplier = await prisma.supplier.findUnique({
     where: { id },
     include: {
-      purchaseInvoices: {
-        include: {
-          items: { include: { product: true } },
-          weightTickets: true,
-          warehouse: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      },
-      ledgerEntries: {
-        orderBy: { createdAt: 'desc' },
-        take: 100,
-      },
+      _count: { select: { purchaseInvoices: true, ledgerEntries: true } },
       linkedCustomer: {
         include: {
           ledgerEntries: { select: { amount: true, type: true } },
@@ -29,9 +18,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Supplier not found' })
   }
 
-  const balance = supplier.ledgerEntries.reduce((acc, entry) => {
-    return entry.type === 'DEBIT' ? acc + Number(entry.amount) : acc - Number(entry.amount)
-  }, 0)
+  const [debitAgg, creditAgg, purchaseAgg] = await Promise.all([
+    prisma.ledgerEntry.aggregate({ where: { supplierId: id, type: 'DEBIT' }, _sum: { amount: true } }),
+    prisma.ledgerEntry.aggregate({ where: { supplierId: id, type: 'CREDIT' }, _sum: { amount: true } }),
+    prisma.purchaseInvoice.aggregate({ where: { supplierId: id }, _sum: { totalAmount: true, paidAmount: true } }),
+  ])
+
+  const balance = Number(debitAgg._sum.amount || 0) - Number(creditAgg._sum.amount || 0)
+  const totalPurchases = Number(purchaseAgg._sum.totalAmount || 0)
+  const totalPaid = Number(purchaseAgg._sum.paidAmount || 0)
 
   let linkedCustomerBalance = 0
   let netBalance = balance
@@ -47,6 +42,8 @@ export default defineEventHandler(async (event) => {
     supplier: {
       ...rest,
       balance,
+      totalPurchases,
+      totalPaid,
       linkedCustomer: linkedCustomer
         ? { id: linkedCustomer.id, name: linkedCustomer.name, balance: linkedCustomerBalance }
         : null,

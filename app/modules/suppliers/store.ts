@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Supplier, CreateSupplierPayload, UpdateSupplierPayload, LedgerEntry } from './type'
+import type { Supplier, CreateSupplierPayload, UpdateSupplierPayload } from './type'
 import {
   fetchSuppliersApi,
   fetchSupplierApi,
@@ -12,7 +12,7 @@ import {
 
 export const useSuppliersStore = defineStore('suppliers', () => {
   const suppliers = ref<Supplier[]>([])
-  const currentSupplier = ref<(Supplier & { purchaseInvoices: any[]; ledgerEntries: LedgerEntry[] }) | null>(null)
+  const currentSupplier = ref<Supplier | null>(null)
   const loading = ref(false)
   const total = ref(0)
 
@@ -76,9 +76,6 @@ export const useSuppliersStore = defineStore('suppliers', () => {
     loading.value = true
     try {
       const data = await addLedgerEntryApi(supplierId, payload)
-      if (currentSupplier.value) {
-        currentSupplier.value.ledgerEntries.unshift(data.entry)
-      }
       return data.entry
     } finally {
       loading.value = false
