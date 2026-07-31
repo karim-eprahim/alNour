@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { ArrowLeft, Phone, MapPin, Wallet, ShoppingCart, Receipt, DollarSign, CreditCard, Calendar, User } from '@lucide/vue'
+import { ArrowLeft, Phone, MapPin, Wallet, ShoppingCart, Receipt, DollarSign, CreditCard, Calendar, User, Plus, X } from '@lucide/vue'
+import type { LookupQuery, LookupResponse } from '@/types/lookup'
 import type { Customer } from '@/modules/customers/type'
+import { toast } from 'vue-sonner'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
+
 
 definePageMeta({
   layout: 'distributor',
@@ -11,6 +15,7 @@ const route = useRoute()
 const customersStore = useCustomersStore()
 const auth = useAuthStore()
 const store = useDistributorStore()
+const productsStore = useProductsStore()
 
 const customer = ref<Customer | null>(null)
 const loading = ref(true)
@@ -21,6 +26,91 @@ const mySales = ref<any[]>([])
 const orders = ref<any[]>([])
 const ledgerEntries = ref<any[]>([])
 const invoicesLoading = ref(false)
+
+const showSaleForm = ref(false)
+const saving = ref(false)
+
+const salesForm = reactive({
+  customerId: '',
+  customerName: '',
+  warehouseId: '',
+  paidAmount: 0,
+  paymentMethod: 'CASH' as string,
+  items: [] as { productId: string; productName: string; quantity?: number; unitPrice?: number }[],
+})
+
+const products = computed(() => productsStore.products)
+
+const calculatedTotal = computed(() =>
+  salesForm.items.reduce((sum, i) => sum + (i.quantity || 0) * (i.unitPrice || 0), 0),
+)
+
+function openSaleForm() {
+  salesForm.customerId = route.params.id as string
+  salesForm.customerName = customer.value?.name || ''
+  salesForm.warehouseId = ''
+  salesForm.paidAmount = 0
+  salesForm.paymentMethod = 'CASH'
+  salesForm.items = []
+  showSaleForm.value = true
+  if (productsStore.products.length === 0) productsStore.fetchProducts()
+}
+
+function addItem() {
+  salesForm.items.push({ productId: '', productName: '' })
+}
+
+function removeItem(index: number) {
+  salesForm.items.splice(index, 1)
+}
+
+function selectProduct(index: number, productId: string) {
+  const p = products.value.find((pr) => pr.id === productId)
+  const item = salesForm.items[index]
+  if (p && item) {
+    item.productId = p.id
+    item.productName = p.name
+    if (!item.unitPrice) {
+      item.unitPrice = p.sellingPrice ? Number(p.sellingPrice) : undefined
+    }
+  }
+}
+
+async function handleCreateSale() {
+  if (!salesForm.customerId || !salesForm.warehouseId || salesForm.items.length === 0) {
+    toast.error('Warehouse and at least one item are required')
+    return
+  }
+  if (salesForm.paidAmount > calculatedTotal.value) {
+    toast.error('Paid amount cannot exceed total')
+    return
+  }
+
+  saving.value = true
+  try {
+    const invoice = await store.createDirectSale({
+      customerId: salesForm.customerId,
+      warehouseId: salesForm.warehouseId,
+      paidAmount: salesForm.paidAmount || 0,
+      paymentMethod: salesForm.paymentMethod,
+      paymentNotes: undefined,
+      items: salesForm.items.map((i) => ({
+        productId: i.productId,
+        quantity: i.quantity || 0,
+        unitPrice: i.unitPrice || 0,
+      })),
+    })
+    toast.success(`Invoice ${invoice.invoiceNumber} created`)
+    showSaleForm.value = false
+    await store.fetchCustody()
+    await store.fetchCashOnHand()
+    await load()
+  } catch (err: any) {
+    toast.error(err?.message || 'Failed to create sale')
+  } finally {
+    saving.value = false
+  }
+}
 
 async function load() {
   loading.value = true
@@ -117,7 +207,7 @@ function goBack() {
       <UiButton variant="outline" size="sm" class="mt-3" @click="load">Retry</UiButton>
     </div>
 
-    <template v-else-if="customer">
+    <template v-else-if="customer && !showSaleForm">
       <UiCard>
         <UiCardHeader>
           <div class="flex items-start justify-between">
@@ -132,11 +222,16 @@ function goBack() {
                 </div>
               </UiCardDescription>
             </div>
-            <div class="text-right">
-              <p class="text-xs text-muted-foreground">Balance</p>
-              <p class="text-2xl font-bold" :class="(customer.balance || 0) > 0 ? 'text-green-600' : (customer.balance || 0) < 0 ? 'text-red-600' : ''">
-                {{ (customer.balance || 0).toFixed(2) }}
-              </p>
+            <div class="flex flex-col items-end gap-2">
+              <div class="text-right">
+                <p class="text-xs text-muted-foreground">Balance</p>
+                <p class="text-2xl font-bold" :class="(customer.balance || 0) > 0 ? 'text-green-600' : (customer.balance || 0) < 0 ? 'text-red-600' : ''">
+                  {{ (customer.balance || 0).toFixed(2) }}
+                </p>
+              </div>
+              <UiButton size="sm" @click="openSaleForm">
+                <DollarSign class="size-4" /> New Sale
+              </UiButton>
             </div>
           </div>
           <div class="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
@@ -231,6 +326,102 @@ function goBack() {
             {{ entry.type === 'DEBIT' ? '-' : '+' }}{{ Number(entry.amount).toFixed(2) }}
           </span>
         </div>
+      </div>
+    </template>
+
+    <template v-else-if="customer && showSaleForm">
+      <div class="space-y-6">
+        <div class="flex items-center gap-3">
+          <UiButton variant="ghost" size="icon" class="size-8 shrink-0" @click="showSaleForm = false">
+            <ArrowLeft class="size-4" />
+          </UiButton>
+          <div>
+            <h2 class="text-lg font-semibold">New Sale</h2>
+            <p class="text-sm text-muted-foreground">Customer: {{ customer.name }}</p>
+          </div>
+        </div>
+
+        <UiCard>
+          <UiCardHeader>
+            <UiCardTitle class="text-base">Sale Details</UiCardTitle>
+          </UiCardHeader>
+          <UiCardContent class="space-y-4">
+            <div>
+              <UiLabel>Warehouse</UiLabel>
+              <LookupCombobox
+                v-model="salesForm.warehouseId"
+                :endpoint="fetchWarehousesLookupApi"
+                placeholder="Select warehouse"
+                class="mt-1"
+              />
+            </div>
+
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <UiLabel>Items</UiLabel>
+                <UiButton size="xs" variant="outline" @click="addItem">
+                  <Plus class="size-3" /> Add Item
+                </UiButton>
+              </div>
+
+              <div v-for="(item, index) in salesForm.items" :key="index" class="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-end">
+                <div class="flex-1">
+                  <UiLabel class="text-xs">Product</UiLabel>
+                  <UiSelect :model-value="item.productId" @update:model-value="selectProduct(index, $event as string)">
+                    <UiSelectTrigger class="mt-0.5">
+                      <UiSelectValue placeholder="Select product" />
+                    </UiSelectTrigger>
+                    <UiSelectContent>
+                      <UiSelectItem v-for="p in products" :key="p.id" :value="p.id">
+                        {{ p.name }}
+                      </UiSelectItem>
+                    </UiSelectContent>
+                  </UiSelect>
+                </div>
+                <div class="w-full sm:w-24">
+                  <UiLabel class="text-xs">Qty</UiLabel>
+                  <UiInput v-model="item.quantity" type="number" min="0" step="0.001" placeholder="0" class="mt-0.5" />
+                </div>
+                <div class="w-full sm:w-28">
+                  <UiLabel class="text-xs">Price</UiLabel>
+                  <UiInput v-model="item.unitPrice" type="number" min="0" step="0.01" placeholder="0.00" class="mt-0.5" />
+                </div>
+                <UiButton variant="ghost" size="icon" class="size-8 shrink-0" @click="removeItem(index)">
+                  <X class="size-4" />
+                </UiButton>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between border-t pt-3">
+              <p class="text-sm font-medium">Total</p>
+              <p class="text-lg font-bold">{{ calculatedTotal.toFixed(2) }}</p>
+            </div>
+
+            <div class="space-y-2">
+              <UiLabel>Payment</UiLabel>
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <div class="flex-1">
+                  <UiInput v-model="salesForm.paidAmount" type="number" min="0" step="0.01" placeholder="Paid amount" />
+                </div>
+                <UiSelect v-model="salesForm.paymentMethod">
+                  <UiSelectTrigger class="w-full sm:w-32">
+                    <UiSelectValue placeholder="Method" />
+                  </UiSelectTrigger>
+                  <UiSelectContent>
+                    <UiSelectItem value="CASH">Cash</UiSelectItem>
+                    <UiSelectItem value="BANK_TRANSFER">Bank Transfer</UiSelectItem>
+                    <UiSelectItem value="CHECK">Check</UiSelectItem>
+                  </UiSelectContent>
+                </UiSelect>
+              </div>
+            </div>
+
+            <UiButton class="w-full" :disabled="saving || calculatedTotal <= 0" @click="handleCreateSale">
+              <DollarSign class="size-4" />
+              {{ saving ? 'Creating...' : 'Create Sale' }}
+            </UiButton>
+          </UiCardContent>
+        </UiCard>
       </div>
     </template>
   </div>

@@ -2,6 +2,7 @@
 import { ArrowLeft, PackageX, Plus, X } from '@lucide/vue'
 import type { LookupQuery, LookupResponse } from '@/types/lookup'
 import { toast } from 'vue-sonner'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
 
 definePageMeta({
   layout: 'distributor',
@@ -10,8 +11,6 @@ definePageMeta({
 
 const store = useDistributorStore()
 const productsStore = useProductsStore()
-
-const warehouseEndpoint = (params?: LookupQuery): Promise<LookupResponse> => $fetch('/api/warehouses/lookup', { params })
 
 const items = ref<{ productId: string; productName: string; quantity?: number }[]>([])
 const warehouseId = ref('')
@@ -90,7 +89,7 @@ onMounted(() => {
           <UiLabel>Warehouse</UiLabel>
           <LookupCombobox
             v-model="warehouseId"
-            :endpoint="warehouseEndpoint"
+            :endpoint="fetchWarehousesLookupApi"
             placeholder="Select warehouse"
             class="mt-1"
           />

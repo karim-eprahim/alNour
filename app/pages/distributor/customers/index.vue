@@ -3,6 +3,7 @@ import { Plus, Search, Users, ShoppingCart, ArrowLeft, DollarSign, X, UserPlus, 
 import type { LookupItem, LookupQuery, LookupResponse } from '@/types/lookup'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
+import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
 
 definePageMeta({
   layout: 'distributor',
@@ -20,7 +21,6 @@ const customerLoading = ref(false)
 const showSaleForm = ref(false)
 const showCreateSheet = ref(false)
 
-const warehouseEndpoint = (params?: LookupQuery): Promise<LookupResponse> => $fetch('/api/warehouses/lookup', { params })
 
 const salesForm = reactive({
   customerId: '',
@@ -303,7 +303,7 @@ onMounted(() => {
             <UiLabel>Warehouse</UiLabel>
             <LookupCombobox
               v-model="salesForm.warehouseId"
-              :endpoint="warehouseEndpoint"
+              :endpoint="fetchWarehousesLookupApi"
               placeholder="Select warehouse"
               class="mt-1"
             />

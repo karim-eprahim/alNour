@@ -8,11 +8,14 @@ definePageMeta({
 
 const store = useDistributorStore()
 const movementsPage = ref(1)
+const limit = 50
+
+const totalPages = computed(() => Math.max(1, Math.ceil(store.cashMovementsTotal / limit)))
 
 async function load() {
   await Promise.all([
     store.fetchCashOnHand(),
-    store.fetchCashMovements({ page: movementsPage.value, limit: 50 }),
+    store.fetchCashMovements({ page: movementsPage.value, limit }),
   ])
 }
 
@@ -98,6 +101,36 @@ const movementTypeColor = (type: string) => {
             <span :class="['text-sm font-semibold shrink-0 ml-2', m.type === 'CASH_HANDOVER' ? 'text-red-600' : 'text-green-600']">
               {{ m.type === 'CASH_HANDOVER' ? '-' : '+' }}{{ Number(m.amount).toFixed(2) }}
             </span>
+          </div>
+        </div>
+
+        <div
+          v-if="!store.loading && store.cashMovementsTotal > 0"
+          class="flex flex-wrap items-center justify-between gap-3 py-4"
+        >
+          <p class="text-sm text-muted-foreground">
+            {{ store.cashMovements.length }} of {{ store.cashMovementsTotal }} row(s)
+          </p>
+          <div class="flex items-center gap-2">
+            <UiButton
+              variant="outline"
+              size="sm"
+              :disabled="movementsPage <= 1"
+              @click="movementsPage--"
+            >
+              Previous
+            </UiButton>
+            <p class="text-sm text-muted-foreground min-w-20 text-center">
+              Page {{ movementsPage }} of {{ totalPages }}
+            </p>
+            <UiButton
+              variant="outline"
+              size="sm"
+              :disabled="movementsPage >= totalPages"
+              @click="movementsPage++"
+            >
+              Next
+            </UiButton>
           </div>
         </div>
       </UiCardContent>
