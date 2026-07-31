@@ -38,11 +38,11 @@ const { user } = storeToRefs(auth)
         </div>
       </UiCardHeader>
       <UiCardContent class="space-y-3">
-        <div class="flex items-center gap-2 text-sm">
+        <!-- <div class="flex items-center gap-2 text-sm">
           <Building2 class="size-4 text-muted-foreground shrink-0" />
           <span v-if="store.custody?.warehouseName" class="truncate">{{ store.custody.warehouseName }}</span>
           <span v-else class="text-muted-foreground italic">No warehouse assigned</span>
-        </div>
+        </div> -->
         <div v-if="user?.email" class="flex items-center gap-2 text-sm">
           <Mail class="size-4 text-muted-foreground shrink-0" />
           <span class="truncate">{{ user.email }}</span>
