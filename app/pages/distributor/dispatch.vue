@@ -153,7 +153,7 @@ function getNextStatus(current: string): string | null {
               <div class="col-span-2 font-medium truncate">{{ order.orderNumber }}</div>
               <div class="col-span-3 truncate">{{ order.customer?.name }}</div>
               <div class="col-span-2 truncate text-muted-foreground">{{ order.warehouse?.name }}</div>
-              <div class="col-span-2 text-right font-semibold">{{ order.totalAmount.toFixed(2) }}</div>
+              <div class="col-span-2 text-right font-semibold">{{ Number(order.totalAmount).toFixed(2) }}</div>
               <div class="col-span-2">
                 <UiBadge :variant="statusVariant(order.status)" class="text-[10px]">{{ statusLabel(order.status) }}</UiBadge>
               </div>
@@ -174,7 +174,7 @@ function getNextStatus(current: string): string | null {
             </div>
             <p class="mt-1 text-xs text-muted-foreground truncate">{{ order.customer?.name }}</p>
             <p class="mt-0.5 text-xs text-muted-foreground">{{ order.warehouse?.name }}</p>
-            <p class="mt-1 text-sm font-semibold">{{ order.totalAmount.toFixed(2) }}</p>
+            <p class="mt-1 text-sm font-semibold">{{ Number(order.totalAmount).toFixed(2) }}</p>
           </div>
         </div>
       </template>
@@ -222,7 +222,7 @@ function getNextStatus(current: string): string | null {
           </div>
           <div class="flex justify-between pt-2 text-sm font-semibold">
             <span>Total</span>
-            <span>{{ selectedOrder.totalAmount.toFixed(2) }}</span>
+            <span>{{ Number(selectedOrder.totalAmount).toFixed(2) }}</span>
           </div>
         </UiCardContent>
       </UiCard>

@@ -149,7 +149,7 @@ function statusLabel(s: string) {
             <UiBadge :variant="statusVariant(order.status)" class="text-[10px]">
               {{ statusLabel(order.status) }}
             </UiBadge>
-            <p class="text-sm font-semibold">{{ order.totalAmount.toFixed(2) }}</p>
+            <p class="text-sm font-semibold">{{ Number(order.totalAmount).toFixed(2) }}</p>
           </div>
         </div>
       </div>
@@ -182,11 +182,11 @@ function statusLabel(s: string) {
           <div v-for="item in selectedOrder.items" :key="item.id" class="grid grid-cols-2 gap-2 py-2 text-sm sm:grid-cols-4 border-b last:border-0">
             <span class="col-span-2 truncate">{{ item.product?.name || item.productId }}</span>
             <span class="text-right">{{ Number(item.quantity).toFixed(1) }}</span>
-            <span class="text-right font-medium">{{ item.totalPrice.toFixed(2) }}</span>
+            <span class="text-right font-medium">{{ Number(item.totalPrice).toFixed(2) }}</span>
           </div>
           <div class="flex justify-between pt-3 text-sm font-semibold">
             <span>Total</span>
-            <span>{{ selectedOrder.totalAmount.toFixed(2) }}</span>
+            <span>{{ Number(selectedOrder.totalAmount).toFixed(2) }}</span>
           </div>
         </UiCardContent>
       </UiCard>

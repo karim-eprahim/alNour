@@ -53,14 +53,34 @@ export interface Payment {
   createdBy?: { id: string; name: string }
 }
 
-export interface CreateSalesOrderPayload {
+export interface SalesItemPayload {
+  productId: string
+  quantity: number
+  unitPrice: number
+}
+
+export interface DirectSalePayload {
+  type: 'DIRECT'
   customerId: string
   warehouseId: string
+  items: SalesItemPayload[]
   paidAmount?: number
   paymentMethod?: string
   paymentNotes?: string
-  items: { productId: string; quantity: number; unitPrice: number }[]
 }
+
+export interface DeliveryOrderPayload {
+  type: 'DELIVERY'
+  customerId: string
+  warehouseId: string
+  items: SalesItemPayload[]
+  assignedDistributorId: string
+  expectedDeliveryDate: string
+  priority?: 'NORMAL' | 'URGENT'
+  deliveryNotes?: string
+}
+
+export type CreateSalesOrderPayload = DirectSalePayload | DeliveryOrderPayload
 
 export interface CreatePaymentPayload {
   amount: number

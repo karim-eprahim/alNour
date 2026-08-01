@@ -117,7 +117,7 @@ onMounted(loadDashboard)
               </div>
               <div class="flex items-center gap-2 shrink-0">
                 <UiBadge variant="secondary" class="text-[10px]">{{ order.status }}</UiBadge>
-                <p class="text-sm font-semibold">{{ order.totalAmount.toFixed(2) }}</p>
+                <p class="text-sm font-semibold">{{ Number(order.totalAmount).toFixed(2) }}</p>
               </div>
             </div>
           </UiCardContent>
@@ -147,7 +147,7 @@ onMounted(loadDashboard)
               </div>
               <div class="text-right shrink-0 ml-2">
                 <p class="text-sm font-semibold" :class="(c.balance || 0) > 0 ? 'text-green-600' : ''">
-                  {{ (c.balance || 0).toFixed(2) }}
+                  {{ Number(c.balance || 0).toFixed(2) }}
                 </p>
                 <p class="text-xs text-muted-foreground">{{ c.invoiceCount || 0 }} invoices</p>
               </div>
