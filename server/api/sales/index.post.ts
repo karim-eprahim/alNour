@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    const orderStatus = hasDistributor ? 'ASSIGNED' : 'DELIVERED'
+    const orderStatus = hasDistributor ? 'ASSIGNED' : 'COMPLETED'
 
     const created = await tx.salesOrder.create({
       data: {
@@ -44,6 +44,8 @@ export default defineEventHandler(async (event) => {
         expectedDeliveryDate: body.expectedDeliveryDate ? new Date(body.expectedDeliveryDate) : null,
         priority: body.priority || 'NORMAL',
         deliveryNotes: body.deliveryNotes || null,
+        deliveryResult: hasDistributor ? 'NONE' : 'FULL',
+        completedAt: hasDistributor ? null : new Date(),
         items: { create: itemsData },
       },
       include: {

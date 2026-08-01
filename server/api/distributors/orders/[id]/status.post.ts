@@ -1,13 +1,13 @@
 const TRANSITIONS: Record<string, string> = {
   ASSIGNED: 'ACCEPTED',
   ACCEPTED: 'OUT_FOR_DELIVERY',
-  OUT_FOR_DELIVERY: 'DELIVERED',
 }
+
+const VALID_TARGETS = new Set(Object.values(TRANSITIONS))
 
 const TIMESTAMPS: Record<string, string> = {
   ACCEPTED: 'acceptedAt',
-  OUT_FOR_DELIVERY: 'startedDeliveryAt',
-  DELIVERED: 'deliveredAt',
+  OUT_FOR_DELIVERY: 'outForDeliveryAt',
 }
 
 export default defineEventHandler(async (event) => {
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const targetStatus = body.status as string
 
-  if (!TRANSITIONS[targetStatus]) {
+  if (!VALID_TARGETS.has(targetStatus)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid target status' })
   }
 

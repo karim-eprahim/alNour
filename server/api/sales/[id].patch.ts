@@ -2,16 +2,15 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
   PENDING: ['ASSIGNED', 'CANCELLED'],
   ASSIGNED: ['ACCEPTED', 'CANCELLED'],
   ACCEPTED: ['OUT_FOR_DELIVERY', 'CANCELLED'],
-  OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
-  DELIVERED: ['COMPLETED', 'CANCELLED'],
+  OUT_FOR_DELIVERY: ['COMPLETED', 'CANCELLED'],
   COMPLETED: ['CANCELLED'],
   CANCELLED: [],
 }
 
 const TIMESTAMPS: Record<string, string> = {
   ACCEPTED: 'acceptedAt',
-  OUT_FOR_DELIVERY: 'startedDeliveryAt',
-  DELIVERED: 'deliveredAt',
+  OUT_FOR_DELIVERY: 'outForDeliveryAt',
+  COMPLETED: 'completedAt',
 }
 
 function isValidTransition(from: string, to: string): boolean {

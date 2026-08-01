@@ -5,7 +5,7 @@ import type {
   DistributorPayment,
   DistributorCashMovement,
   CreateDirectSalePayload,
-  CompleteDeliveryPayload,
+  ConfirmDeliveryPayload,
 } from './type'
 
 export async function fetchCustodyApi(): Promise<{ custodies: DistributorCustodyItem[]; totalItems: number; totalValue: number }> {
@@ -29,8 +29,8 @@ export async function updateDistributorOrderStatusApi(id: string, status: string
   return $fetch(`/api/distributors/orders/${id}/status`, { method: 'POST', body: { status } })
 }
 
-export async function completeDeliveryApi(id: string, payload: CompleteDeliveryPayload): Promise<{ invoice: DistributorInvoice }> {
-  return $fetch(`/api/distributors/orders/${id}/complete`, { method: 'POST', body: payload })
+export async function confirmDeliveryApi(id: string, payload: ConfirmDeliveryPayload): Promise<{ order: { id: string; status: string; deliveryResult: string }; invoice?: DistributorInvoice }> {
+  return $fetch(`/api/distributors/orders/${id}/deliver`, { method: 'POST', body: payload })
 }
 
 export async function createDirectSaleApi(payload: CreateDirectSalePayload): Promise<{ invoice: DistributorInvoice }> {

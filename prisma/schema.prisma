@@ -86,8 +86,15 @@ enum OrderStatus {
   ASSIGNED
   ACCEPTED
   OUT_FOR_DELIVERY
-  DELIVERED
   COMPLETED
+  CANCELLED
+}
+
+enum DeliveryResult {
+  NONE
+  FULL
+  PARTIAL
+  FAILED
   CANCELLED
 }
 
@@ -586,9 +593,12 @@ model SalesOrder {
   expectedDeliveryDate  DateTime?
   priority              OrderPriority @default(NORMAL)
   deliveryNotes         String?
+  deliveryResult        DeliveryResult @default(NONE)
+  partialDeliveryReason String?
+  cancelReason          String?
   acceptedAt            DateTime?
-  startedDeliveryAt     DateTime?
-  deliveredAt           DateTime?
+  outForDeliveryAt      DateTime?
+  completedAt           DateTime?
   createdAt             DateTime      @default(now())
 
   customer            Customer         @relation(fields: [customerId], references: [id])

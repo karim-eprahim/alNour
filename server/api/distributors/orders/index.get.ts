@@ -22,6 +22,12 @@ function serialize(order: any) {
     expectedDeliveryDate: order.expectedDeliveryDate,
     priority: order.priority,
     deliveryNotes: order.deliveryNotes,
+    deliveryResult: order.deliveryResult,
+    partialDeliveryReason: order.partialDeliveryReason,
+    cancelReason: order.cancelReason,
+    acceptedAt: order.acceptedAt,
+    outForDeliveryAt: order.outForDeliveryAt,
+    completedAt: order.completedAt,
     customer: order.customer,
     items: order.items.map((item: any) => ({
       product: item.product,

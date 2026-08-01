@@ -43,7 +43,6 @@ onMounted(load)
             <UiSelectItem value="ASSIGNED">Assigned</UiSelectItem>
             <UiSelectItem value="ACCEPTED">Accepted</UiSelectItem>
             <UiSelectItem value="OUT_FOR_DELIVERY">Out for Delivery</UiSelectItem>
-            <UiSelectItem value="DELIVERED">Delivered</UiSelectItem>
             <UiSelectItem value="COMPLETED">Completed</UiSelectItem>
             <UiSelectItem value="CANCELLED">Cancelled</UiSelectItem>
           </UiSelectContent>

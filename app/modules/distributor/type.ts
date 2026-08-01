@@ -17,12 +17,18 @@ export interface DistributorCustodyItem {
 export interface DistributorOrder {
   id: string
   orderNumber: string
-  status: 'PENDING' | 'ASSIGNED' | 'ACCEPTED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED'
+  status: 'PENDING' | 'ASSIGNED' | 'ACCEPTED' | 'OUT_FOR_DELIVERY' | 'COMPLETED' | 'CANCELLED'
   totalAmount: number
   createdAt: string
   expectedDeliveryDate?: string | null
   priority: 'NORMAL' | 'URGENT'
   deliveryNotes?: string | null
+  deliveryResult: 'NONE' | 'FULL' | 'PARTIAL' | 'FAILED' | 'CANCELLED'
+  partialDeliveryReason?: string | null
+  cancelReason?: string | null
+  acceptedAt?: string | null
+  outForDeliveryAt?: string | null
+  completedAt?: string | null
   customer: { id: string; name: string; phone?: string | null; address?: string | null }
   items: DistributorOrderItem[]
   invoice: {
@@ -100,7 +106,13 @@ export interface CreateDirectSalePayload {
   items: { productId: string; quantity: number; unitPrice: number }[]
 }
 
-export interface CompleteDeliveryPayload {
+export type DeliveryResult = 'FULL' | 'PARTIAL' | 'FAILED' | 'CANCELLED'
+
+export interface ConfirmDeliveryPayload {
+  result: DeliveryResult
+  items?: { productId: string; quantity: number }[]
+  partialDeliveryReason?: string
+  cancelReason?: string
   paidAmount?: number
   paymentMethod?: string
   paymentNotes?: string

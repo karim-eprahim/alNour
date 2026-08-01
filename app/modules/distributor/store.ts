@@ -7,14 +7,14 @@ import type {
   DistributorPayment,
   DistributorCashMovement,
   CreateDirectSalePayload,
-  CompleteDeliveryPayload,
+  ConfirmDeliveryPayload,
 } from './type'
 import {
   fetchCustodyApi,
   fetchDistributorOrdersApi,
   fetchDistributorOrderApi,
   updateDistributorOrderStatusApi,
-  completeDeliveryApi,
+  confirmDeliveryApi,
   createDirectSaleApi,
   fetchDistributorInvoicesApi,
   payInvoiceApi,
@@ -89,13 +89,16 @@ export const useDistributorStore = defineStore('distributor', () => {
     }
   }
 
-  async function completeDelivery(id: string, payload: CompleteDeliveryPayload) {
+  async function confirmDelivery(id: string, payload: ConfirmDeliveryPayload) {
     loading.value = true
     try {
-      const data = await completeDeliveryApi(id, payload)
+      const data = await confirmDeliveryApi(id, payload)
       const idx = orders.value.findIndex((o) => o.id === id)
-      if (idx !== -1 && orders.value[idx]) orders.value[idx].status = 'DELIVERED'
-      return data.invoice
+      if (idx !== -1 && orders.value[idx]) {
+        orders.value[idx].status = data.order.status as DistributorOrder['status']
+        orders.value[idx].deliveryResult = data.order.deliveryResult as DistributorOrder['deliveryResult']
+      }
+      return data
     } finally {
       loading.value = false
     }
@@ -223,7 +226,7 @@ export const useDistributorStore = defineStore('distributor', () => {
     cashOnHand, cashMovements, cashMovementsTotal,
     recentCustomers,
     loading,
-    fetchCustody, fetchOrders, fetchOrder, updateOrderStatus, completeDelivery, createDirectSale, createReturn,
+    fetchCustody, fetchOrders, fetchOrder, updateOrderStatus, confirmDelivery, createDirectSale, createReturn,
     fetchInvoices, payInvoice, returnInventory,
     fetchRecentCustomers,
     fetchCashOnHand, fetchCashMovements,

@@ -13,7 +13,6 @@ export function orderStatusVariant(s: string) {
     ASSIGNED: 'default',
     ACCEPTED: 'warning',
     OUT_FOR_DELIVERY: 'default',
-    DELIVERED: 'secondary',
     COMPLETED: 'success',
     CANCELLED: 'destructive',
   }
@@ -25,11 +24,32 @@ export function orderStatusLabel(s: string) {
     ASSIGNED: 'Assigned',
     ACCEPTED: 'Accepted',
     OUT_FOR_DELIVERY: 'Out for Delivery',
-    DELIVERED: 'Delivered',
     COMPLETED: 'Completed',
     CANCELLED: 'Cancelled',
   }
   return map[s] || s
+}
+
+export function deliveryResultVariant(r: string) {
+  const map: Record<string, string> = {
+    FULL: 'success',
+    PARTIAL: 'warning',
+    FAILED: 'destructive',
+    CANCELLED: 'destructive',
+    NONE: 'secondary',
+  }
+  return (map[r] || 'secondary') as any
+}
+
+export function deliveryResultLabel(r: string) {
+  const map: Record<string, string> = {
+    FULL: 'Full Delivery',
+    PARTIAL: 'Partial Delivery',
+    FAILED: 'Delivery Failed',
+    CANCELLED: 'Cancelled',
+    NONE: 'Not Delivered',
+  }
+  return map[r] || r
 }
 
 export function priorityVariant(p: string) {
