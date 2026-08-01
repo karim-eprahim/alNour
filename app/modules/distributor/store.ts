@@ -12,6 +12,8 @@ import type {
 import {
   fetchCustodyApi,
   fetchDistributorOrdersApi,
+  fetchDistributorOrderApi,
+  updateDistributorOrderStatusApi,
   completeDeliveryApi,
   createDirectSaleApi,
   fetchDistributorInvoicesApi,
@@ -28,6 +30,7 @@ export const useDistributorStore = defineStore('distributor', () => {
   const custodyTotalValue = ref(0)
   const orders = ref<DistributorOrder[]>([])
   const ordersTotal = ref(0)
+  const currentOrder = ref<DistributorOrder | null>(null)
   const invoices = ref<DistributorInvoice[]>([])
   const invoicesTotal = ref(0)
   const cashOnHand = ref(0)
@@ -56,6 +59,31 @@ export const useDistributorStore = defineStore('distributor', () => {
       orders.value = data.orders
       ordersTotal.value = data.total
       return data
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchOrder(id: string) {
+    loading.value = true
+    try {
+      const data = await fetchDistributorOrderApi(id)
+      currentOrder.value = data.order
+      return data.order
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateOrderStatus(id: string, status: string) {
+    loading.value = true
+    try {
+      const data = await updateDistributorOrderStatusApi(id, status)
+      const newStatus = data.order.status as DistributorOrder['status']
+      if (currentOrder.value) currentOrder.value.status = newStatus
+      const idx = orders.value.findIndex((o) => o.id === id)
+      if (idx !== -1 && orders.value[idx]) orders.value[idx].status = newStatus
+      return data.order
     } finally {
       loading.value = false
     }
@@ -190,12 +218,12 @@ export const useDistributorStore = defineStore('distributor', () => {
 
   return {
     custodies, custodyTotalItems, custodyTotalValue, custody,
-    orders, ordersTotal,
+    orders, ordersTotal, currentOrder,
     invoices, invoicesTotal,
     cashOnHand, cashMovements, cashMovementsTotal,
     recentCustomers,
     loading,
-    fetchCustody, fetchOrders, completeDelivery, createDirectSale, createReturn,
+    fetchCustody, fetchOrders, fetchOrder, updateOrderStatus, completeDelivery, createDirectSale, createReturn,
     fetchInvoices, payInvoice, returnInventory,
     fetchRecentCustomers,
     fetchCashOnHand, fetchCashMovements,

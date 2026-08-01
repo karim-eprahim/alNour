@@ -17,27 +17,30 @@ export interface DistributorCustodyItem {
 export interface DistributorOrder {
   id: string
   orderNumber: string
-  customerId: string
-  warehouseId: string
+  status: 'PENDING' | 'ASSIGNED' | 'ACCEPTED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED'
   totalAmount: number
-  status: string
-  saleSource: string
   createdAt: string
-  customer: { id: string; name: string; phone?: string; address?: string }
-  warehouse: { id: string; name: string }
-  createdBy: { id: string; name: string }
+  expectedDeliveryDate?: string | null
+  priority: 'NORMAL' | 'URGENT'
+  deliveryNotes?: string | null
+  customer: { id: string; name: string; phone?: string | null; address?: string | null }
   items: DistributorOrderItem[]
-  invoices?: { id: string; invoiceNumber: string; status: string; paidAmount: number; totalAmount: number }[]
+  invoice: {
+    id: string
+    invoiceNumber: string
+    status: string
+    totalAmount: number
+    paidAmount: number
+    createdAt: string
+  } | null
 }
 
 export interface DistributorOrderItem {
   id: string
-  salesOrderId: string
-  productId: string
+  product: { id: string; name: string; sku: string }
   quantity: number
   unitPrice: number
   totalPrice: number
-  product?: { id: string; name: string; sku: string; sellingPrice?: number }
 }
 
 export interface DistributorInvoice {

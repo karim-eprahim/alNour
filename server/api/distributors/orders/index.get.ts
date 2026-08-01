@@ -1,16 +1,55 @@
+import type { Prisma } from '@prisma/client'
+
+const orderInclude = {
+  customer: { select: { id: true, name: true, phone: true, address: true } },
+  items: {
+    include: { product: { select: { id: true, name: true, sku: true } } },
+  },
+  invoices: {
+    select: { id: true, invoiceNumber: true, status: true, totalAmount: true, paidAmount: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+    take: 1,
+  },
+} satisfies Prisma.SalesOrderInclude
+
+function serialize(order: any) {
+  return {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    totalAmount: order.totalAmount.toNumber(),
+    createdAt: order.createdAt,
+    expectedDeliveryDate: order.expectedDeliveryDate,
+    priority: order.priority,
+    deliveryNotes: order.deliveryNotes,
+    customer: order.customer,
+    items: order.items.map((item: any) => ({
+      product: item.product,
+      quantity: item.quantity.toNumber(),
+      unitPrice: item.unitPrice.toNumber(),
+      totalPrice: item.totalPrice.toNumber(),
+    })),
+    invoice: order.invoices[0] || null,
+  }
+}
+
 export default defineEventHandler(async (event) => {
   const auth = event.context.auth
   await requirePermission(event, 'SALES', 'READ')
 
   const query = getQuery(event)
+  const page = parseInt(query.page as string) || 1
+  const limit = parseInt(query.limit as string) || 10
+  const skip = (page - 1) * limit
 
   const where: any = {
     assignedDistributorId: auth.userId,
+    status: { not: 'PENDING' },
   }
 
   if (query.status) {
     const statuses = (query.status as string).split(',')
-    where.status = { in: statuses }
+    where.status = { not: 'PENDING', in: statuses }
   }
   if (query.search) {
     where.OR = [
@@ -19,22 +58,10 @@ export default defineEventHandler(async (event) => {
     ]
   }
 
-  const page = parseInt(query.page as string) || 1
-  const limit = parseInt(query.limit as string) || 20
-  const skip = (page - 1) * limit
-
   const [orders, total] = await Promise.all([
     prisma.salesOrder.findMany({
       where,
-      include: {
-        customer: { select: { id: true, name: true, phone: true, address: true } },
-        warehouse: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, name: true } },
-        items: {
-          include: { product: { select: { id: true, name: true, sku: true, sellingPrice: true } } },
-        },
-        invoices: { select: { id: true, invoiceNumber: true, status: true, paidAmount: true, totalAmount: true } },
-      },
+      include: orderInclude,
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
@@ -42,5 +69,5 @@ export default defineEventHandler(async (event) => {
     prisma.salesOrder.count({ where }),
   ])
 
-  return { orders, total, page, limit }
+  return { orders: orders.map(serialize), total, page, limit }
 })

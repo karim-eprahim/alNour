@@ -8,6 +8,12 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
   CANCELLED: [],
 }
 
+const TIMESTAMPS: Record<string, string> = {
+  ACCEPTED: 'acceptedAt',
+  OUT_FOR_DELIVERY: 'startedDeliveryAt',
+  DELIVERED: 'deliveredAt',
+}
+
 function isValidTransition(from: string, to: string): boolean {
   const allowed = STATUS_TRANSITIONS[from]
   return allowed ? allowed.includes(to) : false
@@ -33,6 +39,8 @@ export default defineEventHandler(async (event) => {
       })
     }
     data.status = body.status
+    const timestampField = TIMESTAMPS[body.status]
+    if (timestampField) data[timestampField] = new Date()
   }
   if (body.assignedDistributorId !== undefined) {
     if (body.assignedDistributorId) {

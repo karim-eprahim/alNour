@@ -21,6 +21,14 @@ export async function fetchDistributorOrdersApi(params?: {
   return $fetch('/api/distributors/orders', { params })
 }
 
+export async function fetchDistributorOrderApi(id: string): Promise<{ order: DistributorOrder }> {
+  return $fetch(`/api/distributors/orders/${id}`)
+}
+
+export async function updateDistributorOrderStatusApi(id: string, status: string): Promise<{ order: { id: string; status: string } }> {
+  return $fetch(`/api/distributors/orders/${id}/status`, { method: 'POST', body: { status } })
+}
+
 export async function completeDeliveryApi(id: string, payload: CompleteDeliveryPayload): Promise<{ invoice: DistributorInvoice }> {
   return $fetch(`/api/distributors/orders/${id}/complete`, { method: 'POST', body: payload })
 }
