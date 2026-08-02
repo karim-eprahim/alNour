@@ -8,8 +8,8 @@ import type {
   ConfirmDeliveryPayload,
 } from './type'
 
-export async function fetchCustodyApi(): Promise<{ custodies: DistributorCustodyItem[]; totalItems: number; totalValue: number }> {
-  return $fetch('/api/distributors/custody')
+export async function fetchCustodyApi(distributorId?: string): Promise<{ custodies: DistributorCustodyItem[]; totalItems: number; totalValue: number }> {
+  return $fetch('/api/distributors/custody', { params: { distributorId } })
 }
 
 export async function fetchDistributorOrdersApi(params?: {
@@ -17,7 +17,8 @@ export async function fetchDistributorOrdersApi(params?: {
   status?: string
   page?: number
   limit?: number
-}): Promise<{ orders: DistributorOrder[]; total: number; page: number; limit: number }> {
+  distributorId?: string
+}): Promise<{ orders: DistributorOrder[]; total: number; page: number; limit: number; summary?: Record<string, number> }> {
   return $fetch('/api/distributors/orders', { params })
 }
 
@@ -77,6 +78,7 @@ export async function fetchCashMovementsApi(params?: {
   type?: string
   page?: number
   limit?: number
+  distributorId?: string
 }): Promise<{ movements: DistributorCashMovement[]; total: number; page: number; limit: number }> {
   return $fetch('/api/distributors/cash/movements', { params })
 }

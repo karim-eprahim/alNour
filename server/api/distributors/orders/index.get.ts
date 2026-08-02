@@ -44,12 +44,18 @@ export default defineEventHandler(async (event) => {
   await requirePermission(event, 'SALES', 'READ')
 
   const query = getQuery(event)
+  const distributorId = (query.distributorId as string) || auth.userId
+
+  if (distributorId !== auth.userId) {
+    await requirePermission(event, 'USERS', 'READ')
+  }
+
   const page = parseInt(query.page as string) || 1
   const limit = parseInt(query.limit as string) || 10
   const skip = (page - 1) * limit
 
   const where: any = {
-    assignedDistributorId: auth.userId,
+    assignedDistributorId: distributorId,
     status: { not: 'PENDING' },
   }
 
@@ -64,7 +70,7 @@ export default defineEventHandler(async (event) => {
     ]
   }
 
-  const [orders, total] = await Promise.all([
+  const [orders, total, grouped] = await Promise.all([
     prisma.salesOrder.findMany({
       where,
       include: orderInclude,
@@ -73,7 +79,17 @@ export default defineEventHandler(async (event) => {
       take: limit,
     }),
     prisma.salesOrder.count({ where }),
+    prisma.salesOrder.groupBy({
+      by: ['status'],
+      where,
+      _count: { _all: true },
+    }),
   ])
 
-  return { orders: orders.map(serialize), total, page, limit }
+  const summary: Record<string, number> = {}
+  for (const g of grouped) {
+    summary[g.status] = g._count._all
+  }
+
+  return { orders: orders.map(serialize), total, page, limit, summary }
 })

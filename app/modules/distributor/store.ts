@@ -30,6 +30,7 @@ export const useDistributorStore = defineStore('distributor', () => {
   const custodyTotalValue = ref(0)
   const orders = ref<DistributorOrder[]>([])
   const ordersTotal = ref(0)
+  const ordersSummary = ref<Record<string, number>>({})
   const currentOrder = ref<DistributorOrder | null>(null)
   const invoices = ref<DistributorInvoice[]>([])
   const invoicesTotal = ref(0)
@@ -39,10 +40,10 @@ export const useDistributorStore = defineStore('distributor', () => {
   const recentCustomers = ref<any[]>([])
   const loading = ref(false)
 
-  async function fetchCustody() {
+  async function fetchCustody(distributorId?: string) {
     loading.value = true
     try {
-      const data = await fetchCustodyApi()
+      const data = await fetchCustodyApi(distributorId)
       custodies.value = data.custodies
       custodyTotalItems.value = data.totalItems
       custodyTotalValue.value = data.totalValue
@@ -52,12 +53,13 @@ export const useDistributorStore = defineStore('distributor', () => {
     }
   }
 
-  async function fetchOrders(params?: { search?: string; status?: string; page?: number; limit?: number }) {
+  async function fetchOrders(params?: { search?: string; status?: string; page?: number; limit?: number; distributorId?: string }) {
     loading.value = true
     try {
       const data = await fetchDistributorOrdersApi(params)
       orders.value = data.orders
       ordersTotal.value = data.total
+      ordersSummary.value = data.summary || {}
       return data
     } finally {
       loading.value = false
@@ -221,7 +223,7 @@ export const useDistributorStore = defineStore('distributor', () => {
 
   return {
     custodies, custodyTotalItems, custodyTotalValue, custody,
-    orders, ordersTotal, currentOrder,
+    orders, ordersTotal, ordersSummary, currentOrder,
     invoices, invoicesTotal,
     cashOnHand, cashMovements, cashMovementsTotal,
     recentCustomers,

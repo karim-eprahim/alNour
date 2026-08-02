@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/vue-table'
 import {
   UiBadge, UiButton, UiCard, UiCardContent, UiCardHeader, UiCardTitle, UiCardDescription,
   UiDialog, UiDialogContent, UiDialogHeader, UiDialogTitle, UiDialogDescription, UiDialogFooter,
-  UiInput, UiLabel,
+  UiInput, UiLabel, NuxtLink,
 } from '#components'
 
 definePageMeta({
@@ -89,7 +89,7 @@ const columns: ColumnDef<Distributor>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
-    cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name),
+    cell: ({ row }) => h(NuxtLink, { to: `/customers/distributors/${row.original.id}`, class: 'font-medium hover:underline' }, row.original.name),
   },
   {
     accessorKey: 'phone',

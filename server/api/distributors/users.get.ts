@@ -12,6 +12,9 @@ export default defineEventHandler(async () => {
       status: true,
       cashOnHand: true,
       createdAt: true,
+      userWarehouses: {
+        include: { warehouse: { select: { id: true, name: true, location: true } } },
+      },
       custodies: {
         include: {
           product: { select: { id: true, name: true, nameAr: true, sku: true, sellingPrice: true } },
@@ -31,7 +34,12 @@ export default defineEventHandler(async () => {
       return e.type === 'DEBIT' ? sum + e.amount.toNumber() : sum - e.amount.toNumber()
     }, 0)
     const { ledgerEntries, ...rest } = d
-    return { ...rest, totalCustody, balance }
+    return {
+      ...rest,
+      totalCustody,
+      balance,
+      assignedWarehouses: d.userWarehouses.map((uw) => uw.warehouse),
+    }
   })
 
   return { distributors: result }
