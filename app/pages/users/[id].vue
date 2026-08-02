@@ -38,12 +38,16 @@ async function handleAssign() {
     await permsStore.assignUserPermission(userId.value, selectedPermissionId.value)
     showAssignDialog.value = false
     selectedPermissionId.value = ''
+    await fetchUserPerms()
+    await fetchAllPerms()
   } catch {}
 }
 
 async function handleRemove(permissionId: string) {
   try {
     await permsStore.removeUserPermission(userId.value, permissionId)
+    await fetchUserPerms()
+    await fetchAllPerms()
   } catch {}
 }
 

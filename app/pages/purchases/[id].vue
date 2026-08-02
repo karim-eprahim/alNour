@@ -44,6 +44,7 @@ async function handlePay() {
     showPayDialog.value = false
     payForm.amount = null; payForm.description = ''
     toast.success('Payment recorded')
+    await fetchInvoice()
   } catch {}
 }
 

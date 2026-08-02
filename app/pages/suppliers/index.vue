@@ -66,6 +66,7 @@ async function handleCreate() {
     showCreateDialog.value = false
     createForm.name = ''; createForm.phone = ''; createForm.email = ''; createForm.address = ''; createForm.company = ''; createForm.linkedCustomerId = ''
     toast.success('Supplier created')
+    await suppliersStore.fetchSuppliers({ search: debouncedSearch.value || undefined })
   } catch {}
 }
 
@@ -75,6 +76,7 @@ async function handleEdit() {
     await suppliersStore.updateSupplier(editingSupplier.value.id, editForm)
     showEditDialog.value = false; editingSupplier.value = null
     toast.success('Supplier updated')
+    await suppliersStore.fetchSuppliers({ search: debouncedSearch.value || undefined })
   } catch {}
 }
 
@@ -84,6 +86,7 @@ async function handleDelete() {
     await suppliersStore.deleteSupplier(deletingSupplier.value.id)
     showDeleteDialog.value = false; deletingSupplier.value = null
     toast.success('Supplier deleted')
+    await suppliersStore.fetchSuppliers({ search: debouncedSearch.value || undefined })
   } catch {}
 }
 

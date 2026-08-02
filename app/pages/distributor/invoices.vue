@@ -39,6 +39,7 @@ async function handlePay() {
     toast.success(`Payment recorded for ${selectedInvoice.value.invoiceNumber}`)
     showPay.value = false
     await store.fetchCashOnHand()
+    await store.fetchInvoices({ page: page.value, limit })
   } catch (err: any) {
     toast.error(err?.message || 'Payment failed')
   } finally {

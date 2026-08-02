@@ -158,6 +158,7 @@ async function handlePay() {
     })
     showPayDialog.value = false; payingInvoice.value = null
     toast.success('Payment recorded')
+    await suppliersStore.fetchSupplier(supplierId.value)
     loadPurchases()
   } catch {}
 }

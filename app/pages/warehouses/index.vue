@@ -52,6 +52,7 @@ async function handleCreate() {
     createForm.name = ''
     createForm.location = ''
     toast.success('Warehouse created')
+    await warehousesStore.fetchWarehouses({ search: debouncedSearch.value || undefined })
   } catch {}
 }
 
@@ -62,6 +63,7 @@ async function handleEdit() {
     showEditDialog.value = false
     editingWarehouse.value = null
     toast.success('Warehouse updated')
+    await warehousesStore.fetchWarehouses({ search: debouncedSearch.value || undefined })
   } catch {}
 }
 
@@ -72,6 +74,7 @@ async function handleDelete() {
     showDeleteDialog.value = false
     deletingWarehouse.value = null
     toast.success('Warehouse deleted')
+    await warehousesStore.fetchWarehouses({ search: debouncedSearch.value || undefined })
   } catch {}
 }
 

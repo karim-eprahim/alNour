@@ -82,6 +82,7 @@ async function handleCreate() {
     showCreateDialog.value = false
     resetCreateForm()
     toast.success('Product created successfully')
+    await fetchData()
   } catch {}
 }
 
@@ -117,6 +118,7 @@ async function handleEdit() {
     showEditDialog.value = false
     editingProduct.value = null
     toast.success('Product updated successfully')
+    await fetchData()
   } catch {}
 }
 
@@ -132,6 +134,7 @@ async function handleDelete() {
     showDeleteDialog.value = false
     deletingProduct.value = null
     toast.success('Product deleted successfully')
+    await fetchData()
   } catch {}
 }
 

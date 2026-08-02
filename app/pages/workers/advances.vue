@@ -60,6 +60,7 @@ async function handleCreate() {
     createForm.date = new Date().toISOString().split('T')[0]
     createForm.notes = ''
     toast.success('Advance recorded')
+    await fetchData()
   } catch { toast.error('Failed to record advance') }
 }
 

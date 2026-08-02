@@ -31,7 +31,7 @@ const customerActions: CustomerActions = {
   onEdit: (customer) => { currentId.value = customer.id; openEdit(customer) },
   onDelete: async (id) => {
     if (!confirm('Delete this customer?')) return
-    try { await customersStore.deleteCustomer(id); toast.success('Customer deleted') }
+    try { await customersStore.deleteCustomer(id); toast.success('Customer deleted'); await load() }
     catch { toast.error('Failed to delete') }
   },
 }
@@ -76,6 +76,7 @@ async function save() {
     if (editing.value) { await customersStore.updateCustomer(currentId.value, payload); toast.success('Customer updated') }
     else { await customersStore.createCustomer(payload); toast.success('Customer created') }
     showDialog.value = false
+    await load()
   } catch { toast.error('Failed to save customer') }
 }
 

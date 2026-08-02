@@ -113,6 +113,7 @@ async function handleCreate() {
     await customersStore.createCustomer({ name: form.name.trim(), phone: form.phone || undefined, address: form.address || undefined })
     toast.success('Customer created')
     showCreateSheet.value = false
+    await load()
   } catch (err: any) {
     toast.error(err?.message || 'Failed to create customer')
   } finally {
@@ -128,6 +129,7 @@ async function handleUpdate() {
     toast.success('Customer updated')
     showEditSheet.value = false
     editingCustomer.value = null
+    await load()
   } catch (err: any) {
     toast.error(err?.message || 'Failed to update customer')
   } finally {

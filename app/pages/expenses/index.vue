@@ -90,6 +90,7 @@ async function handleCreate() {
     showCreateDialog.value = false
     resetCreateForm()
     toast.success('Expense recorded')
+    await fetchData()
   } catch { toast.error('Failed to create expense') }
 }
 
@@ -118,6 +119,7 @@ async function handleEdit() {
     showEditDialog.value = false
     editingExpense.value = null
     toast.success('Expense updated')
+    await fetchData()
   } catch { toast.error('Failed to update expense') }
 }
 
@@ -133,6 +135,7 @@ async function handleDelete() {
     showDeleteDialog.value = false
     deletingExpense.value = null
     toast.success('Expense deleted')
+    await fetchData()
   } catch { toast.error('Failed to delete expense') }
 }
 

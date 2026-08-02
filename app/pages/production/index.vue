@@ -26,6 +26,7 @@ const batchActions: BatchActions = {
     try {
       await productionStore.deleteBatch(id)
       toast.success('Batch deleted')
+      await load()
     } catch { toast.error('Failed to delete batch') }
   },
 }

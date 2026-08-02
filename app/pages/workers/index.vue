@@ -73,6 +73,7 @@ async function handleCreate() {
     showCreateDialog.value = false
     resetCreateForm()
     toast.success('Worker created successfully')
+    await fetchData()
   } catch { toast.error('Failed to create worker') }
 }
 
@@ -100,6 +101,7 @@ async function handleEdit() {
     showEditDialog.value = false
     editingWorker.value = null
     toast.success('Worker updated successfully')
+    await fetchData()
   } catch { toast.error('Failed to update worker') }
 }
 
@@ -115,6 +117,7 @@ async function handleDelete() {
     showDeleteDialog.value = false
     deletingWorker.value = null
     toast.success('Worker deleted successfully')
+    await fetchData()
   } catch { toast.error('Failed to delete worker') }
 }
 

@@ -120,6 +120,7 @@ async function handleCreateCustomer() {
     createForm.phone = ''
     createForm.address = ''
     toast.success('Customer created')
+    await loadRecentCustomers()
   } catch (err: any) {
     toast.error(err?.message || 'Failed to create customer')
   } finally {

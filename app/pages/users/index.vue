@@ -91,6 +91,7 @@ async function handleCreate() {
     await usersStore.createUser({ ...createForm, warehouseIds: createWarehouseIds.value } as any)
     showCreateDialog.value = false
     resetCreateForm()
+    await fetchUsers()
   } catch {}
 }
 
@@ -120,6 +121,7 @@ async function handleEdit() {
     await usersStore.updateUser(editingUser.value.id, { ...editForm, warehouseIds: editWarehouseIds.value })
     showEditDialog.value = false
     editingUser.value = null
+    await fetchUsers()
   } catch {}
 }
 
@@ -134,6 +136,7 @@ async function handleDeleteUser() {
     await usersStore.deleteUser(deletingUser.value.id)
     showDeleteDialog.value = false
     deletingUser.value = null
+    await fetchUsers()
   } catch {}
 }
 
