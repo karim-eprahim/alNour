@@ -263,7 +263,7 @@ async function handleLoad() {
     await $fetch('/api/distributors/load', { method: 'POST', body: loadForm })
     toast.success('Truck loaded successfully')
     showLoadDialog.value = false
-    await Promise.all([fetchDistributor(), loadCustody()])
+    await Promise.all([fetchDistributorSnapshot(), loadCustody()])
   } catch (err: any) {
     toast.error(err?.data?.statusMessage || 'Failed to load truck')
   } finally {
@@ -281,7 +281,7 @@ async function handleReturn() {
     await $fetch('/api/distributors/return', { method: 'POST', body: returnForm })
     toast.success('Stock returned successfully')
     showReturnDialog.value = false
-    await Promise.all([fetchDistributor(), loadCustody()])
+    await Promise.all([fetchDistributorSnapshot(), loadCustody()])
   } catch (err: any) {
     toast.error(err?.data?.statusMessage || 'Failed to return stock')
   } finally {
