@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client'
 
 const orderInclude = {
-  customer: { select: { id: true, name: true, phone: true, address: true } },
+  customer: { select: { id: true, name: true, phone: true, address: true, latitude: true, longitude: true } },
   items: {
     include: { product: { select: { id: true, name: true, sku: true } } },
   },

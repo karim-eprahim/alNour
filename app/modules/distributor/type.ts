@@ -47,7 +47,7 @@ export interface DistributorOrder {
   acceptedAt?: string | null
   outForDeliveryAt?: string | null
   completedAt?: string | null
-  customer: { id: string; name: string; phone?: string | null; address?: string | null }
+  customer: { id: string; name: string; phone?: string | null; address?: string | null; latitude?: number | null; longitude?: number | null }
   items: DistributorOrderItem[]
   invoice: {
     id: string

@@ -6,3 +6,7 @@ export const MAP_TILE_ATTRIBUTION =
 export const MAP_DEFAULT_CENTER = { lat: 30.5877, lng: 32.2654 }
 
 export const MAP_DEFAULT_ZOOM = 12
+
+export function buildDirectionsUrl(latitude: number, longitude: number): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+}

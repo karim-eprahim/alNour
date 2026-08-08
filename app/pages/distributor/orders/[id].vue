@@ -11,6 +11,7 @@ import {
 } from '@/modules/distributor/components/orderColumns'
 import type { DeliveryResult } from '@/modules/distributor/type'
 import PageHeader from '~/components/shared/PageHeader.vue'
+import { buildDirectionsUrl } from '~/utils/mapConfig'
 
 definePageMeta({
   layout: 'distributor',
@@ -211,7 +212,7 @@ onUnmounted(() => stopTracking())
               <span class="relative inline-flex size-2.5 rounded-full bg-green-500" />
             </span>
             <p class="text-sm font-medium">GPS tracking active</p>
-            <UiBadge variant="success" class="ml-auto text-[10px]">OUT_FOR_DELIVERY</UiBadge>
+            <UiBadge :variant="'success' as any" class="ml-auto text-[10px]">OUT_FOR_DELIVERY</UiBadge>
           </div>
 
           <div v-if="currentLocation" class="flex items-center gap-2 text-sm">
@@ -253,6 +254,39 @@ onUnmounted(() => stopTracking())
               <p class="flex items-center gap-2 text-muted-foreground">
                 <MapPin class="size-3.5" /> {{ order.customer.address || '—' }}
               </p>
+            </UiCardContent>
+          </UiCard>
+
+          <UiCard>
+            <UiCardHeader>
+              <UiCardTitle class="text-base">Delivery Location</UiCardTitle>
+            </UiCardHeader>
+            <UiCardContent class="space-y-3">
+              <div class="text-sm">
+                <p class="font-medium">{{ order.customer.name }}</p>
+                <p class="text-muted-foreground">{{ order.customer.address || '—' }}</p>
+              </div>
+
+              <CustomerLocationMap
+                :customer-name="order.customer.name"
+                :address="order.customer.address"
+                :latitude="order.customer.latitude ?? null"
+                :longitude="order.customer.longitude ?? null"
+                class="h-56 w-full overflow-hidden rounded-lg border"
+              />
+
+              <a
+                v-if="order.customer.latitude != null && order.customer.longitude != null"
+                :href="buildDirectionsUrl(order.customer.latitude, order.customer.longitude)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="block w-full"
+              >
+                <UiButton class="w-full">
+                  <MapPin class="size-4" /> Navigate to Customer
+                </UiButton>
+              </a>
+              <p v-else class="text-sm text-muted-foreground">Customer location is not available.</p>
             </UiCardContent>
           </UiCard>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus } from '@lucide/vue'
+import { Plus, MapPin, Trash2 } from '@lucide/vue'
 import type { CustomerActions } from '@/modules/customers/components/column'
 import type { Customer } from '@/modules/customers/type'
 import { getCustomerColumns } from '@/modules/customers/components/column'
@@ -22,8 +22,9 @@ const search = ref('')
 const page = ref(1)
 const limit = 20
 const showDialog = ref(false)
+const showMapPicker = ref(false)
 const editing = ref(false)
-const form = reactive({ name: '', phone: '', address: '', latitude: '', longitude: '', linkedSupplierId: '' })
+const form = reactive({ name: '', phone: '', address: '', latitude: null as number | null, longitude: null as number | null, linkedSupplierId: '' })
 const currentId = ref('')
 
 const customerActions: CustomerActions = {
@@ -57,15 +58,15 @@ async function loadSupplierOptions() {
 
 function openCreate() {
   editing.value = false
-  form.name = ''; form.phone = ''; form.address = ''; form.latitude = ''; form.longitude = ''; form.linkedSupplierId = ''
+  form.name = ''; form.phone = ''; form.address = ''; form.latitude = null; form.longitude = null; form.linkedSupplierId = ''
   showDialog.value = true
 }
 
 function openEdit(customer: Customer) {
   editing.value = true
   form.name = customer.name; form.phone = customer.phone || ''; form.address = customer.address || ''
-  form.latitude = customer.latitude != null ? String(customer.latitude) : ''
-  form.longitude = customer.longitude != null ? String(customer.longitude) : ''
+  form.latitude = customer.latitude ?? null
+  form.longitude = customer.longitude ?? null
   form.linkedSupplierId = (customer as any).linkedSupplier?.id ?? ''
   showDialog.value = true
 }
@@ -74,8 +75,10 @@ async function save() {
   if (!form.name) { toast.error('Name is required'); return }
   try {
     const payload: any = { name: form.name, phone: form.phone, address: form.address }
-    if (form.latitude !== '') payload.latitude = form.latitude
-    if (form.longitude !== '') payload.longitude = form.longitude
+    if (form.latitude !== null && form.longitude !== null) {
+      payload.latitude = form.latitude
+      payload.longitude = form.longitude
+    }
     if (form.linkedSupplierId) payload.linkedSupplierId = form.linkedSupplierId
     if (editing.value) { await customersStore.updateCustomer(currentId.value, payload); toast.success('Customer updated') }
     else { await customersStore.createCustomer(payload); toast.success('Customer created') }
@@ -138,14 +141,25 @@ onMounted(load)
             <UiLabel for="address">Address</UiLabel>
             <UiTextarea id="address" v-model="form.address" placeholder="Address" />
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="space-y-2">
-              <UiLabel for="latitude">Latitude <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
-              <UiInput id="latitude" v-model="form.latitude" type="number" step="any" min="-90" max="90" placeholder="e.g. 30.5912" />
-            </div>
-            <div class="space-y-2">
-              <UiLabel for="longitude">Longitude <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
-              <UiInput id="longitude" v-model="form.longitude" type="number" step="any" min="-180" max="180" placeholder="e.g. 32.2731" />
+          <div class="space-y-2">
+            <UiLabel for="customer-location">Customer Location <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
+            <div class="flex items-center justify-between rounded-lg border p-3">
+              <div v-if="form.latitude !== null && form.longitude !== null" class="flex items-center gap-3">
+                <MapPin class="size-5 text-primary" />
+                <div>
+                  <p class="text-sm font-medium">Location selected</p>
+                  <p class="text-sm text-muted-foreground">{{ form.latitude.toFixed(6) }}, {{ form.longitude.toFixed(6) }}</p>
+                </div>
+              </div>
+              <p v-else class="text-sm text-muted-foreground">No location selected</p>
+              <div class="flex items-center gap-2">
+                <UiButton v-if="form.latitude !== null && form.longitude !== null" type="button" variant="ghost" size="sm" @click="form.latitude = null; form.longitude = null">
+                  <Trash2 class="size-4" /> Clear
+                </UiButton>
+                <UiButton type="button" variant="outline" size="sm" @click="showMapPicker = true">
+                  <MapPin class="size-4" /> Select location on map
+                </UiButton>
+              </div>
             </div>
           </div>
           <div class="space-y-2 *:w-full">
@@ -157,6 +171,27 @@ onMounted(load)
             <UiButton type="submit">{{ editing ? 'Update' : 'Create' }}</UiButton>
           </UiDialogFooter>
         </form>
+      </UiDialogContent>
+    </UiDialog>
+
+    <UiDialog :open="showMapPicker" @update:open="showMapPicker = $event">
+      <UiDialogContent class="sm:max-w-lg">
+        <UiDialogHeader>
+          <UiDialogTitle>Select customer location</UiDialogTitle>
+          <UiDialogDescription>Click on the map to place the marker, or drag it to fine-tune the position.</UiDialogDescription>
+        </UiDialogHeader>
+        <div class="space-y-3">
+          <div class="h-72 w-full overflow-hidden rounded-lg border">
+            <MapLocationPicker v-model:latitude="form.latitude" v-model:longitude="form.longitude" />
+          </div>
+          <p class="text-center text-sm text-muted-foreground">
+            {{ form.latitude !== null && form.longitude !== null ? `${form.latitude.toFixed(6)}, ${form.longitude.toFixed(6)}` : 'No location selected yet' }}
+          </p>
+        </div>
+        <UiDialogFooter>
+          <UiButton type="button" variant="outline" @click="showMapPicker = false">Cancel</UiButton>
+          <UiButton type="button" :disabled="form.latitude === null || form.longitude === null" @click="showMapPicker = false">Confirm location</UiButton>
+        </UiDialogFooter>
       </UiDialogContent>
     </UiDialog>
   </div>
