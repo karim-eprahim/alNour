@@ -34,13 +34,23 @@ export default defineEventHandler(async (event) => {
   }
 
   if (result === 'CANCELLED') {
-    const updated = await prisma.salesOrder.update({
-      where: { id },
-      data: {
-        deliveryResult: 'CANCELLED',
-        status: 'CANCELLED',
-        cancelReason: body.cancelReason || null,
-      },
+    const updated = await prisma.$transaction(async (tx) => {
+      const order = await tx.salesOrder.update({
+        where: { id },
+        data: {
+          deliveryResult: 'CANCELLED',
+          status: 'CANCELLED',
+          cancelReason: body.cancelReason || null,
+          completedAt: new Date(),
+        },
+      })
+
+      await tx.deliveryTracking.updateMany({
+        where: { salesOrderId: id, status: 'ACTIVE' },
+        data: { status: 'CANCELLED', endedAt: new Date(), lastUpdatedAt: new Date() },
+      })
+
+      return order
     })
     return { order: { id: updated.id, status: updated.status, deliveryResult: updated.deliveryResult } }
   }
@@ -223,6 +233,11 @@ export default defineEventHandler(async (event) => {
         partialDeliveryReason: result === 'PARTIAL' ? body.partialDeliveryReason || null : null,
         completedAt: new Date(),
       },
+    })
+
+    await tx.deliveryTracking.updateMany({
+      where: { salesOrderId: order.id, status: 'ACTIVE' },
+      data: { status: 'COMPLETED', endedAt: new Date(), lastUpdatedAt: new Date() },
     })
 
     return { invoice, order: updated }

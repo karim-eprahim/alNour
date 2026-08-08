@@ -85,7 +85,7 @@ export const useDistributorStore = defineStore('distributor', () => {
       if (currentOrder.value) currentOrder.value.status = newStatus
       const idx = orders.value.findIndex((o) => o.id === id)
       if (idx !== -1 && orders.value[idx]) orders.value[idx].status = newStatus
-      return data.order
+      return data
     } finally {
       loading.value = false
     }

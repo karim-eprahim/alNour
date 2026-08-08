@@ -23,7 +23,7 @@ const page = ref(1)
 const limit = 20
 const showDialog = ref(false)
 const editing = ref(false)
-const form = reactive({ name: '', phone: '', address: '', linkedSupplierId: '' })
+const form = reactive({ name: '', phone: '', address: '', latitude: '', longitude: '', linkedSupplierId: '' })
 const currentId = ref('')
 
 const customerActions: CustomerActions = {
@@ -57,13 +57,15 @@ async function loadSupplierOptions() {
 
 function openCreate() {
   editing.value = false
-  form.name = ''; form.phone = ''; form.address = ''; form.linkedSupplierId = ''
+  form.name = ''; form.phone = ''; form.address = ''; form.latitude = ''; form.longitude = ''; form.linkedSupplierId = ''
   showDialog.value = true
 }
 
 function openEdit(customer: Customer) {
   editing.value = true
   form.name = customer.name; form.phone = customer.phone || ''; form.address = customer.address || ''
+  form.latitude = customer.latitude != null ? String(customer.latitude) : ''
+  form.longitude = customer.longitude != null ? String(customer.longitude) : ''
   form.linkedSupplierId = (customer as any).linkedSupplier?.id ?? ''
   showDialog.value = true
 }
@@ -72,12 +74,14 @@ async function save() {
   if (!form.name) { toast.error('Name is required'); return }
   try {
     const payload: any = { name: form.name, phone: form.phone, address: form.address }
+    if (form.latitude !== '') payload.latitude = form.latitude
+    if (form.longitude !== '') payload.longitude = form.longitude
     if (form.linkedSupplierId) payload.linkedSupplierId = form.linkedSupplierId
     if (editing.value) { await customersStore.updateCustomer(currentId.value, payload); toast.success('Customer updated') }
     else { await customersStore.createCustomer(payload); toast.success('Customer created') }
     showDialog.value = false
     await load()
-  } catch { toast.error('Failed to save customer') }
+  } catch (err: any) { toast.error(err?.data?.statusMessage || 'Failed to save customer') }
 }
 
 async function load() {
@@ -133,6 +137,16 @@ onMounted(load)
           <div class="space-y-2">
             <UiLabel for="address">Address</UiLabel>
             <UiTextarea id="address" v-model="form.address" placeholder="Address" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-2">
+              <UiLabel for="latitude">Latitude <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
+              <UiInput id="latitude" v-model="form.latitude" type="number" step="any" min="-90" max="90" placeholder="e.g. 30.5912" />
+            </div>
+            <div class="space-y-2">
+              <UiLabel for="longitude">Longitude <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>
+              <UiInput id="longitude" v-model="form.longitude" type="number" step="any" min="-180" max="180" placeholder="e.g. 32.2731" />
+            </div>
           </div>
           <div class="space-y-2 *:w-full">
             <UiLabel for="supplier-link">Link to Supplier <span class="text-xs text-muted-foreground">(optional)</span></UiLabel>

@@ -14,12 +14,15 @@ export default defineEventHandler(async (event) => {
   const auth = event.context.auth
   await requirePermission(event, 'SALES', 'UPDATE')
 
-  const id = getRouterParam(event, 'id')
+  let id = getRouterParam(event, 'id') || ''
   const body = await readBody(event)
   const targetStatus = body.status as string
 
   if (!VALID_TARGETS.has(targetStatus)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid target status' })
+  }
+  if (!id) {
+    throw createError({ statusCode: 400, statusMessage: 'Order id is required' })
   }
 
   const order = await prisma.salesOrder.findFirst({
@@ -41,7 +44,35 @@ export default defineEventHandler(async (event) => {
   const data: any = { status: targetStatus }
   if (timestampField) data[timestampField] = new Date()
 
-  const updated = await prisma.salesOrder.update({ where: { id }, data })
+  const result = await prisma.$transaction(async (tx) => {
+    const updated = await tx.salesOrder.update({ where: { id }, data })
 
-  return { order: { id: updated.id, status: updated.status } }
+    let tracking: any = null
+    if (targetStatus === 'OUT_FOR_DELIVERY') {
+      const existing = await tx.deliveryTracking.findFirst({
+        where: { salesOrderId: id, status: 'ACTIVE' },
+      })
+      if (existing) {
+        throw createError({ statusCode: 409, statusMessage: 'A tracking session is already active for this order' })
+      }
+      tracking = await tx.deliveryTracking.create({
+        data: {
+          salesOrderId: id,
+          distributorId: auth.userId,
+          status: 'ACTIVE',
+          startedAt: new Date(),
+          lastUpdatedAt: new Date(),
+        },
+      })
+    }
+
+    return { updated, tracking }
+  })
+
+  return {
+    order: { id: result.updated.id, status: result.updated.status },
+    tracking: result.tracking
+      ? { id: result.tracking.id, status: result.tracking.status }
+      : null,
+  }
 })

@@ -10,9 +10,13 @@ const orderInclude = {
     orderBy: { createdAt: 'desc' },
     take: 1,
   },
+  deliveryTracking: {
+    include: { locations: { orderBy: { recordedAt: 'desc' }, take: 1 } },
+  },
 } satisfies Prisma.SalesOrderInclude
 
 function serialize(order: any) {
+  const tracking = order.deliveryTracking || null
   return {
     id: order.id,
     orderNumber: order.orderNumber,
@@ -36,6 +40,25 @@ function serialize(order: any) {
       totalPrice: item.totalPrice.toNumber(),
     })),
     invoice: order.invoices[0] || null,
+    tracking: tracking
+      ? {
+          id: tracking.id,
+          status: tracking.status,
+          startedAt: tracking.startedAt,
+          endedAt: tracking.endedAt,
+          lastUpdatedAt: tracking.lastUpdatedAt,
+          location: tracking.locations[0]
+            ? {
+                latitude: tracking.locations[0].latitude,
+                longitude: tracking.locations[0].longitude,
+                accuracy: tracking.locations[0].accuracy,
+                speed: tracking.locations[0].speed,
+                heading: tracking.locations[0].heading,
+                recordedAt: tracking.locations[0].recordedAt,
+              }
+            : null,
+        }
+      : null,
   }
 }
 

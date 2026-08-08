@@ -1,3 +1,5 @@
+import { isValidLatitude, isValidLongitude } from '~~/server/utils/tracking'
+
 export default defineEventHandler(async (event) => {
   await requirePermission(event, 'CUSTOMERS', 'UPDATE')
 
@@ -12,6 +14,21 @@ export default defineEventHandler(async (event) => {
   if (body.name !== undefined) data.name = body.name
   if (body.phone !== undefined) data.phone = body.phone
   if (body.address !== undefined) data.address = body.address
+
+  if (body.latitude !== undefined) {
+    const latitude = body.latitude === null || body.latitude === '' ? null : Number(body.latitude)
+    if (latitude !== null && !isValidLatitude(latitude)) {
+      throw createError({ statusCode: 400, statusMessage: 'Invalid latitude: must be between -90 and 90' })
+    }
+    data.latitude = latitude
+  }
+  if (body.longitude !== undefined) {
+    const longitude = body.longitude === null || body.longitude === '' ? null : Number(body.longitude)
+    if (longitude !== null && !isValidLongitude(longitude)) {
+      throw createError({ statusCode: 400, statusMessage: 'Invalid longitude: must be between -180 and 180' })
+    }
+    data.longitude = longitude
+  }
 
   const customer = await prisma.customer.update({ where: { id }, data })
 

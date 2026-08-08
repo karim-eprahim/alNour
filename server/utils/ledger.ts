@@ -25,7 +25,15 @@ export function resolveLedgerOwner(body: Record<string, any>): LedgerOwner {
     })
   }
 
-  return { field: provided[0], value: body[provided[0]] }
+  const field = provided[0]
+  if (!field) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Exactly one owner is required: customerId, supplierId, workerId, or distributorId',
+    })
+  }
+
+  return { field, value: body[field] }
 }
 
 export function assertExactlyOneOwner(body: Record<string, any>): void {

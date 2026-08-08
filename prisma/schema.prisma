@@ -125,6 +125,12 @@ enum OrderPriority {
   URGENT
 }
 
+enum TrackingStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
 // enum OrderStatus {
 //   PENDING
 //   COMPLETED
@@ -172,6 +178,7 @@ model User {
   cashMovements       DistributorCashMovement[]
   cashOnHand          Decimal                   @default(0) @db.Decimal(12, 2)
   ledgerEntries       LedgerEntry[]             @relation("DistributorLedger")
+  deliveryTrackings   DeliveryTracking[]        @relation("DistributorTracking")
 
   @@index([email])
   @@map("users")
@@ -568,6 +575,8 @@ model Customer {
   name      String
   phone     String?
   address   String?
+  latitude  Float?
+  longitude Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -607,6 +616,7 @@ model SalesOrder {
   assignedDistributor User?            @relation("AssignedDistributor", fields: [assignedDistributorId], references: [id])
   items               SalesOrderItem[]
   invoices            Invoice[]
+  deliveryTracking    DeliveryTracking?
 
   @@map("sales_orders")
 }
@@ -792,6 +802,44 @@ model UserLocation {
 
   @@index([userId])
   @@map("user_locations")
+}
+
+// ============================================
+// DISTRIBUTOR GPS TRACKING
+// ============================================
+
+model DeliveryTracking {
+  id            String        @id @default(uuid())
+  salesOrderId  String        @unique
+  distributorId String
+  status        TrackingStatus @default(ACTIVE)
+  startedAt     DateTime      @default(now())
+  endedAt       DateTime?
+  lastUpdatedAt DateTime      @updatedAt
+
+  salesOrder SalesOrder         @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  distributor User              @relation("DistributorTracking", fields: [distributorId], references: [id], onDelete: Cascade)
+  locations   DeliveryLocation[]
+
+  @@index([distributorId, status])
+  @@index([status, lastUpdatedAt])
+  @@map("delivery_tracking")
+}
+
+model DeliveryLocation {
+  id                 String   @id @default(uuid())
+  deliveryTrackingId String
+  latitude           Float
+  longitude          Float
+  accuracy           Float?
+  speed              Float?
+  heading            Float?
+  recordedAt         DateTime @default(now())
+
+  deliveryTracking DeliveryTracking @relation(fields: [deliveryTrackingId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryTrackingId, recordedAt])
+  @@map("delivery_locations")
 }
 
 model AuditLog {

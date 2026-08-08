@@ -4,6 +4,10 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const auth = event.context.auth
 
+  if (!id) {
+    throw createError({ statusCode: 400, statusMessage: 'Invoice id is required' })
+  }
+
   if (!body.amount || parseFloat(body.amount) <= 0) {
     throw createError({ statusCode: 400, statusMessage: 'Amount must be a positive number' })
   }

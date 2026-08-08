@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ArrowLeft, CalendarDays, MapPin, Phone, Truck, CircleCheck, PackageCheck, CircleX, RotateCcw, AlertTriangle, PackageX } from '@lucide/vue'
+import { ArrowLeft, CalendarDays, MapPin, Phone, Truck, CircleCheck, PackageCheck, CircleX, RotateCcw, AlertTriangle, PackageX, Satellite } from '@lucide/vue'
 import { toast } from 'vue-sonner'
+import { useDistributorTracking } from '@/composables/useDistributorTracking'
 import {
   orderStatusVariant,
   orderStatusLabel,
@@ -18,6 +19,16 @@ definePageMeta({
 
 const route = useRoute()
 const store = useDistributorStore()
+const {
+  trackingId,
+  status: trackingStatus,
+  currentLocation,
+  error: trackingError,
+  lastSentAt,
+  positionsSent,
+  start: startTracking,
+  stop: stopTracking,
+} = useDistributorTracking()
 
 const actionLoading = ref(false)
 const showDeliveryDialog = ref(false)
@@ -59,7 +70,22 @@ const cancelReasons = ['Customer Refused', 'Duplicate Order', 'Wrong Order', 'Ot
 async function load() {
   await store.fetchOrder(route.params.id as string)
   seedDeliveryForm()
+  syncTrackingFromOrder()
 }
+
+function syncTrackingFromOrder() {
+  const o = order.value
+  const session = o?.tracking
+  if (o?.status === 'OUT_FOR_DELIVERY' && session?.status === 'ACTIVE') {
+    if (trackingId.value !== session.id) {
+      startTracking(session.id)
+    }
+  } else if (trackingStatus.value === 'tracking') {
+    stopTracking()
+  }
+}
+
+const showTracking = computed(() => order.value?.tracking?.status === 'ACTIVE')
 
 function seedDeliveryForm() {
   const o = order.value
@@ -97,6 +123,7 @@ async function handleAction(key: string) {
     await store.updateOrderStatus(order.value.id, key)
     toast.success(`Order ${order.value.orderNumber} updated`)
     await store.fetchOrder(order.value.id)
+    syncTrackingFromOrder()
   } catch (err: any) {
     toast.error(err?.message || 'Failed to update order')
   } finally {
@@ -137,6 +164,7 @@ async function submitDelivery() {
     toast.success(`Delivery confirmed`)
     showDeliveryDialog.value = false
     await store.fetchOrder(order.value.id)
+    syncTrackingFromOrder()
   } catch (err: any) {
     toast.error(err?.message || 'Failed to confirm delivery')
   } finally {
@@ -145,6 +173,7 @@ async function submitDelivery() {
 }
 
 onMounted(load)
+onUnmounted(() => stopTracking())
 </script>
 
 <template>
@@ -173,6 +202,42 @@ onMounted(load)
         <CircleX class="size-4 shrink-0" />
         <span>Cancel reason: <span class="font-medium">{{ order.cancelReason }}</span></span>
       </div>
+
+      <UiCard v-if="showTracking">
+        <UiCardContent class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="relative flex size-2.5">
+              <span class="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
+              <span class="relative inline-flex size-2.5 rounded-full bg-green-500" />
+            </span>
+            <p class="text-sm font-medium">GPS tracking active</p>
+            <UiBadge variant="success" class="ml-auto text-[10px]">OUT_FOR_DELIVERY</UiBadge>
+          </div>
+
+          <div v-if="currentLocation" class="flex items-center gap-2 text-sm">
+            <Satellite class="size-4 shrink-0 text-muted-foreground" />
+            <span class="tabular-nums">
+              {{ currentLocation.latitude.toFixed(6) }}, {{ currentLocation.longitude.toFixed(6) }}
+            </span>
+            <span v-if="currentLocation.accuracy != null" class="text-xs text-muted-foreground">
+              ±{{ Math.round(currentLocation.accuracy) }}m
+            </span>
+          </div>
+
+          <div v-if="trackingError" class="flex items-center gap-2 text-sm text-destructive">
+            <AlertTriangle class="size-4 shrink-0" />
+            <span>{{ trackingError }}</span>
+          </div>
+
+          <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span v-if="lastSentAt">
+              Last location sent: {{ new Date(lastSentAt).toLocaleTimeString() }}
+            </span>
+            <span v-if="positionsSent > 0">{{ positionsSent }} update(s) sent</span>
+            <span v-else>Waiting for first GPS fix…</span>
+          </div>
+        </UiCardContent>
+      </UiCard>
 
       <div class="grid gap-6 lg:grid-cols-2">
         <div class="space-y-6">

@@ -3,6 +3,8 @@ export interface Customer {
   name: string
   phone?: string | null
   address?: string | null
+  latitude?: number | null
+  longitude?: number | null
   balance?: number
   netBalance?: number
   linkedSupplier?: { id: string; name: string; balance?: number } | null
@@ -18,5 +20,7 @@ export interface CreateCustomerPayload {
   name: string
   phone?: string
   address?: string
+  latitude?: number | null
+  longitude?: number | null
   linkedSupplierId?: string | null
 }

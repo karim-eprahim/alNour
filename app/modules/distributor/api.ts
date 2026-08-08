@@ -26,7 +26,10 @@ export async function fetchDistributorOrderApi(id: string): Promise<{ order: Dis
   return $fetch(`/api/distributors/orders/${id}`)
 }
 
-export async function updateDistributorOrderStatusApi(id: string, status: string): Promise<{ order: { id: string; status: string } }> {
+export async function updateDistributorOrderStatusApi(id: string, status: string): Promise<{
+  order: { id: string; status: string }
+  tracking?: { id: string; status: string } | null
+}> {
   return $fetch(`/api/distributors/orders/${id}/status`, { method: 'POST', body: { status } })
 }
 
