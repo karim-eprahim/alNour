@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/modules/auth/store'
 
-const { colorMode } = useColorMode()
 const auth = useAuthStore()
 
 onMounted(async () => {

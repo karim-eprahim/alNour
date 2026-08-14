@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useSidebar } from '@/composables/useSidebar'
-import { useColorMode } from '@/composables/useColorMode'
 import {useAuthStore} from "@/modules/auth/store"
 
 import { cn } from '@/lib/utils'
@@ -16,8 +15,12 @@ import {
 } from '@lucide/vue'
 
 const { openMobile } = useSidebar()
-const { isDark, toggle: toggleColorMode } = useColorMode()
+const colorMode = useColorMode()
 const auth = useAuthStore()
+
+function toggleColorMode() {
+  colorMode.preference = colorMode.preference === 'dark' ? 'light' : 'dark'
+}
 
 const roles = ['Super Admin', 'Admin', 'Manager', 'Supervisor', 'Operator']
 const currentRole = ref('Super Admin')
@@ -105,7 +108,7 @@ const notifications = ref([
         class="size-8"
         @click="toggleColorMode"
       >
-        <Sun v-if="isDark" class="size-4" />
+        <Sun v-if="colorMode.preference === 'dark'" class="size-4" />
         <Moon v-else class="size-4" />
       </UiButton>
 

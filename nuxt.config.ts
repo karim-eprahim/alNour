@@ -6,7 +6,12 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  modules: ["shadcn-nuxt", "@pinia/nuxt", "pinia-plugin-persistedstate/nuxt"],
+  modules: ["shadcn-nuxt", "@pinia/nuxt", "pinia-plugin-persistedstate/nuxt", "@nuxtjs/color-mode"],
+  colorMode: {
+    preference: "light",
+    fallback: "light",
+    classSuffix: "",
+  },
   components: [
     { path: "~/components/shared", pathPrefix: false },
     { path: "~/components/layout", pathPrefix: false },
