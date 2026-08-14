@@ -10,6 +10,7 @@ export const useAuthStore = defineStore(
     const permissions = ref<Set<string>>(new Set());
     const loading = ref(false);
     const error = ref<string | null>(null);
+    const isInitialized = ref(false);
 
     const isAuthenticated = computed(() => user.value !== null);
     const userName = computed(() => user.value?.name ?? "");
@@ -65,7 +66,23 @@ export const useAuthStore = defineStore(
         user.value = null;
         permissions.value = new Set();
         return null;
+      } finally {
+        isInitialized.value = true;
       }
+    }
+
+    let initPromise: Promise<void> | null = null;
+
+    async function initialize() {
+      if (isInitialized.value) return;
+      if (!initPromise) {
+        initPromise = fetchUser()
+          .then(() => undefined)
+          .finally(() => {
+            initPromise = null;
+          });
+      }
+      return initPromise;
     }
 
     function clearUser() {
@@ -80,12 +97,14 @@ export const useAuthStore = defineStore(
       permissions,
       loading,
       error,
+      isInitialized,
       isAuthenticated,
       userName,
       userRole,
       login,
       logout,
       fetchUser,
+      initialize,
       clearUser,
     };
   },
