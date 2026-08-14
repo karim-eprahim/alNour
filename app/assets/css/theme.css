@@ -1,0 +1,213 @@
+/* ============================================================
+   Design Tokens
+   Semantic variables consumed by shadcn-vue and Tailwind
+   utilities. Every theme overrides the SAME variable set via
+   the `data-theme` attribute on <html>. Light/dark mode is
+   independent of theme and is driven by the `.dark` class
+   (managed by @nuxtjs/color-mode).
+   ============================================================ */
+
+/* ---------- Light mode base (neutral + emerald identity) ---------- */
+:root {
+  --background: oklch(0.985 0.002 240);
+  --foreground: oklch(0.21 0.006 285.885);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.006 285.885);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.006 285.885);
+
+  --primary: oklch(0.52 0.12 164);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.96 0.003 285.885);
+  --secondary-foreground: oklch(0.28 0.01 285.885);
+  --muted: oklch(0.965 0.003 240);
+  --muted-foreground: oklch(0.55 0.012 285.885);
+  --accent: oklch(0.96 0.004 240);
+  --accent-foreground: oklch(0.27 0.01 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+
+  --border: oklch(0.93 0.004 240);
+  --input: oklch(0.925 0.005 240);
+  --ring: oklch(0.6 0.1 164);
+
+  --chart-1: oklch(0.6 0.13 164);
+  --chart-2: oklch(0.7 0.15 162);
+  --chart-3: oklch(0.52 0.12 164);
+  --chart-4: oklch(0.45 0.1 166);
+  --chart-5: oklch(0.76 0.15 160);
+
+  --radius: 0.75rem;
+
+  --sidebar: oklch(0.987 0.002 240);
+  --sidebar-foreground: oklch(0.23 0.008 285.885);
+  --sidebar-primary: oklch(0.52 0.12 164);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.955 0.004 240);
+  --sidebar-accent-foreground: oklch(0.27 0.01 285.885);
+  --sidebar-border: oklch(0.93 0.004 240);
+  --sidebar-ring: oklch(0.6 0.1 164);
+}
+
+/* ---------- Dark mode base (neutral + emerald identity) ---------- */
+.dark {
+  --background: oklch(0.15 0.004 240);
+  --foreground: oklch(0.96 0.004 240);
+  --card: oklch(0.205 0.005 240);
+  --card-foreground: oklch(0.96 0.004 240);
+  --popover: oklch(0.21 0.005 240);
+  --popover-foreground: oklch(0.96 0.004 240);
+
+  --primary: oklch(0.7 0.13 164);
+  --primary-foreground: oklch(0.18 0.02 160);
+
+  --secondary: oklch(0.27 0.005 240);
+  --secondary-foreground: oklch(0.96 0.004 240);
+  --muted: oklch(0.265 0.005 240);
+  --muted-foreground: oklch(0.71 0.01 240);
+  --accent: oklch(0.275 0.005 240);
+  --accent-foreground: oklch(0.96 0.004 240);
+  --destructive: oklch(0.704 0.191 22.216);
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.65 0.12 164);
+
+  --chart-1: oklch(0.7 0.13 164);
+  --chart-2: oklch(0.78 0.15 162);
+  --chart-3: oklch(0.62 0.12 164);
+  --chart-4: oklch(0.52 0.12 166);
+  --chart-5: oklch(0.85 0.15 160);
+
+  --sidebar: oklch(0.18 0.005 240);
+  --sidebar-foreground: oklch(0.96 0.004 240);
+  --sidebar-primary: oklch(0.72 0.14 164);
+  --sidebar-primary-foreground: oklch(0.18 0.02 160);
+  --sidebar-accent: oklch(0.27 0.005 240);
+  --sidebar-accent-foreground: oklch(0.96 0.004 240);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.68 0.12 164);
+}
+
+/* ============================================================
+   Themes
+   Each theme overrides only its color identity. Neutral
+   surfaces, typography and radius are shared from the base so
+   adding a theme never requires touching components.
+   ============================================================ */
+
+/* ---------- Emerald ---------- */
+[data-theme="emerald"] {
+  --primary: oklch(0.52 0.12 164);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.6 0.1 164);
+  --chart-1: oklch(0.6 0.13 164);
+  --chart-2: oklch(0.7 0.15 162);
+  --chart-3: oklch(0.52 0.12 164);
+  --chart-4: oklch(0.45 0.1 166);
+  --chart-5: oklch(0.76 0.15 160);
+  --sidebar-primary: oklch(0.52 0.12 164);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-ring: oklch(0.6 0.1 164);
+}
+
+.dark[data-theme="emerald"] {
+  --primary: oklch(0.7 0.13 164);
+  --primary-foreground: oklch(0.18 0.02 160);
+  --ring: oklch(0.65 0.12 164);
+  --chart-1: oklch(0.7 0.13 164);
+  --chart-2: oklch(0.78 0.15 162);
+  --chart-3: oklch(0.62 0.12 164);
+  --chart-4: oklch(0.52 0.12 166);
+  --chart-5: oklch(0.85 0.15 160);
+  --sidebar-primary: oklch(0.72 0.14 164);
+  --sidebar-primary-foreground: oklch(0.18 0.02 160);
+  --sidebar-ring: oklch(0.68 0.12 164);
+}
+
+/* ---------- Blue ---------- */
+[data-theme="blue"] {
+  --primary: oklch(0.55 0.15 255);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.6 0.12 255);
+  --chart-1: oklch(0.55 0.15 255);
+  --chart-2: oklch(0.66 0.15 250);
+  --chart-3: oklch(0.48 0.13 258);
+  --chart-4: oklch(0.42 0.12 262);
+  --chart-5: oklch(0.72 0.13 248);
+  --sidebar-primary: oklch(0.55 0.15 255);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-ring: oklch(0.6 0.12 255);
+}
+
+.dark[data-theme="blue"] {
+  --primary: oklch(0.66 0.14 255);
+  --primary-foreground: oklch(0.16 0.03 260);
+  --ring: oklch(0.62 0.12 255);
+  --chart-1: oklch(0.66 0.14 255);
+  --chart-2: oklch(0.75 0.15 250);
+  --chart-3: oklch(0.58 0.13 258);
+  --chart-4: oklch(0.5 0.12 262);
+  --chart-5: oklch(0.82 0.13 248);
+  --sidebar-primary: oklch(0.68 0.14 255);
+  --sidebar-primary-foreground: oklch(0.16 0.03 260);
+  --sidebar-ring: oklch(0.64 0.12 255);
+}
+
+/* ---------- Violet ---------- */
+[data-theme="violet"] {
+  --primary: oklch(0.53 0.2 290);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.58 0.17 290);
+  --chart-1: oklch(0.55 0.2 290);
+  --chart-2: oklch(0.64 0.19 285);
+  --chart-3: oklch(0.47 0.18 293);
+  --chart-4: oklch(0.41 0.17 296);
+  --chart-5: oklch(0.7 0.18 283);
+  --sidebar-primary: oklch(0.55 0.2 290);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-ring: oklch(0.58 0.17 290);
+}
+
+.dark[data-theme="violet"] {
+  --primary: oklch(0.68 0.19 292);
+  --primary-foreground: oklch(0.16 0.04 295);
+  --ring: oklch(0.63 0.17 290);
+  --chart-1: oklch(0.68 0.19 292);
+  --chart-2: oklch(0.76 0.19 287);
+  --chart-3: oklch(0.6 0.18 293);
+  --chart-4: oklch(0.52 0.17 296);
+  --chart-5: oklch(0.83 0.18 283);
+  --sidebar-primary: oklch(0.7 0.19 292);
+  --sidebar-primary-foreground: oklch(0.16 0.04 295);
+  --sidebar-ring: oklch(0.65 0.17 290);
+}
+
+/* ---------- Orange ---------- */
+[data-theme="orange"] {
+  --primary: oklch(0.62 0.19 45);
+  --primary-foreground: oklch(0.2 0.03 45);
+  --ring: oklch(0.66 0.16 45);
+  --chart-1: oklch(0.62 0.19 45);
+  --chart-2: oklch(0.7 0.19 40);
+  --chart-3: oklch(0.55 0.17 50);
+  --chart-4: oklch(0.48 0.16 55);
+  --chart-5: oklch(0.75 0.18 35);
+  --sidebar-primary: oklch(0.62 0.19 45);
+  --sidebar-primary-foreground: oklch(0.2 0.03 45);
+  --sidebar-ring: oklch(0.66 0.16 45);
+}
+
+.dark[data-theme="orange"] {
+  --primary: oklch(0.72 0.16 50);
+  --primary-foreground: oklch(0.22 0.03 50);
+  --ring: oklch(0.7 0.15 50);
+  --chart-1: oklch(0.72 0.16 50);
+  --chart-2: oklch(0.78 0.16 45);
+  --chart-3: oklch(0.64 0.15 55);
+  --chart-4: oklch(0.56 0.14 60);
+  --chart-5: oklch(0.83 0.15 35);
+  --sidebar-primary: oklch(0.74 0.16 50);
+  --sidebar-primary-foreground: oklch(0.22 0.03 50);
+  --sidebar-ring: oklch(0.7 0.15 50);
+}
