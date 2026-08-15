@@ -6,6 +6,8 @@ import type {
   DistributorInvoice,
   DistributorPayment,
   DistributorCashMovement,
+  DistributorSettlement,
+  SettlementSummary,
   CreateDirectSalePayload,
   ConfirmDeliveryPayload,
 } from './type'
@@ -22,6 +24,8 @@ import {
   fetchCashOnHandApi,
   fetchRecentCustomersApi,
   fetchCashMovementsApi,
+  fetchDistributorSettlementsApi,
+  createDistributorSettlementApi,
 } from './api'
 
 export const useDistributorStore = defineStore('distributor', () => {
@@ -37,6 +41,9 @@ export const useDistributorStore = defineStore('distributor', () => {
   const cashOnHand = ref(0)
   const cashMovements = ref<DistributorCashMovement[]>([])
   const cashMovementsTotal = ref(0)
+  const settlements = ref<DistributorSettlement[]>([])
+  const settlementsTotal = ref(0)
+  const settlementSummary = ref<SettlementSummary>({ collected: 0, confirmed: 0, custody: 0 })
   const recentCustomers = ref<any[]>([])
   const loading = ref(false)
 
@@ -221,16 +228,45 @@ export const useDistributorStore = defineStore('distributor', () => {
     }
   }
 
+  const custodyBalance = computed(() => settlementSummary.value.custody || 0)
+
+  async function fetchSettlements(params?: { status?: string; page?: number; limit?: number }) {
+    loading.value = true
+    try {
+      const data = await fetchDistributorSettlementsApi(params)
+      settlements.value = data.settlements
+      settlementsTotal.value = data.total
+      settlementSummary.value = data.summary
+      return data
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function createSettlement(payload: { amount: number; paymentMethod: string; notes?: string }) {
+    loading.value = true
+    try {
+      const data = await createDistributorSettlementApi(payload)
+      settlements.value.unshift(data.settlement)
+      await fetchSettlements()
+      return data.settlement
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     custodies, custodyTotalItems, custodyTotalValue, custody,
     orders, ordersTotal, ordersSummary, currentOrder,
     invoices, invoicesTotal,
     cashOnHand, cashMovements, cashMovementsTotal,
+    settlements, settlementsTotal, settlementSummary, custodyBalance,
     recentCustomers,
     loading,
     fetchCustody, fetchOrders, fetchOrder, updateOrderStatus, confirmDelivery, createDirectSale, createReturn,
     fetchInvoices, payInvoice, returnInventory,
     fetchRecentCustomers,
     fetchCashOnHand, fetchCashMovements,
+    fetchSettlements, createSettlement,
   }
 })

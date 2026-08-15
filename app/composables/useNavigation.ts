@@ -17,6 +17,7 @@ import {
   MapPin,
   RefreshCw,
   ClipboardList,
+  Settings,
 } from '@lucide/vue'
 
 export interface NavItem {
@@ -91,12 +92,14 @@ export const useNavigation = () => {
         { title: 'Orders', to: '/sales/orders', permission: { module: 'SALES', action: 'READ' } },
         { title: 'Invoices', to: '/sales/invoices', permission: { module: 'SALES', action: 'READ' } },
         { title: 'Payments', to: '/sales/payments', permission: { module: 'SALES', action: 'READ' } },
+        { title: 'Settlements', to: '/sales/settlements', permission: { module: 'SALES', action: 'READ' } },
       ],
     },
     { title: 'Expenses', icon: DollarSign, to: '/expenses', permission: { module: 'EXPENSES', action: 'READ' } },
     { title: 'GPS Tracking', icon: MapPin, to: '/gps-tracking', permission: { module: 'GPS', action: 'READ' } },
     { title: 'Sync Queue', icon: RefreshCw, to: '/sync-queue', permission: { module: 'SYSTEM', action: 'READ' } },
     { title: 'Audit Logs', icon: ClipboardList, to: '/audit-logs', permission: { module: 'AUDIT', action: 'READ' } },
+    { title: 'Settings', icon: Settings, to: '/settings/appearance' },
   ]
 
   return { navigation }

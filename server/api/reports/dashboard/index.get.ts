@@ -1,3 +1,4 @@
+
 export default defineEventHandler(async (event) => {
   const auth = event.context.auth
   const userRole: string = auth.role
@@ -94,6 +95,11 @@ export default defineEventHandler(async (event) => {
     const grossProfit = totalRevenue - totalCogs
     const netProfit = grossProfit - totalLaborCosts - totalExpenses
 
+    // Distributor Custody = customer payments collected by distributors − confirmed settlements.
+    // Company Cash = money actually received and confirmed by the company.
+    const { custody: totalDistributorCustody, distributorsWithCustody } = await getTotalDistributorCustody(prisma)
+    const companyCash = Math.max(0, totalCollected - totalDistributorCustody)
+
     data.financials = {
       totalRevenue,
       totalCollected,
@@ -102,6 +108,9 @@ export default defineEventHandler(async (event) => {
       totalExpenses,
       grossProfit,
       netProfit,
+      distributorCustody: totalDistributorCustody,
+      distributorsWithCustody,
+      companyCash,
       recentExpenses,
       recentInvoices,
     }
@@ -205,6 +214,8 @@ export default defineEventHandler(async (event) => {
       return e.type === 'DEBIT' ? sum + e.amount.toNumber() : sum - e.amount.toNumber()
     }, 0)
 
+    const cashCustody = await getDistributorCustody(prisma, auth.userId)
+
     data.distributor = {
       custodies: custodies.map((c) => ({
         productId: c.productId,
@@ -214,6 +225,9 @@ export default defineEventHandler(async (event) => {
       totalCustody,
       salesToday,
       outstanding,
+      cashCollected: cashCustody.collected,
+      cashConfirmed: cashCustody.confirmed,
+      cashCustody: cashCustody.custody,
     }
   }
 

@@ -113,6 +113,12 @@ enum CashMovementType {
   ADJUSTMENT
 }
 
+enum SettlementStatus {
+  SUBMITTED
+  CONFIRMED
+  REJECTED
+}
+
 enum InvoiceStatus {
   UNPAID
   PARTIAL
@@ -179,6 +185,8 @@ model User {
   cashOnHand          Decimal                   @default(0) @db.Decimal(12, 2)
   ledgerEntries       LedgerEntry[]             @relation("DistributorLedger")
   deliveryTrackings   DeliveryTracking[]        @relation("DistributorTracking")
+  settlements         Settlement[]              @relation("DistributorSettlements")
+  confirmedSettlements Settlement[]             @relation("SettlementConfirmedBy")
 
   @@index([email])
   @@map("users")
@@ -438,6 +446,33 @@ model DistributorCashMovement {
   distributor User @relation(fields: [distributorId], references: [id])
 
   @@map("distributor_cash_movements")
+}
+
+// ============================================
+// DISTRIBUTOR SETTLEMENTS
+// ============================================
+
+model Settlement {
+  id                String           @id @default(uuid())
+  settlementNumber  String           @unique
+  distributorId     String
+  amount            Decimal          @db.Decimal(12, 2)
+  paymentMethod     PaymentMethod    @default(CASH)
+  status            SettlementStatus @default(SUBMITTED)
+  notes             String?
+  submittedAt       DateTime         @default(now())
+  confirmedAt       DateTime?
+  confirmedBy       String?
+  rejectionReason   String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  distributor     User  @relation("DistributorSettlements", fields: [distributorId], references: [id])
+  confirmedByUser User? @relation("SettlementConfirmedBy", fields: [confirmedBy], references: [id])
+
+  @@index([distributorId])
+  @@index([status])
+  @@map("settlements")
 }
 
 // ============================================

@@ -116,6 +116,31 @@ export interface DistributorCashMovement {
   createdAt: string
 }
 
+export type SettlementStatus = 'SUBMITTED' | 'CONFIRMED' | 'REJECTED'
+
+export interface DistributorSettlement {
+  id: string
+  settlementNumber: string
+  distributorId: string
+  amount: number
+  paymentMethod: string
+  status: SettlementStatus
+  notes?: string | null
+  submittedAt: string
+  confirmedAt?: string | null
+  confirmedBy?: string | null
+  confirmedByUser?: { id: string; name: string } | null
+  rejectionReason?: string | null
+  createdAt: string
+  distributor?: { id: string; name: string }
+}
+
+export interface SettlementSummary {
+  collected: number
+  confirmed: number
+  custody: number
+}
+
 export interface CreateDirectSalePayload {
   customerId: string
   warehouseId: string
