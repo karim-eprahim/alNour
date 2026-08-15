@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { h } from 'vue'
-import { Eye, HandCoins } from '@lucide/vue'
+import { Eye, HandCoins, CheckCircle2, XCircle } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { UiBadge, UiButton, NuxtLink } from '#components'
 import { fetchDistributorsLookupApi } from '@/modules/customers/api'
+import { usePermissions } from '~/composables/usePermissions'
 import PageHeader from '~/components/shared/PageHeader.vue'
 
 definePageMeta({
@@ -28,6 +29,13 @@ interface SettlementRow {
 const settlements = ref<SettlementRow[]>([])
 const total = ref(0)
 const loading = ref(false)
+const { can } = usePermissions()
+
+const target = ref<SettlementRow | null>(null)
+const processing = ref(false)
+const showConfirmDialog = ref(false)
+const showRejectDialog = ref(false)
+const rejectionReason = ref('')
 
 const statusFilter = ref('__all__')
 const distributorFilter = ref('__all__')
@@ -82,7 +90,30 @@ const columns: ColumnDef<SettlementRow>[] = [
     id: 'actions',
     header: 'Actions',
     enableSorting: false,
-    cell: ({ row }) => h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => navigateTo(`/sales/settlements/${row.original.id}`) }, () => h(Eye, { class: 'size-3.5' })),
+    cell: ({ row }) => {
+      const buttons = [
+        h(UiButton, { variant: 'ghost', size: 'icon-xs', onClick: () => navigateTo(`/sales/settlements/${row.original.id}`) }, () => h(Eye, { class: 'size-3.5' })),
+      ]
+      if (row.original.status === 'SUBMITTED' && can('SALES', 'UPDATE')) {
+        buttons.push(
+          h(UiButton, {
+            variant: 'ghost',
+            size: 'icon-xs',
+            class: 'text-green-600 hover:text-green-600 dark:text-green-500',
+            title: 'Confirm',
+            onClick: () => { target.value = row.original; showConfirmDialog.value = true },
+          }, () => h(CheckCircle2, { class: 'size-3.5' })),
+          h(UiButton, {
+            variant: 'ghost',
+            size: 'icon-xs',
+            class: 'text-destructive hover:text-destructive',
+            title: 'Reject',
+            onClick: () => { target.value = row.original; showRejectDialog.value = true },
+          }, () => h(XCircle, { class: 'size-3.5' })),
+        )
+      }
+      return h('div', { class: 'flex items-center gap-1' }, buttons)
+    },
   },
 ]
 
@@ -112,6 +143,46 @@ async function load() {
 watch([statusFilter, distributorFilter, paymentMethodFilter, dateFrom, dateTo], () => { page.value = 1; load() })
 watch(page, load)
 onMounted(load)
+
+async function confirmSettlement() {
+  if (!target.value) return
+  processing.value = true
+  try {
+    const data = await $fetch(`/api/sales/settlements/${target.value.id}/confirm`, { method: 'POST' })
+    toast.success(`Settlement ${data.settlement.settlementNumber} confirmed`)
+    showConfirmDialog.value = false
+    target.value = null
+    await load()
+  } catch (err: any) {
+    toast.error(err?.data?.statusMessage || 'Failed to confirm settlement')
+  } finally {
+    processing.value = false
+  }
+}
+
+async function rejectSettlement() {
+  if (!target.value) return
+  if (!rejectionReason.value.trim()) {
+    toast.error('Rejection reason is required')
+    return
+  }
+  processing.value = true
+  try {
+    const data = await $fetch(`/api/sales/settlements/${target.value.id}/reject`, {
+      method: 'POST',
+      body: { rejectionReason: rejectionReason.value.trim() },
+    })
+    toast.success(`Settlement ${data.settlement.settlementNumber} rejected`)
+    showRejectDialog.value = false
+    rejectionReason.value = ''
+    target.value = null
+    await load()
+  } catch (err: any) {
+    toast.error(err?.data?.statusMessage || 'Failed to reject settlement')
+  } finally {
+    processing.value = false
+  }
+}
 </script>
 
 <template>
@@ -163,5 +234,38 @@ onMounted(load)
         </AppTable>
       </UiCardContent>
     </UiCard>
+
+    <ConfirmDialog
+      v-model:open="showConfirmDialog"
+      title="Confirm Settlement"
+      :description="`Confirm that the company has received ${Number(target?.amount || 0).toFixed(2)} from ${target?.distributor?.name || 'this distributor'}. This transfers the amount from distributor custody to company cash.`"
+      confirm-text="Confirm Settlement"
+      variant="default"
+      :loading="processing"
+      @confirm="confirmSettlement"
+      @cancel="showConfirmDialog = false"
+    />
+
+    <UiDialog :open="showRejectDialog" @update:open="showRejectDialog = $event">
+      <UiDialogContent class="sm:max-w-md">
+        <UiDialogHeader>
+          <UiDialogTitle>Reject Settlement</UiDialogTitle>
+          <UiDialogDescription>The settlement will stay in the distributor's custody. Provide a reason for rejection.</UiDialogDescription>
+        </UiDialogHeader>
+        <form @submit.prevent="rejectSettlement" class="space-y-4">
+          <div class="space-y-2">
+            <UiLabel for="rejectionReason">Rejection Reason *</UiLabel>
+            <UiTextarea id="rejectionReason" v-model="rejectionReason" placeholder="Explain why the settlement was rejected" />
+          </div>
+          <UiDialogFooter>
+            <UiButton type="button" variant="outline" @click="showRejectDialog = false">Cancel</UiButton>
+            <UiButton type="submit" variant="destructive" :disabled="processing || !rejectionReason.trim()">
+              <XCircle v-if="!processing" class="size-4" />
+              {{ processing ? 'Rejecting...' : 'Reject Settlement' }}
+            </UiButton>
+          </UiDialogFooter>
+        </form>
+      </UiDialogContent>
+    </UiDialog>
   </div>
 </template>
