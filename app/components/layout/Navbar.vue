@@ -30,6 +30,10 @@ const notifications = ref([
   { id: 2, title: 'Production batch complete', description: 'Batch #PB-2024-089 completed', time: '1h ago' },
   { id: 3, title: 'New order received', description: 'Order #INV-2024-456 from Distributor Co.', time: '2h ago' },
 ])
+
+function navigateToSettings() {
+  navigateTo('settings/appearance')
+}
 </script>
 
 <template>
@@ -142,8 +146,8 @@ const notifications = ref([
             <User class="size-4" />
             Profile
           </UiDropdownMenuItem>
-          <UiDropdownMenuItem>
-            <Settings class="size-4" />
+          <UiDropdownMenuItem @click="navigateToSettings()">
+            <Settings class="size-4"/>
             Settings
           </UiDropdownMenuItem>
           <UiDropdownMenuSeparator />

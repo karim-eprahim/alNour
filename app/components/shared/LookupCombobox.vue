@@ -49,7 +49,7 @@ const props = withDefaults(defineProps<{
   disabled: false,
   loading: false,
   emptyMessage: 'No results found.',
-  autoSelectSingle: false,
+  autoSelectSingle: true,
   includeAll: false,
   allLabel: 'All',
   allValue: 'all',
@@ -297,7 +297,7 @@ onUnmounted(() => {
 })
 
 onMounted(() => {
-  if (isRemote.value && props.modelValue) {
+  if ((isRemote.value && props.modelValue) || props.autoSelectSingle) {
     fetchItems()
   }
 })
