@@ -1118,7 +1118,7 @@ const _routes = [
     name: "sales-settlements",
     path: "/sales/settlements",
     meta: { ...__nuxt_page_meta$w || {}, ...{ "middleware": "auth" } },
-    component: () => import('./index-BEdwVegU.mjs')
+    component: () => import('./index-Cg_HW4zr.mjs')
   },
   {
     name: "settings-appearance",
