@@ -17,6 +17,7 @@ import {
   MapPin,
   RefreshCw,
   ClipboardList,
+  Settings,
 } from '@lucide/vue'
 
 export interface NavItem {
@@ -97,6 +98,7 @@ export const useNavigation = () => {
     { title: 'GPS Tracking', icon: MapPin, to: '/gps-tracking', permission: { module: 'GPS', action: 'READ' } },
     { title: 'Sync Queue', icon: RefreshCw, to: '/sync-queue', permission: { module: 'SYSTEM', action: 'READ' } },
     { title: 'Audit Logs', icon: ClipboardList, to: '/audit-logs', permission: { module: 'AUDIT', action: 'READ' } },
+    { title: 'Settings', icon: Settings, to: '/settings/appearance' },
   ]
 
   return { navigation }
