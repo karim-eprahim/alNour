@@ -1,6 +1,7 @@
 import { d as defineEventHandler } from '../../../nitro/nitro.mjs';
 import { g as getAccessibleWarehouseIds } from '../../../_/warehouse-access.mjs';
 import { p as prisma } from '../../../_/prisma.mjs';
+import { a as getTotalDistributorCustody, g as getDistributorCustody } from '../../../_/settlement.mjs';
 import 'node:http';
 import 'node:https';
 import 'node:events';
@@ -91,6 +92,8 @@ const index_get = defineEventHandler(async (event) => {
     const totalExpenses = ((_e = expenseAgg._sum.amount) == null ? void 0 : _e.toNumber()) || 0;
     const grossProfit = totalRevenue - totalCogs;
     const netProfit = grossProfit - totalLaborCosts - totalExpenses;
+    const { custody: totalDistributorCustody, distributorsWithCustody } = await getTotalDistributorCustody(prisma);
+    const companyCash = Math.max(0, totalCollected - totalDistributorCustody);
     data.financials = {
       totalRevenue,
       totalCollected,
@@ -99,6 +102,9 @@ const index_get = defineEventHandler(async (event) => {
       totalExpenses,
       grossProfit,
       netProfit,
+      distributorCustody: totalDistributorCustody,
+      distributorsWithCustody,
+      companyCash,
       recentExpenses,
       recentInvoices
     };
@@ -184,6 +190,7 @@ const index_get = defineEventHandler(async (event) => {
     const outstanding = ledgerEntries.reduce((sum, e) => {
       return e.type === "DEBIT" ? sum + e.amount.toNumber() : sum - e.amount.toNumber();
     }, 0);
+    const cashCustody = await getDistributorCustody(prisma, auth.userId);
     data.distributor = {
       custodies: custodies.map((c) => ({
         productId: c.productId,
@@ -192,7 +199,10 @@ const index_get = defineEventHandler(async (event) => {
       })),
       totalCustody,
       salesToday,
-      outstanding
+      outstanding,
+      cashCollected: cashCustody.collected,
+      cashConfirmed: cashCustody.confirmed,
+      cashCustody: cashCustody.custody
     };
   }
   {

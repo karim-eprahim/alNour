@@ -4,6 +4,8 @@ import type {
   DistributorInvoice,
   DistributorPayment,
   DistributorCashMovement,
+  DistributorSettlement,
+  SettlementSummary,
   CreateDirectSalePayload,
   ConfirmDeliveryPayload,
 } from './type'
@@ -84,4 +86,20 @@ export async function fetchCashMovementsApi(params?: {
   distributorId?: string
 }): Promise<{ movements: DistributorCashMovement[]; total: number; page: number; limit: number }> {
   return $fetch('/api/distributors/cash/movements', { params })
+}
+
+export async function fetchDistributorSettlementsApi(params?: {
+  status?: string
+  page?: number
+  limit?: number
+}): Promise<{ settlements: DistributorSettlement[]; total: number; page: number; limit: number; summary: SettlementSummary }> {
+  return $fetch('/api/distributors/settlements', { params })
+}
+
+export async function createDistributorSettlementApi(payload: {
+  amount: number
+  paymentMethod: string
+  notes?: string
+}): Promise<{ settlement: DistributorSettlement }> {
+  return $fetch('/api/distributors/settlements', { method: 'POST', body: payload })
 }

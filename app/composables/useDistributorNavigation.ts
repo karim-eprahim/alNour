@@ -9,6 +9,7 @@ import {
   Undo2,
   User,
   PlusCircle,
+  HandCoins,
 } from '@lucide/vue'
 
 export interface DistributorNavItem {
@@ -29,6 +30,7 @@ export const useDistributorNavigation = () => {
     { title: 'Invoices', icon: Receipt, to: '/distributor/invoices' },
     { title: 'Payments', icon: DollarSign, to: '/distributor/payments' },
     { title: 'Returns', icon: Undo2, to: '/distributor/returns' },
+    { title: 'Settlements', icon: HandCoins, to: '/distributor/settlements' },
     { title: 'Profile', icon: User, to: '/distributor/profile' },
   ]
 

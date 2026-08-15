@@ -2,7 +2,7 @@
 import {
   Package, Warehouse, AlertTriangle, ArrowUp, ArrowDown, Factory,
   DollarSign, TrendingUp, TrendingDown, Users, Briefcase,
-  ShoppingBag, Receipt, Scale, RefreshCw, Truck,
+  ShoppingBag, Receipt, Scale, RefreshCw, Truck, Wallet, HandCoins,
 } from '@lucide/vue'
 import { MOVEMENT_TYPES } from '@/modules/stock/type'
 import PageHeader from '~/components/shared/PageHeader.vue'
@@ -78,7 +78,29 @@ onMounted(fetchDashboard)
           </UiCardHeader>
           <UiCardContent>
             <p class="text-2xl font-bold text-green-600">{{ (data.financials?.totalRevenue || 0).toFixed(2) }}</p>
-            <p class="text-xs text-muted-foreground">{{ (data.financials?.totalCollected || 0).toFixed(2) }} collected</p>
+            <p class="text-xs text-muted-foreground">total invoiced</p>
+          </UiCardContent>
+        </UiCard>
+
+        <UiCard v-if="canViewFinancial">
+          <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
+            <UiCardTitle class="text-sm font-medium text-muted-foreground">Cash &amp; Bank</UiCardTitle>
+            <Wallet class="size-4 text-blue-500" />
+          </UiCardHeader>
+          <UiCardContent>
+            <p class="text-2xl font-bold text-blue-600">{{ (data.financials?.companyCash || 0).toFixed(2) }}</p>
+            <p class="text-xs text-muted-foreground">money with the company</p>
+          </UiCardContent>
+        </UiCard>
+
+        <UiCard v-if="canViewFinancial">
+          <UiCardHeader class="pb-2 flex flex-row items-center justify-between">
+            <UiCardTitle class="text-sm font-medium text-muted-foreground">Distributor Custody</UiCardTitle>
+            <HandCoins class="size-4 text-amber-500" />
+          </UiCardHeader>
+          <UiCardContent>
+            <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ (data.financials?.distributorCustody || 0).toFixed(2) }}</p>
+            <p class="text-xs text-muted-foreground">{{ data.financials?.distributorsWithCustody || 0 }} distributor(s)</p>
           </UiCardContent>
         </UiCard>
 
@@ -294,7 +316,7 @@ onMounted(fetchDashboard)
               <div class="rounded-lg border p-4">
                 <p class="text-sm text-muted-foreground flex items-center gap-1"><DollarSign class="size-3.5" /> Revenue</p>
                 <p class="text-xl font-bold text-green-600">{{ data.financials.totalRevenue.toFixed(2) }}</p>
-                <p class="text-xs text-muted-foreground">{{ data.financials.totalCollected.toFixed(2) }} collected</p>
+                <p class="text-xs text-muted-foreground">Cash &amp; Bank: {{ Number(data.financials.companyCash || 0).toFixed(2) }} · Custody: {{ Number(data.financials.distributorCustody || 0).toFixed(2) }}</p>
               </div>
               <div class="rounded-lg border p-4">
                 <p class="text-sm text-muted-foreground flex items-center gap-1"><TrendingDown class="size-3.5" /> COGS</p>

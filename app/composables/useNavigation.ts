@@ -92,6 +92,7 @@ export const useNavigation = () => {
         { title: 'Orders', to: '/sales/orders', permission: { module: 'SALES', action: 'READ' } },
         { title: 'Invoices', to: '/sales/invoices', permission: { module: 'SALES', action: 'READ' } },
         { title: 'Payments', to: '/sales/payments', permission: { module: 'SALES', action: 'READ' } },
+        { title: 'Settlements', to: '/sales/settlements', permission: { module: 'SALES', action: 'READ' } },
       ],
     },
     { title: 'Expenses', icon: DollarSign, to: '/expenses', permission: { module: 'EXPENSES', action: 'READ' } },
