@@ -65,7 +65,7 @@ function formatQuantity(value: number) {
 </script>
 
 <template>
-  <UiCard>
+  <UiCard class="shadow-sm transition-shadow hover:shadow-md">
     <UiCardHeader>
       <UiCardTitle>Inventory Distribution</UiCardTitle>
       <UiCardDescription>Stock quantity by product across warehouses</UiCardDescription>

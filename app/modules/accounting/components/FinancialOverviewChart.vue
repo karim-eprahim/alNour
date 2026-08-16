@@ -67,7 +67,7 @@ function formatCompact(value: number) {
 </script>
 
 <template>
-  <UiCard>
+  <UiCard class="shadow-sm transition-shadow hover:shadow-md">
     <UiCardHeader class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <UiCardTitle>Financial Overview</UiCardTitle>

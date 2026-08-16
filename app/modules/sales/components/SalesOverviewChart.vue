@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/chart'
 import type { SalesOverviewPoint } from '@/modules/sales/type'
 import type { DashboardPeriod } from '@/lib/period'
+import { useSalesStore } from '@/modules/sales/store'
+
 
 const store = useSalesStore()
 const period = ref<DashboardPeriod>('30d')
@@ -58,7 +60,7 @@ function formatCompact(value: number) {
 </script>
 
 <template>
-  <UiCard>
+  <UiCard class="shadow-sm transition-shadow hover:shadow-md">
     <UiCardHeader class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <UiCardTitle>Sales Overview</UiCardTitle>
@@ -75,7 +77,7 @@ function formatCompact(value: number) {
         title="No sales data"
         description="No invoices recorded in this period"
       />
-      <ChartContainer v-else :config="chartConfig">
+      <ChartContainer v-else :config="chartConfig" class="max-h-50 sm:max-h-88">
         <VisXYContainer :data="chartData">
           <VisArea
             :x="(d: SalesOverviewPoint) => toTime(d.date)"

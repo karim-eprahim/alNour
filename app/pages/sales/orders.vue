@@ -4,6 +4,8 @@ import type { OrderActions } from '@/modules/sales/components/column'
 import { getOrderColumns } from '@/modules/sales/components/column'
 import { fetchCustomersLookupApi } from '@/modules/customers/api'
 import PageHeader from '~/components/shared/PageHeader.vue'
+import { useSalesStore } from '@/modules/sales/store'
+
 
 definePageMeta({
   layout: 'dashboard',

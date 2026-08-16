@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/chart'
 import type { SalesByProductItem } from '@/modules/sales/type'
 import type { DashboardPeriod } from '@/lib/period'
+import { useSalesStore } from '@/modules/sales/store'
 
 const store = useSalesStore()
 const period = ref<DashboardPeriod>('30d')
@@ -51,7 +52,7 @@ function formatCompact(value: number) {
 </script>
 
 <template>
-  <UiCard>
+  <UiCard class="shadow-sm transition-shadow hover:shadow-md">
     <UiCardHeader class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <UiCardTitle>Sales By Product</UiCardTitle>
