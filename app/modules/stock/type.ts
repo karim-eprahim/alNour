@@ -76,3 +76,13 @@ export const MOVEMENT_TYPES: { value: MovementType; label: string; isIncrease: b
   { value: 'DISTRIBUTOR_LOAD', label: 'Distributor Load', isIncrease: false },
   { value: 'DISTRIBUTOR_RETURN', label: 'Distributor Return', isIncrease: true },
 ]
+
+export interface StockDistributionItem {
+  product: string
+  value: number
+}
+
+export interface WarehouseDistributionItem {
+  warehouse: string
+  value: number
+}

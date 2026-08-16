@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { StockEntry, StockMovement, CreateMovementPayload } from './type'
+import type { StockEntry, StockMovement, CreateMovementPayload, StockDistributionItem, WarehouseDistributionItem } from './type'
 import {
   fetchStockApi,
   fetchMovementsApi,
   createMovementApi,
+  fetchStockDistributionApi,
 } from './api'
 
 export const useStockStore = defineStore('stock', () => {
@@ -13,6 +14,9 @@ export const useStockStore = defineStore('stock', () => {
   const loading = ref(false)
   const totalStocks = ref(0)
   const totalMovements = ref(0)
+  const stockDistribution = ref<StockDistributionItem[]>([])
+  const warehouseDistribution = ref<WarehouseDistributionItem[]>([])
+  const stockDistributionLoading = ref(false)
 
   async function fetchStocks(params?: { warehouseId?: string; productId?: string; lowStock?: string }) {
     loading.value = true
@@ -61,8 +65,23 @@ export const useStockStore = defineStore('stock', () => {
     }
   }
 
+  async function fetchStockDistribution() {
+    stockDistributionLoading.value = true
+    try {
+      const data = await fetchStockDistributionApi()
+      stockDistribution.value = data.data
+      warehouseDistribution.value = data.warehouseData
+      return data
+    } catch (err: any) {
+      throw err
+    } finally {
+      stockDistributionLoading.value = false
+    }
+  }
+
   return {
     stocks, movements, loading, totalStocks, totalMovements,
-    fetchStocks, fetchMovements, createMovement,
+    stockDistribution, warehouseDistribution, stockDistributionLoading,
+    fetchStocks, fetchMovements, createMovement, fetchStockDistribution,
   }
 })

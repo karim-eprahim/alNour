@@ -7,6 +7,10 @@ import {
 import { MOVEMENT_TYPES } from '@/modules/stock/type'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { UiBadge } from '#components'
+import SalesOverviewChart from '@/modules/sales/components/SalesOverviewChart.vue'
+import SalesByProductChart from '@/modules/sales/components/SalesByProductChart.vue'
+import InventoryDistributionChart from '@/modules/stock/components/InventoryDistributionChart.vue'
+import FinancialOverviewChart from '@/modules/accounting/components/FinancialOverviewChart.vue'
 
 definePageMeta({
   layout: 'dashboard',
@@ -15,6 +19,7 @@ definePageMeta({
 
 const authStore = useAuthStore()
 const userRole = computed(() => authStore.userRole)
+const { can } = usePermissions()
 
 const isStorekeeper = computed(() => userRole.value === 'STOREKEEPER')
 const isAccountant = computed(() => userRole.value === 'ACCOUNTANT')
@@ -22,6 +27,9 @@ const isAdmin = computed(() => userRole.value === 'ADMIN' || userRole.value === 
 const isDistributor = computed(() => userRole.value === 'DISTRIBUTOR')
 const canViewFinancial = computed(() => isAdmin.value || isAccountant.value)
 const canViewStock = computed(() => isAdmin.value || isStorekeeper.value || true)
+const showSalesCharts = computed(() => can('SALES', 'READ'))
+const showStockCharts = computed(() => can('INVENTORY', 'READ'))
+const showAccountingCharts = computed(() => can('ACCOUNTING', 'READ'))
 
 const loading = ref(true)
 const data = ref<any>(null)
@@ -399,5 +407,16 @@ onMounted(fetchDashboard)
         </div>
       </template>
     </template>
+
+    <!-- CHARTS — each fetches its own data independently -->
+    <div v-if="showSalesCharts" class="grid gap-6 lg:grid-cols-2">
+      <SalesOverviewChart />
+      <SalesByProductChart />
+    </div>
+
+    <div v-if="showStockCharts || showAccountingCharts" class="grid gap-6 lg:grid-cols-2">
+      <InventoryDistributionChart v-if="showStockCharts" />
+      <FinancialOverviewChart v-if="showAccountingCharts" />
+    </div>
   </div>
 </template>

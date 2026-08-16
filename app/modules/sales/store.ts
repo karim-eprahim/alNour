@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { SalesOrder, CreateSalesOrderPayload, Invoice, Payment, CreatePaymentPayload } from './type'
+import type { SalesOrder, CreateSalesOrderPayload, Invoice, Payment, CreatePaymentPayload, SalesOverviewPoint, SalesByProductItem, DashboardPeriod } from './type'
 import {
   fetchSalesOrdersApi,
   fetchSalesOrderApi,
@@ -10,6 +10,8 @@ import {
   fetchInvoicesApi,
   fetchInvoiceApi,
   payInvoiceApi,
+  fetchSalesOverviewApi,
+  fetchSalesByProductApi,
 } from './api'
 
 export const useSalesStore = defineStore('sales', () => {
@@ -20,6 +22,10 @@ export const useSalesStore = defineStore('sales', () => {
   const loading = ref(false)
   const total = ref(0)
   const totalInvoices = ref(0)
+  const salesOverview = ref<SalesOverviewPoint[]>([])
+  const salesOverviewLoading = ref(false)
+  const salesByProduct = ref<SalesByProductItem[]>([])
+  const salesByProductLoading = ref(false)
 
   async function fetchOrders(params?: {
     search?: string
@@ -135,6 +141,37 @@ export const useSalesStore = defineStore('sales', () => {
     }
   }
 
+  async function fetchSalesOverview(params?: {
+    period?: DashboardPeriod
+    from?: string
+    to?: string
+  }) {
+    salesOverviewLoading.value = true
+    try {
+      const data = await fetchSalesOverviewApi(params)
+      salesOverview.value = data.data
+      return data.data
+    } finally {
+      salesOverviewLoading.value = false
+    }
+  }
+
+  async function fetchSalesByProduct(params?: {
+    period?: DashboardPeriod
+    from?: string
+    to?: string
+    limit?: number
+  }) {
+    salesByProductLoading.value = true
+    try {
+      const data = await fetchSalesByProductApi(params)
+      salesByProduct.value = data.data
+      return data.data
+    } finally {
+      salesByProductLoading.value = false
+    }
+  }
+
   function clearCurrent() {
     currentOrder.value = null
     currentInvoice.value = null
@@ -142,7 +179,9 @@ export const useSalesStore = defineStore('sales', () => {
 
   return {
     orders, currentOrder, invoices, currentInvoice, loading, total, totalInvoices,
+    salesOverview, salesOverviewLoading, salesByProduct, salesByProductLoading,
     fetchOrders, fetchOrder, createOrder, updateOrder, deleteOrder,
     fetchInvoices, fetchInvoice, payInvoice, clearCurrent,
+    fetchSalesOverview, fetchSalesByProduct,
   }
 })
