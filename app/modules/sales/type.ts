@@ -87,3 +87,16 @@ export interface CreatePaymentPayload {
   paymentMethod: string
   notes?: string
 }
+
+export type { DashboardPeriod } from '@/lib/period'
+
+export interface SalesOverviewPoint {
+  date: string
+  sales: number
+}
+
+export interface SalesByProductItem {
+  product: string
+  sales: number
+  quantity: number
+}

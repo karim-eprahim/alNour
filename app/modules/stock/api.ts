@@ -3,6 +3,8 @@ import type {
   StockMovement,
   CreateMovementPayload,
   StockTransfer,
+  StockDistributionItem,
+  WarehouseDistributionItem,
 } from './type'
 
 export async function fetchStockApi(params?: {
@@ -51,4 +53,11 @@ export async function uploadImageApi(dataUrl: string, name?: string): Promise<{ 
     method: 'POST',
     body: { image: dataUrl, name },
   })
+}
+
+export async function fetchStockDistributionApi(): Promise<{
+  data: StockDistributionItem[]
+  warehouseData: WarehouseDistributionItem[]
+}> {
+  return $fetch('/api/stock/dashboard/distribution')
 }

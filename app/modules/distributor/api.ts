@@ -8,7 +8,9 @@ import type {
   SettlementSummary,
   CreateDirectSalePayload,
   ConfirmDeliveryPayload,
+  DistributorDashboardData,
 } from './type'
+import type { DashboardPeriod } from '@/lib/period'
 
 export async function fetchCustodyApi(distributorId?: string): Promise<{ custodies: DistributorCustodyItem[]; totalItems: number; totalValue: number }> {
   return $fetch('/api/distributors/custody', { params: { distributorId } })
@@ -102,4 +104,13 @@ export async function createDistributorSettlementApi(payload: {
   notes?: string
 }): Promise<{ settlement: DistributorSettlement }> {
   return $fetch('/api/distributors/settlements', { method: 'POST', body: payload })
+}
+
+export async function fetchDistributorDashboardApi(params?: {
+  period?: DashboardPeriod
+  from?: string
+  to?: string
+  distributorId?: string
+}): Promise<DistributorDashboardData> {
+  return $fetch('/api/distributors/dashboard', { params })
 }

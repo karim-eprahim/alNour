@@ -10,7 +10,9 @@ import type {
   SettlementSummary,
   CreateDirectSalePayload,
   ConfirmDeliveryPayload,
+  DistributorDashboardData,
 } from './type'
+import type { DashboardPeriod } from '@/lib/period'
 import {
   fetchCustodyApi,
   fetchDistributorOrdersApi,
@@ -26,6 +28,7 @@ import {
   fetchCashMovementsApi,
   fetchDistributorSettlementsApi,
   createDistributorSettlementApi,
+  fetchDistributorDashboardApi,
 } from './api'
 
 export const useDistributorStore = defineStore('distributor', () => {
@@ -45,6 +48,8 @@ export const useDistributorStore = defineStore('distributor', () => {
   const settlementsTotal = ref(0)
   const settlementSummary = ref<SettlementSummary>({ collected: 0, confirmed: 0, custody: 0 })
   const recentCustomers = ref<any[]>([])
+  const dashboard = ref<DistributorDashboardData | null>(null)
+  const dashboardLoading = ref(false)
   const loading = ref(false)
 
   async function fetchCustody(distributorId?: string) {
@@ -255,6 +260,22 @@ export const useDistributorStore = defineStore('distributor', () => {
     }
   }
 
+  async function fetchDashboard(params?: {
+    period?: DashboardPeriod
+    from?: string
+    to?: string
+    distributorId?: string
+  }) {
+    dashboardLoading.value = true
+    try {
+      const data = await fetchDistributorDashboardApi(params)
+      dashboard.value = data
+      return data
+    } finally {
+      dashboardLoading.value = false
+    }
+  }
+
   return {
     custodies, custodyTotalItems, custodyTotalValue, custody,
     orders, ordersTotal, ordersSummary, currentOrder,
@@ -262,11 +283,13 @@ export const useDistributorStore = defineStore('distributor', () => {
     cashOnHand, cashMovements, cashMovementsTotal,
     settlements, settlementsTotal, settlementSummary, custodyBalance,
     recentCustomers,
+    dashboard, dashboardLoading,
     loading,
     fetchCustody, fetchOrders, fetchOrder, updateOrderStatus, confirmDelivery, createDirectSale, createReturn,
     fetchInvoices, payInvoice, returnInventory,
     fetchRecentCustomers,
     fetchCashOnHand, fetchCashMovements,
     fetchSettlements, createSettlement,
+    fetchDashboard,
   }
 })

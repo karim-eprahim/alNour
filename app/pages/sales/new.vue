@@ -6,6 +6,8 @@ import { fetchWarehousesLookupApi } from '@/modules/warehouses/api'
 import { fetchProductsLookupApi } from '@/modules/products/api'
 import type { CreateSalesOrderPayload } from '@/modules/sales/type'
 import { toast } from 'vue-sonner'
+import { useSalesStore } from '@/modules/sales/store'
+
 
 definePageMeta({
   layout: 'dashboard',

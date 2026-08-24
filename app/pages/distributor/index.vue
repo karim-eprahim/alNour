@@ -12,6 +12,9 @@ import {
   Clock,
   HandCoins,
 } from '@lucide/vue'
+import DistributorOrderStatusChart from '@/modules/distributor/components/DistributorOrderStatusChart.vue'
+import DistributorPerformanceChart from '@/modules/distributor/components/DistributorPerformanceChart.vue'
+import DistributorDeliveriesChart from '@/modules/distributor/components/DistributorDeliveriesChart.vue'
 
 definePageMeta({
   layout: 'distributor',
@@ -110,6 +113,12 @@ onMounted(loadDashboard)
         </UiCardContent>
       </UiCard>
     </div>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+      <DistributorOrderStatusChart />
+      <DistributorPerformanceChart />
+    </div>
+    <DistributorDeliveriesChart />
 
     <div class="grid gap-6 lg:grid-cols-2">
       <div v-if="store.orders.length > 0">

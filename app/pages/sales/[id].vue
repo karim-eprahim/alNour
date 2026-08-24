@@ -5,6 +5,8 @@ import { getInvoiceColumns, getOrderItemColumns } from '@/modules/sales/componen
 import { UiBadge, UiButton } from '#components'
 import PageHeader from '~/components/shared/PageHeader.vue'
 import { toast } from 'vue-sonner'
+import { useSalesStore } from '@/modules/sales/store'
+
 
 definePageMeta({
   layout: 'dashboard',

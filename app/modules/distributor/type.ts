@@ -161,3 +161,26 @@ export interface ConfirmDeliveryPayload {
   paymentMethod?: string
   paymentNotes?: string
 }
+
+export interface DistributorOrderStatusItem {
+  status: DistributorOrder['status']
+  count: number
+}
+
+export interface DistributorPerformance {
+  orders: number
+  delivered: number
+  salesAmount: number
+  deliveredRate: number
+}
+
+export interface DistributorDeliveryPoint {
+  date: string
+  delivered: number
+}
+
+export interface DistributorDashboardData {
+  orderStatus: DistributorOrderStatusItem[]
+  performance: DistributorPerformance
+  deliveries: DistributorDeliveryPoint[]
+}

@@ -11,13 +11,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppLoading v-if="!auth.isInitialized || !authReady" />
-
-  <template v-else>
+  <div class="min-h-screen">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
 
     <UiToaster />
-  </template>
+
+    <div v-if="!auth.isInitialized || !authReady" class="fixed inset-0 z-50">
+      <AppLoading />
+    </div>
+  </div>
 </template>

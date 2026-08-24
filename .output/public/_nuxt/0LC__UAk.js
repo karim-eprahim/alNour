@@ -1,1 +1,0 @@
-async function c(){return $fetch("/api/tracking/active")}async function n(t,i){return $fetch(`/api/tracking/${t}/locations`,{params:i})}async function a(t,i){return $fetch(`/api/distributors/tracking/${t}/location`,{method:"POST",body:i})}export{c as a,n as f,a as s};

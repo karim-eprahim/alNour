@@ -1,4 +1,4 @@
-import type { SalesOrder, CreateSalesOrderPayload, Invoice, Payment, CreatePaymentPayload } from './type'
+import type { SalesOrder, CreateSalesOrderPayload, Invoice, Payment, CreatePaymentPayload, SalesOverviewPoint, SalesByProductItem, DashboardPeriod } from './type'
 
 export async function fetchSalesOrdersApi(params?: {
   search?: string
@@ -47,4 +47,21 @@ export async function fetchInvoiceApi(id: string): Promise<{ invoice: Invoice }>
 
 export async function payInvoiceApi(id: string, payload: CreatePaymentPayload): Promise<{ payment: Payment }> {
   return $fetch(`/api/invoices/${id}/pay`, { method: 'POST', body: payload })
+}
+
+export async function fetchSalesOverviewApi(params?: {
+  period?: DashboardPeriod
+  from?: string
+  to?: string
+}): Promise<{ data: SalesOverviewPoint[] }> {
+  return $fetch('/api/sales/dashboard/overview', { params })
+}
+
+export async function fetchSalesByProductApi(params?: {
+  period?: DashboardPeriod
+  from?: string
+  to?: string
+  limit?: number
+}): Promise<{ data: SalesByProductItem[] }> {
+  return $fetch('/api/sales/dashboard/by-product', { params })
 }
