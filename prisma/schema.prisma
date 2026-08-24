@@ -137,6 +137,15 @@ enum TrackingStatus {
   CANCELLED
 }
 
+enum NotificationType {
+  ORDER_ASSIGNED
+  ORDER_STATUS_UPDATED
+  ORDER_CANCELLED
+  SETTLEMENT_SUBMITTED
+  STOCK_ALERT
+  SYSTEM_ALERT
+}
+
 // enum OrderStatus {
 //   PENDING
 //   COMPLETED
@@ -187,6 +196,8 @@ model User {
   deliveryTrackings   DeliveryTracking[]        @relation("DistributorTracking")
   settlements         Settlement[]              @relation("DistributorSettlements")
   confirmedSettlements Settlement[]             @relation("SettlementConfirmedBy")
+  notifications       Notification[]
+  deviceTokens        DeviceToken[]
 
   @@index([email])
   @@map("users")
@@ -908,4 +919,37 @@ model SyncQueue {
 
   @@index([synced])
   @@map("sync_queue")
+}
+
+// ============================================
+// NOTIFICATIONS & PUSH TOKENS
+// ============================================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model DeviceToken {
+  id         String   @id @default(uuid())
+  userId     String
+  token      String   @unique
+  deviceType String?  // web, android, ios, desktop
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("device_tokens")
 }

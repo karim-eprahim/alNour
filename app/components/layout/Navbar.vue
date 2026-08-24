@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { useSidebar } from '@/composables/useSidebar'
-import {useAuthStore} from "@/modules/auth/store"
+import { useAuthStore } from '@/modules/auth/store'
+import NotificationDropdown from '@/components/layout/NotificationDropdown.vue'
 
 import { cn } from '@/lib/utils'
 import {
   Menu,
   Sun,
   Moon,
-  Bell,
   ChevronDown,
   LogOut,
   Settings,
@@ -24,12 +24,6 @@ function toggleColorMode() {
 
 const roles = ['Super Admin', 'Admin', 'Manager', 'Supervisor', 'Operator']
 const currentRole = ref('Super Admin')
-
-const notifications = ref([
-  { id: 1, title: 'Low stock alert', description: 'Charcoal grade A is below minimum', time: '5m ago' },
-  { id: 2, title: 'Production batch complete', description: 'Batch #PB-2024-089 completed', time: '1h ago' },
-  { id: 3, title: 'New order received', description: 'Order #INV-2024-456 from Distributor Co.', time: '2h ago' },
-])
 
 function navigateToSettings() {
   navigateTo('settings/appearance')
@@ -76,35 +70,7 @@ function navigateToSettings() {
 
       <UiSeparator orientation="vertical" class="mx-1 h-6" />
 
-      <UiDropdownMenu>
-        <UiDropdownMenuTrigger as-child>
-          <UiButton variant="ghost" size="icon" class="size-8 relative">
-            <Bell class="size-4" />
-            <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-              {{ notifications.length }}
-            </span>
-          </UiButton>
-        </UiDropdownMenuTrigger>
-        <UiDropdownMenuContent align="end" class="w-72">
-          <UiDropdownMenuLabel>Notifications</UiDropdownMenuLabel>
-          <UiDropdownMenuSeparator />
-          <div class="max-h-72 overflow-y-auto">
-            <button
-              v-for="n in notifications"
-              :key="n.id"
-              class="flex w-full flex-col gap-0.5 px-2 py-2 text-left text-sm transition-colors hover:bg-accent"
-            >
-              <span class="font-medium">{{ n.title }}</span>
-              <span class="text-xs text-muted-foreground line-clamp-1">{{ n.description }}</span>
-              <span class="text-[10px] text-muted-foreground/60">{{ n.time }}</span>
-            </button>
-          </div>
-          <UiDropdownMenuSeparator />
-          <UiDropdownMenuItem class="justify-center text-xs font-medium text-primary">
-            View all notifications
-          </UiDropdownMenuItem>
-        </UiDropdownMenuContent>
-      </UiDropdownMenu>
+      <NotificationDropdown :notifications="[]" :unread-count="0" />
 
       <UiButton
         variant="ghost"

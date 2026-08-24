@@ -313,7 +313,7 @@ onMounted(() => {
     @update:open="onOpenChange"
     :disabled="disabled"
   >
-    <ComboboxAnchor :class="props.class" as-child>
+    <ComboboxAnchor class="min-w-50" :class="props.class" as-child>
       <ComboboxTrigger as-child :disabled="disabled || loadingState">
         <Button
           variant="outline"
