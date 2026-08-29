@@ -1,24 +1,10 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { cn } from '@/lib/utils'
 import { Bell, X } from '@lucide/vue'
-import { useAuthStore } from '@/modules/auth/store'
+import { useNotificationStore } from '@/stores/notification'
 
-interface Notification {
-  id: string
-  type: string
-  title: string
-  message: string
-  data?: Record<string, unknown>
-  readAt?: string | null
-  createdAt: string
-}
-
-const props = defineProps<{
-  notifications: Notification[]
-  unreadCount: number
-}>()
-
-const auth = useAuthStore()
+const notificationStore = useNotificationStore()
 
 function formatTime(date: string): string {
   const now = new Date()
@@ -34,15 +20,19 @@ function formatTime(date: string): string {
   return `${diffDays}d ago`
 }
 
-function markAsRead(notification: Notification) {
+async function markAsRead(notification: { id: string; readAt?: string | null }) {
   if (!notification.readAt) {
-    $fetch(`/api/notifications/${notification.id}/read`, { method: 'POST' })
+    await notificationStore.markAsRead(notification.id)
   }
 }
 
-function markAllAsRead() {
-  $fetch('/api/notifications/read-all', { method: 'POST' })
+async function markAllAsRead() {
+  await notificationStore.markAllAsRead()
 }
+
+onMounted(() => {
+  notificationStore.fetchNotifications()
+})
 </script>
 
 <template>
@@ -51,10 +41,10 @@ function markAllAsRead() {
       <UiButton variant="ghost" size="icon" class="size-8 relative">
         <Bell class="size-4" />
         <span
-          v-if="unreadCount > 0"
+          v-if="notificationStore.unreadCount > 0"
           class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground"
         >
-          {{ unreadCount > 99 ? '99+' : unreadCount }}
+          {{ notificationStore.unreadCount > 99 ? '99+' : notificationStore.unreadCount }}
         </span>
       </UiButton>
     </UiDropdownMenuTrigger>
@@ -62,7 +52,7 @@ function markAllAsRead() {
       <div class="flex items-center justify-between px-2 py-2">
         <UiDropdownMenuLabel>Notifications</UiDropdownMenuLabel>
         <UiButton
-          v-if="unreadCount > 0"
+          v-if="notificationStore.unreadCount > 0"
           variant="ghost"
           size="icon"
           class="size-6"
@@ -73,12 +63,18 @@ function markAllAsRead() {
       </div>
       <UiDropdownMenuSeparator />
       <div class="max-h-80 overflow-y-auto">
-        <div v-if="notifications.length === 0" class="px-4 py-6 text-center text-sm text-muted-foreground">
+        <div
+          v-if="notificationStore.items.length === 0 && !notificationStore.loading"
+          class="px-4 py-6 text-center text-sm text-muted-foreground"
+        >
           No notifications
+        </div>
+        <div v-else-if="notificationStore.loading" class="px-4 py-6 text-center text-sm text-muted-foreground">
+          Loading...
         </div>
         <button
           v-else
-          v-for="n in notifications"
+          v-for="n in notificationStore.items"
           :key="n.id"
           @click="markAsRead(n)"
           :class="[
@@ -92,6 +88,19 @@ function markAllAsRead() {
           </div>
           <span class="text-xs text-muted-foreground line-clamp-2">{{ n.message }}</span>
         </button>
+        <div
+          v-if="notificationStore.hasMore && !notificationStore.loading"
+          class="px-4 py-2 text-center"
+        >
+          <UiButton
+            variant="ghost"
+            size="sm"
+            class="w-full"
+            @click="notificationStore.loadMore"
+          >
+            Load more
+          </UiButton>
+        </div>
       </div>
       <UiDropdownMenuSeparator />
       <UiDropdownMenuItem class="justify-center text-xs font-medium text-primary" @click="$router.push('/notifications')">

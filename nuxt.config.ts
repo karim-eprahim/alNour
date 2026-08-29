@@ -30,4 +30,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     jwtSecret: "",
   },
+  nitro: {
+    experimental: {
+      websocket: true
+    }
+  }
 });
