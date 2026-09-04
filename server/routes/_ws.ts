@@ -1,73 +1,99 @@
 import { defineWebSocketHandler } from 'h3'
 import { verifyToken } from '../utils/jwt'
-import type { JwtPayload } from '../utils/jwt'
 
 interface WebSocketClient {
   id: string
-  user: JwtPayload
-  ws: any
+  user: { userId: string; role: string; [key: string]: any }
+  peer: any
   rooms: Set<string>
 }
 
 const clients = new Map<string, WebSocketClient>()
-const userRooms = new Map<string, Set<string>>()
 
-function addUserToRoom(userId: string, roomId: string) {
-  if (!userRooms.has(userId)) {
-    userRooms.set(userId, new Set())
-  }
-  userRooms.get(userId)!.add(roomId)
+function getHeader(headers: any, name: string): string | undefined {
+  if (!headers) return undefined
+  return typeof headers.get === 'function' ? headers.get(name) : headers[name]
 }
 
-function removeUserFromRoom(userId: string, roomId: string) {
-  const rooms = userRooms.get(userId)
-  if (rooms) {
-    rooms.delete(roomId)
-    if (rooms.size === 0) {
-      userRooms.delete(userId)
-    }
+function addUserToRoom(_userId: string, _room: string) {
+}
+
+function cleanupClient(clientId: string) {
+  const client = clients.get(clientId)
+  if (client) {
+    console.log('[WS][SERVER] cleaning up client:', clientId)
+  }
+  clients.delete(clientId)
+  console.log('[WS][SERVER] client removed | total clients now:', clients.size)
+}
+
+function handleMessage(clientId: string, parsed: any) {
+  const client = clients.get(clientId)
+  if (!client) return
+
+  console.log('[WS][SERVER] message from', clientId, ':', parsed)
+
+  if (parsed.type === 'SUBSCRIBE' && parsed.room) {
+    client.rooms.add(parsed.room)
+    client.peer.send(JSON.stringify({ event: 'SUBSCRIBED', data: { room: parsed.room } }))
+  }
+
+  if (parsed.type === 'UNSUBSCRIBE' && parsed.room) {
+    client.rooms.delete(parsed.room)
+    client.peer.send(JSON.stringify({ event: 'UNSUBSCRIBED', data: { room: parsed.room } }))
+  }
+
+  if (parsed.type === 'PING') {
+    client.peer.send(JSON.stringify({ event: 'PONG', data: { timestamp: Date.now() } }))
   }
 }
 
-function broadcastToRoom(roomId: string, event: string, data: any, excludeClientId?: string) {
-  for (const [clientId, client] of clients.entries()) {
-    if (clientId !== excludeClientId && client.rooms.has(roomId)) {
-      client.ws.send(JSON.stringify({ event, data }))
-      console.log("notification data",data)
-    }
+export function broadcastToRoom(room: string, event: string, data: any) {
+  const matched = [...clients.values()].filter((c) => c.rooms.has(room))
+  console.log('[WS][BROADCAST] room:', room, '| event:', event, '| matched clients:', matched.length)
+  if (matched.length === 0) {
+    console.warn('[WS][BROADCAST] ⚠️ no clients found in room:', room)
+  }
+  for (const client of matched) {
+    client.peer.send(JSON.stringify({ event, data }))
   }
 }
 
-function broadcastToUser(userId: string, event: string, data: any) {
-  const rooms = userRooms.get(userId)
-  console.log("broadcastToRoom",userId,event,rooms)
-  if (!rooms) return
-  for (const roomId of rooms) {
-    broadcastToRoom(roomId, event, data)
-  }
+export function broadcastToUser(userId: string, event: string, data: any) {
+  broadcastToRoom(`user:${userId}`, event, data)
 }
+
+export const realtime = { broadcastToRoom, broadcastToUser }
 
 export default defineWebSocketHandler({
   open(peer: any) {
-    const ws = peer
-    console.log('[ws] open', peer)
-    const url = new URL(peer.url, `http://${peer.headers.host}`)
+    console.log('[ws] open', peer.id)
+
+    const headers = peer.request?.headers
+    const rawUrl = peer.request?.url || '/'
+    const host = getHeader(headers, 'host') || 'localhost'
+
+    const url = new URL(rawUrl, `http://${host}`)
     let token = url.searchParams.get('token')
 
     if (!token) {
-      const cookieHeader = peer.headers?.cookie || ''
+      const cookieHeader = getHeader(headers, 'cookie') || ''
       const match = cookieHeader.match(/(?:^|;\s*)auth_token=([^;]*)/)
       if (match) token = decodeURIComponent(match[1])
     }
 
+    console.log('[WS][SERVER] token extracted:', token ? 'FOUND' : 'MISSING')
+
     if (!token) {
-      ws.close(4001, 'Authentication required')
+      peer.close(4001, 'Authentication required')
       return
     }
 
     const payload = verifyToken(token)
+    console.log('[WS][SERVER] verifyToken result:', payload ? { userId: payload.userId, role: payload.role } : 'INVALID')
+
     if (!payload) {
-      ws.close(4001, 'Invalid or expired token')
+      peer.close(4001, 'Invalid or expired token')
       return
     }
 
@@ -75,83 +101,45 @@ export default defineWebSocketHandler({
     const client: WebSocketClient = {
       id: clientId,
       user: payload,
-      ws,
+      peer,
       rooms: new Set(),
     }
 
     clients.set(clientId, client)
+    peer.clientId = clientId
+
     addUserToRoom(payload.userId, `user:${payload.userId}`)
     addUserToRoom(payload.userId, `role:${payload.role}`)
 
     client.rooms.add(`user:${payload.userId}`)
     client.rooms.add(`role:${payload.role}`)
 
-    ws.on('message', (message: Buffer) => {
-      try {
-        const parsed = JSON.parse(message.toString())
-        handleMessage(clientId, parsed)
-      } catch (e) {
-        ws.send(JSON.stringify({ event: 'ERROR', data: { message: 'Invalid message format' } }))
-      }
-    })
+    console.log('[WS][SERVER] client registered:', clientId, '| total clients:', clients.size)
+    console.log('[WS][SERVER] rooms joined:', Array.from(client.rooms))
 
-    ws.on('close', () => {
-      cleanupClient(clientId)
-    })
-
-    ws.send(JSON.stringify({ event: 'CONNECTED', data: { clientId, user: payload } }))
+    peer.send(JSON.stringify({ event: 'CONNECTED', data: { clientId, user: payload } }))
   },
 
-  close(peer, event) {
-    console.log('[ws] close', peer, event)
+  message(peer: any, message: any) {
+    const clientId = peer.clientId
+    if (!clientId) return
+
+    try {
+      const parsed = JSON.parse(message.text())
+      handleMessage(clientId, parsed)
+    } catch (e) {
+      peer.send(JSON.stringify({ event: 'ERROR', data: { message: 'Invalid message format' } }))
+    }
   },
 
-  error(_peer: any, error: Error) {
-    console.error('WebSocket error:', error)
+  close(peer: any, event: any) {
+    console.log('[ws] close', peer.clientId, event)
+    if (peer.clientId) {
+      cleanupClient(peer.clientId)
+    }
+  },
+
+  error(peer: any, error: Error) {
+    console.error('[WS][SERVER] error:', peer?.clientId, error)
   },
 })
-
-function handleMessage(clientId: string, message: any) {
-  const client = clients.get(clientId)
-  if (!client) return
-
-  switch (message.type) {
-    case 'SUBSCRIBE':
-      if (message.room) {
-        client.rooms.add(message.room)
-        addUserToRoom(client.user.userId, message.room)
-        client.ws.send(JSON.stringify({ event: 'SUBSCRIBED', data: { room: message.room } }))
-      }
-      break
-    case 'UNSUBSCRIBE':
-      if (message.room) {
-        client.rooms.delete(message.room)
-        removeUserFromRoom(client.user.userId, message.room)
-        client.ws.send(JSON.stringify({ event: 'UNSUBSCRIBED', data: { room: message.room } }))
-      }
-      break
-    case 'PING':
-      client.ws.send(JSON.stringify({ event: 'PONG', data: { timestamp: Date.now() } }))
-      break
-  }
-}
-
-function cleanupClient(clientId: string) {
-  const client = clients.get(clientId)
-  if (!client) return
-
-  for (const room of client.rooms) {
-    removeUserFromRoom(client.user.userId, room)
-  }
-  clients.delete(clientId)
-}
-
-export const realtime = {
-  broadcastToRoom,
-  broadcastToUser,
-  broadcastToRole: (role: string, event: string, data: any) => {
-    broadcastToRoom(`role:${role}`, event, data)
-  },
-  getConnectedUsers: () => Array.from(userRooms.keys()),
-  getClientCount: () => clients.size,
-}

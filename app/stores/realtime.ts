@@ -27,16 +27,12 @@ export const useRealtimeStore = defineStore('realtime', () => {
  
   function connect() {
     console.log('Attempting to connect to WebSocket')
-    // لو فيه اتصال شغال بالفعل أو جاري الاتصال، متعملش حاجة
     if (ws.value?.readyState === WebSocket.OPEN || connecting.value) return
     if (!authStore.isAuthenticated) return
  
     connecting.value = true
  
     try {
-      // متبعتش التوكن في الـ query، لأن الكوكي (httpOnly) بتتبعت
-      // تلقائيًا مع الـ WebSocket handshake من المتصفح للسيرفر.
-      // السيرفر (_ws.ts) هو اللي بيقراها من peer.headers.cookie مباشرة.
       ws.value = new WebSocket(wsUrl.value)
       setupEventHandlers()
     } catch (e) {
@@ -50,7 +46,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
     if (!ws.value) return
  
     ws.value.onopen = () => {
-      console.log('WebSocket connected')
+      console.log('WebSocket start')
       connected.value = true
       connecting.value = false
       reconnectAttempts.value = 0

@@ -2,6 +2,8 @@
 import { cn } from '@/lib/utils'
 import { Menu, LogOut, Sun, Moon } from '@lucide/vue'
 import { useAuthStore } from '@/modules/auth/store'
+import NotificationDropdown from '@/components/layout/NotificationDropdown.vue'
+
 
 const colorMode = useColorMode()
 const auth = useAuthStore()
@@ -110,6 +112,9 @@ function closeSidebar() {
         </div>
 
         <div class="flex-1" />
+
+      <NotificationDropdown :notifications="[]" :unread-count="0" />
+
 
         <UiButton variant="ghost" size="icon" class="size-8" @click="toggleColorMode">
           <Sun v-if="colorMode.preference === 'dark'" class="size-4" />
