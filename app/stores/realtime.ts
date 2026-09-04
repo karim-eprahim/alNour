@@ -1,8 +1,9 @@
+
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useNotificationStore } from './notification'
 import { useAuthStore } from '@/modules/auth/store'
-
+ 
 export const useRealtimeStore = defineStore('realtime', () => {
   const ws = ref<WebSocket | null>(null)
   const connected = ref(false)
@@ -13,43 +14,30 @@ export const useRealtimeStore = defineStore('realtime', () => {
   const subscribedRooms = ref<Set<string>>(new Set())
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
   let pingTimer: ReturnType<typeof setInterval> | null = null
-
+ 
   const authStore = useAuthStore()
   const notificationStore = useNotificationStore()
-
+ 
   const wsUrl = computed(() => {
-    const base = import.meta.env.DEV 
-      ? 'ws://localhost:3000' 
+    const base = import.meta.env.DEV
+      ? 'ws://localhost:3000'
       : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
     return `${base}/_ws`
   })
-
-  function getToken(): string | null {
-    if (!authStore.user) return null
-    const match = document.cookie.match(/(?:^|;\s*)auth_token=([^;]*)/)
-    return match?.[1] ? decodeURIComponent(match[1]) : null
-  }
-
+ 
   function connect() {
-      console.log("ws",ws)
-      console.log("OPEN",WebSocket.OPEN)
-      console.log("connecting",connecting.value)
-
+    console.log('Attempting to connect to WebSocket')
+    // لو فيه اتصال شغال بالفعل أو جاري الاتصال، متعملش حاجة
     if (ws.value?.readyState === WebSocket.OPEN || connecting.value) return
     if (!authStore.isAuthenticated) return
-
+ 
     connecting.value = true
-    const token = getToken()
-    if (!token) {
-      console.log("token",token)
-
-      connecting.value = false
-      return
-    }
-
+ 
     try {
-      ws.value = new WebSocket(`${wsUrl.value}?token=${encodeURIComponent(token)}`)
-      console.log("ws.value",ws.value)
+      // متبعتش التوكن في الـ query، لأن الكوكي (httpOnly) بتتبعت
+      // تلقائيًا مع الـ WebSocket handshake من المتصفح للسيرفر.
+      // السيرفر (_ws.ts) هو اللي بيقراها من peer.headers.cookie مباشرة.
+      ws.value = new WebSocket(wsUrl.value)
       setupEventHandlers()
     } catch (e) {
       console.error('WebSocket connection error:', e)
@@ -57,22 +45,22 @@ export const useRealtimeStore = defineStore('realtime', () => {
       scheduleReconnect()
     }
   }
-
+ 
   function setupEventHandlers() {
     if (!ws.value) return
-
+ 
     ws.value.onopen = () => {
       console.log('WebSocket connected')
       connected.value = true
       connecting.value = false
       reconnectAttempts.value = 0
-
+ 
       subscribe(`user:${authStore.user?.id}`)
       subscribe(`role:${authStore.user?.role}`)
-
+ 
       startPing()
     }
-
+ 
     ws.value.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data)
@@ -81,7 +69,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
         console.error('Failed to parse WebSocket message:', e)
       }
     }
-
+ 
     ws.value.onclose = (event) => {
       console.log('WebSocket disconnected:', event.code, event.reason)
       connected.value = false
@@ -90,12 +78,12 @@ export const useRealtimeStore = defineStore('realtime', () => {
       subscribedRooms.value.clear()
       scheduleReconnect()
     }
-
+ 
     ws.value.onerror = (error) => {
       console.error('WebSocket error:', error)
     }
   }
-
+ 
   function handleMessage(message: { event: string; data: any }) {
     switch (message.event) {
       case 'CONNECTED':
@@ -122,34 +110,34 @@ export const useRealtimeStore = defineStore('realtime', () => {
         break
     }
   }
-
+ 
   function handleOrderStatusUpdate(data: any) {
     const event = new CustomEvent('order-status-updated', { detail: data })
     window.dispatchEvent(event)
   }
-
+ 
   function subscribe(room: string) {
     if (!ws.value || ws.value.readyState !== WebSocket.OPEN) return
     if (subscribedRooms.value.has(room)) return
-
+ 
     ws.value.send(JSON.stringify({ type: 'SUBSCRIBE', room }))
   }
-
+ 
   function unsubscribe(room: string) {
     if (!ws.value || ws.value.readyState !== WebSocket.OPEN) return
     if (!subscribedRooms.value.has(room)) return
-
+ 
     ws.value.send(JSON.stringify({ type: 'UNSUBSCRIBE', room }))
   }
-
+ 
   function subscribeToOrder(orderId: string) {
     subscribe(`order:${orderId}`)
   }
-
+ 
   function unsubscribeFromOrder(orderId: string) {
     unsubscribe(`order:${orderId}`)
   }
-
+ 
   function startPing() {
     stopPing()
     pingTimer = setInterval(() => {
@@ -158,14 +146,14 @@ export const useRealtimeStore = defineStore('realtime', () => {
       }
     }, 30000)
   }
-
+ 
   function stopPing() {
     if (pingTimer) {
       clearInterval(pingTimer)
       pingTimer = null
     }
   }
-
+ 
   function scheduleReconnect() {
     if (reconnectTimer) return
     if (reconnectAttempts.value >= maxReconnectAttempts) {
@@ -173,23 +161,23 @@ export const useRealtimeStore = defineStore('realtime', () => {
       return
     }
     if (!authStore.isAuthenticated) return
-
+ 
     reconnectAttempts.value++
     const delay = reconnectDelay * Math.pow(2, reconnectAttempts.value - 1)
-    
+ 
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null
       connect()
     }, delay)
   }
-
+ 
   function disconnect() {
     if (reconnectTimer) {
       clearTimeout(reconnectTimer)
       reconnectTimer = null
     }
     stopPing()
-    
+ 
     if (ws.value) {
       ws.value.close(1000, 'Client disconnect')
       ws.value = null
@@ -199,7 +187,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
     subscribedRooms.value.clear()
     reconnectAttempts.value = 0
   }
-
+ 
   function onAuthChange(isAuthenticated: boolean) {
     if (isAuthenticated) {
       connect()
@@ -207,7 +195,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
       disconnect()
     }
   }
-
+ 
   return {
     ws,
     connected,
