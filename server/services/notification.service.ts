@@ -94,6 +94,6 @@ export async function createBulkNotifications(inputs: CreateNotificationInput[])
 
 export async function emitOrderStatusUpdate(orderId: string, data: any) {
   realtime.broadcastToRoom(`order:${orderId}`, 'ORDER_STATUS_UPDATED', data)
-  realtime.broadcastToRole('ADMIN', 'ORDER_STATUS_UPDATED', data)
-  realtime.broadcastToRole('MANAGER', 'ORDER_STATUS_UPDATED', data)
+  // realtime.broadcastToRole('ADMIN', 'ORDER_STATUS_UPDATED', data)
+  // realtime.broadcastToRole('MANAGER', 'ORDER_STATUS_UPDATED', data)
 }
