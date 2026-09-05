@@ -1,71 +1,33 @@
-import { getApp, getApps, initializeApp, type App } from 'firebase-admin/app'
-import { getMessaging, type Messaging, type MulticastMessage, type Message } from 'firebase-admin/messaging'
-import { cert } from 'firebase-admin/app'
+import type { BatchResponse, MulticastMessage, Message } from 'firebase-admin/messaging'
 import prisma from '../utils/prisma'
+import { getMessagingInstance } from '../utils/firebase-admin'
 
-let messaging: Messaging | null = null
-let app: App | null = null
-
-function initFirebase(): Messaging | null {
-  if (messaging) return messaging
-  
-  if (getApps().length === 0) {
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    if (serviceAccount) {
-      try {
-        const credentials = JSON.parse(serviceAccount)
-        app = initializeApp({
-          credential: cert({
-            projectId: credentials.project_id,
-            clientEmail: credentials.client_email,
-            privateKey: credentials.private_key,
-          }),
-        })
-      } catch (e) {
-        console.error('Failed to initialize Firebase Admin:', e)
-        return null
-      }
-    } else {
-      console.warn('FIREBASE_SERVICE_ACCOUNT not configured, FCM disabled')
-      return null
-    }
-  } else {
-    app = getApp()
-  }
-  
-  messaging = getMessaging(app)
-  return messaging
-}
-
-interface PushPayload {
+export interface PushPayload {
   title: string
   body: string
   data?: Record<string, string>
-  userId: string
 }
 
-export async function sendPushNotification(payload: PushPayload): Promise<boolean> {
-  const msg = initFirebase()
-  if (!msg) return false
+/** FCM `data` payloads only accept string values — coerce defensively. */
+function toStringData(data?: Record<string, any>): Record<string, string> {
+  if (!data) return {}
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [
+      key,
+      value === null || value === undefined ? '' : String(value),
+    ]),
+  )
+}
 
-  const tokens = await prisma.deviceToken.findMany({
-    where: { userId: payload.userId },
-    select: { token: true },
-  })
-
-  if (tokens.length === 0) return false
-
-  const fcmTokens = tokens.map((t) => t.token)
-  const message: MulticastMessage = {
-    tokens: fcmTokens,
+function buildMulticastMessage(tokens: string[], payload: PushPayload): MulticastMessage {
+  const data = toStringData(payload.data)
+  return {
+    tokens,
     notification: {
       title: payload.title,
       body: payload.body,
     },
-    data: {
-      ...payload.data,
-      click_action: 'FLUTTER_NOTIFICATION_CLICK',
-    },
+    data,
     webpush: {
       notification: {
         title: payload.title,
@@ -73,7 +35,7 @@ export async function sendPushNotification(payload: PushPayload): Promise<boolea
         icon: '/icons/icon-192x192.png',
       },
       fcmOptions: {
-        link: payload.data?.url || '/',
+        link: data.url || '/',
       },
     },
     apns: {
@@ -89,38 +51,89 @@ export async function sendPushNotification(payload: PushPayload): Promise<boolea
       },
     },
   }
+}
 
-  try {
-    const response = await msg.sendEachForMulticast(message)
-    
-    const failedTokens: string[] = []
-    response.responses.forEach((resp, idx) => {
-      if (!resp.success) {
-        const error = resp.error
-        if (error?.code === 'messaging/registration-token-not-registered' ||
-            error?.code === 'messaging/invalid-registration-token' ||
-            error?.code === 'messaging/unregistered') {
-          const token = fcmTokens[idx]
-          if (token) failedTokens.push(token)
-        }
+async function pruneInvalidTokens(allTokens: string[], response: BatchResponse) {
+  const invalidTokens: string[] = []
+  response.responses.forEach((resp, idx) => {
+    if (!resp.success) {
+      const code = resp.error?.code
+      if (
+        code === 'messaging/registration-token-not-registered' ||
+        code === 'messaging/invalid-registration-token' ||
+        code === 'messaging/unregistered'
+      ) {
+        const token = allTokens[idx]
+        if (token) invalidTokens.push(token)
       }
-    })
-
-    if (failedTokens.length > 0) {
-      await prisma.deviceToken.deleteMany({
-        where: { token: { in: failedTokens } }
-      })
     }
+  })
 
-    return response.successCount > 0
-  } catch (error) {
-    console.error('FCM send error:', error)
-    return false
+  if (invalidTokens.length > 0) {
+    await prisma.deviceToken.deleteMany({
+      where: { token: { in: invalidTokens } },
+    })
   }
 }
 
-export async function sendPushToToken(token: string, payload: Omit<PushPayload, 'userId'>): Promise<boolean> {
-  const msg = initFirebase()
+/**
+ * Spec unified API: send a push to every device registered to a user.
+ * Returns the FCM batch response, or null when there is nothing to send
+ * (no tokens) or FCM is not configured.
+ */
+export async function sendPushToUser(
+  userId: string,
+  payload: PushPayload,
+): Promise<BatchResponse | null> {
+  const msg = getMessagingInstance()
+  if (!msg) return null
+
+  const tokens = await prisma.deviceToken.findMany({
+    where: { userId },
+    select: { token: true },
+  })
+  if (tokens.length === 0) return null
+
+  const fcmTokens = tokens.map(t => t.token)
+  try {
+    const response = await msg.sendEachForMulticast(
+      buildMulticastMessage(fcmTokens, payload),
+    )
+    await pruneInvalidTokens(fcmTokens, response)
+    return response
+  }
+  catch (error) {
+    console.error('[fcm] sendEachForMulticast error:', error)
+    return null
+  }
+}
+
+export async function sendPushToUsers(
+  userIds: string[],
+  payload: PushPayload,
+): Promise<void> {
+  await Promise.all(userIds.map(id => sendPushToUser(id, payload)))
+}
+
+/**
+ * Legacy wrapper kept for existing callers: send + boolean outcome.
+ */
+export async function sendPushNotification(
+  payload: PushPayload & { userId: string },
+): Promise<boolean> {
+  const response = await sendPushToUser(payload.userId, {
+    title: payload.title,
+    body: payload.body,
+    data: payload.data,
+  })
+  return !!response && response.successCount > 0
+}
+
+export async function sendPushToToken(
+  token: string,
+  payload: Omit<PushPayload, 'data'> & { data?: Record<string, string> },
+): Promise<boolean> {
+  const msg = getMessagingInstance()
   if (!msg) return false
 
   const message: Message = {
@@ -129,18 +142,21 @@ export async function sendPushToToken(token: string, payload: Omit<PushPayload, 
       title: payload.title,
       body: payload.body,
     },
-    data: payload.data,
+    data: toStringData(payload.data),
   }
 
   try {
     await msg.send(message)
     return true
-  } catch (error: any) {
-    if (error.code === 'messaging/registration-token-not-registered' ||
-        error.code === 'messaging/invalid-registration-token') {
+  }
+  catch (error: any) {
+    if (
+      error?.code === 'messaging/registration-token-not-registered' ||
+      error?.code === 'messaging/invalid-registration-token'
+    ) {
       await prisma.deviceToken.deleteMany({ where: { token } })
     }
-    console.error('FCM single send error:', error)
+    console.error('[fcm] single send error:', error)
     return false
   }
 }
@@ -148,11 +164,11 @@ export async function sendPushToToken(token: string, payload: Omit<PushPayload, 
 export async function registerDeviceToken(
   userId: string,
   token: string,
-  deviceType?: string
+  deviceType?: string,
 ): Promise<void> {
   await prisma.deviceToken.upsert({
     where: { token },
-    update: { userId, deviceType, createdAt: new Date() },
+    update: { userId, deviceType, lastUsedAt: new Date() },
     create: { userId, token, deviceType },
   })
 }

@@ -1,4 +1,4 @@
-import { createNotification } from '../../services/notification.service'
+import { notifyUser } from '../../services/notification.service'
 import { NotificationType } from '@prisma/client'
 
 export default defineEventHandler(async (event) => {
@@ -60,17 +60,15 @@ export default defineEventHandler(async (event) => {
     })
 
     if (hasDistributor && created.assignedDistributorId) {
-      await createNotification({
-        userId: created.assignedDistributorId,
+      await notifyUser(created.assignedDistributorId, {
         type: NotificationType.ORDER_ASSIGNED,
         title: 'New Order Assigned',
-        message: `You have been assigned order #${created.orderNumber}`,
+        body: `You have been assigned order #${created.orderNumber}`,
         data: {
           salesOrderId: created.id,
           orderNumber: created.orderNumber,
           customerName: created.customer?.name,
         },
-        sendPush: true,
       })
     }
 

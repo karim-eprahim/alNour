@@ -13,6 +13,17 @@ export interface CreateNotificationInput {
 }
 
 /**
+ * Spec unified API payload. `body` maps to the Notification `message` column.
+ * `type` must be a valid NotificationType (e.g. 'ORDER_ASSIGNED').
+ */
+export interface NotifyPayload {
+  type: NotificationType | string
+  title: string
+  body: string
+  data?: Record<string, any>
+}
+
+/**
  * Creates a single notification record in PostgreSQL and emits realtime events.
  */
 export async function createNotification(input: CreateNotificationInput): Promise<Notification> {
@@ -32,7 +43,6 @@ export async function createNotification(input: CreateNotificationInput): Promis
   }
 
   realtime.broadcastToUser(input.userId, 'NOTIFICATION_CREATED', payload)
-  console.log("paylllllllod",payload)
 
   if (input.sendPush !== false) {
     sendPushNotification({
@@ -42,12 +52,50 @@ export async function createNotification(input: CreateNotificationInput): Promis
       data: {
         notificationId: notification.id,
         type: input.type,
-        ...input.data,
+        ...toStringMap(input.data),
       }
     }).catch(console.error)
   }
 
   return notification
+}
+
+/**
+ * Unified dispatcher: ONE call delivers via WebSocket (if connected) + FCM
+ * push (always), and persists the Notification row. Feature code should call
+ * this instead of touching WebSocket or FCM directly.
+ *
+ * Example:
+ *   await notifyUser(distributorId, {
+ *     type: 'ORDER_ASSIGNED',
+ *     title: 'طلب جديد',
+ *     body: `تم إنشاء طلب رقم #${order.orderNumber}`,
+ *     data: { url: `/distributor/orders/${order.id}` },
+ *   })
+ */
+export async function notifyUser(userId: string, payload: NotifyPayload): Promise<Notification> {
+  return createNotification({
+    userId,
+    type: payload.type as NotificationType,
+    title: payload.title,
+    message: payload.body,
+    data: payload.data ?? {},
+    sendPush: true,
+  })
+}
+
+export async function notifyUsers(userIds: string[], payload: NotifyPayload): Promise<Notification[]> {
+  return Promise.all(userIds.map(id => notifyUser(id, payload)))
+}
+
+function toStringMap(data?: Record<string, any>): Record<string, string> {
+  if (!data) return {}
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [
+      key,
+      value === null || value === undefined ? '' : String(value),
+    ]),
+  )
 }
 
 /**
@@ -83,7 +131,7 @@ export async function createBulkNotifications(inputs: CreateNotificationInput[])
         data: {
           notificationId: notification.id,
           type: input.type,
-          ...input.data,
+          ...toStringMap(input.data),
         }
       }).catch(console.error)
     }

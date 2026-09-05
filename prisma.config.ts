@@ -9,6 +9,7 @@ export default defineConfig({
   datasource: {
     // url: process.env.DATABASE_URL!, // الرابط هياخده من ملف .env
     url: env("DATABASE_URL"),
+    shadowDatabaseUrl: env("SHADOW_DATABASE_URL"),
   },
   // هنا تقدر تحدد أي إعدادات تانية زي migrations.path لو محتاج
 })
