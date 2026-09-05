@@ -3,19 +3,57 @@ import { getMessaging, type Messaging } from 'firebase-admin/messaging'
 
 let cachedApp: App | null = null
 
+/**
+ * Normalizes a PEM private key pasted into .env.
+ * Handles: surrounding quotes, single-escaped \n, double-escaped \\n
+ * (single-quoted dotenv values), real newlines, and CRLF.
+ */
+function normalizePrivateKey(raw: string): string {
+  let key = raw.trim()
+  if (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1)
+  }
+  key = key.replace(/\\\\n/g, '\n') // double-escaped \\n -> newline
+  key = key.replace(/\\n/g, '\n') // escaped \n -> newline
+  key = key.replace(/\r\n?/g, '\n')
+  return key.trim()
+}
+
+function isPlausiblePrivateKey(key: string): boolean {
+  return (
+    key.includes('-----BEGIN') &&
+    key.includes('PRIVATE KEY-----') &&
+    key.includes('-----END') &&
+    key.length > 500 && // a real RSA key is ~1600+ chars; anything shorter is truncated
+    !key.includes('....')
+  )
+}
+
 function resolveCredentials() {
   const config = useRuntimeConfig()
   const admin = config.firebaseAdmin as
     | { projectId?: string; clientEmail?: string; privateKey?: string }
     | undefined
 
-    console.log('[firebase-admin] Resolving credentials from runtime config:', admin)
   if (admin?.projectId && admin?.clientEmail && admin?.privateKey) {
+    const privateKey = normalizePrivateKey(admin.privateKey)
+    if (!isPlausiblePrivateKey(privateKey)) {
+      console.error(
+        '[firebase-admin] FIREBASE_ADMIN_PRIVATE_KEY looks truncated or is a placeholder '
+        + `(${privateKey.length} chars). Paste the full single-line key from Firebase Console → `
+        + 'Project settings → Service accounts → Generate new private key, keeping the \\n escapes. '
+        + 'FCM push is disabled until then.',
+      )
+      return null
+    }
     return {
       projectId: admin.projectId,
       clientEmail: admin.clientEmail,
       // Service account private keys are stored with escaped newlines in .env
-      privateKey: admin.privateKey.replace(/\\n/g, '\n'),
+      privateKey,
     }
   }
 
@@ -66,7 +104,12 @@ export function getMessagingInstance(): Messaging | null {
     return getMessaging(app)
   }
   catch (e) {
-    console.error('[firebase-admin] Failed to initialize Firebase Admin:', e)
+    console.error(
+      '[firebase-admin] Failed to initialize Firebase Admin (FCM push disabled). '
+      + 'If this mentions "Failed to parse private key", re-paste the full FIREBASE_ADMIN_PRIVATE_KEY '
+      + 'as one line with \\n escapes:',
+      e,
+    )
     return null
   }
 }
