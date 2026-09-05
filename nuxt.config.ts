@@ -29,6 +29,18 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     jwtSecret: "",
+    public: {
+      firebase: {
+        apiKey: "",
+        authDomain: "",
+        projectId: "",
+        storageBucket: "",
+        messagingSenderId: "",
+        appId: "",
+        measurementId: "",
+        vapidKey: "",
+      },
+    },
   },
   nitro: {
     experimental: {
