@@ -18,6 +18,8 @@ export const useNotificationStore = defineStore('notification', () => {
     totalPages: 0,
   })
   const unreadOnly = ref(false)
+  const searchQuery = ref('')
+  const statusFilter = ref<'all' | 'read' | 'unread'>('all')
 
   // Ids already delivered via WebSocket (in-app toast shown). The FCM
   // foreground handler consults this set and stays silent on duplicates,
@@ -46,7 +48,11 @@ export const useNotificationStore = defineStore('notification', () => {
         page: page.toString(),
         limit: pagination.value.limit.toString(),
         unreadOnly: unreadOnly.value.toString(),
+        status: statusFilter.value,
       })
+      if (searchQuery.value.trim()) {
+        params.set('search', searchQuery.value.trim())
+      }
 
       const response = await $fetch<{
         items: Notification[]
@@ -103,6 +109,74 @@ export const useNotificationStore = defineStore('notification', () => {
       unreadCount.value = 0
     } catch (e) {
       console.error('Failed to mark all notifications as read:', e)
+    }
+  }
+
+  async function markAsUnread(id: string) {
+    const notification = items.value.find(n => n.id === id)
+    if (!notification || !notification.readAt) return
+
+    try {
+      await $fetch(`/api/notifications/${id}/unread`, { method: 'PATCH' })
+      notification.readAt = null
+      unreadCount.value += 1
+    } catch (e) {
+      console.error('Failed to mark notification as unread:', e)
+      throw e
+    }
+  }
+
+  async function deleteNotification(id: string) {
+    const notification = items.value.find(n => n.id === id)
+    try {
+      await $fetch(`/api/notifications/${id}`, { method: 'DELETE' })
+      items.value = items.value.filter(n => n.id !== id)
+      if (notification && !notification.readAt) {
+        unreadCount.value = Math.max(0, unreadCount.value - 1)
+      }
+      pagination.value.total = Math.max(0, pagination.value.total - 1)
+      // Step back a page if the current one became empty
+      if (items.value.length === 0 && pagination.value.page > 1) {
+        await fetchNotifications(pagination.value.page - 1)
+      }
+    } catch (e) {
+      console.error('Failed to delete notification:', e)
+      throw e
+    }
+  }
+
+  async function deleteAllNotifications() {
+    try {
+      await $fetch('/api/notifications', { method: 'DELETE' })
+      items.value = []
+      unreadCount.value = 0
+      pagination.value = { ...pagination.value, page: 1, total: 0, totalPages: 0 }
+    } catch (e) {
+      console.error('Failed to delete all notifications:', e)
+      throw e
+    }
+  }
+
+  async function bulkDelete(ids: string[]) {
+    if (ids.length === 0) return { deletedCount: 0 }
+    try {
+      const response = await $fetch<{ success: boolean; deletedCount: number }>(
+        '/api/notifications/bulk-delete',
+        { method: 'POST', body: { ids } },
+      )
+      const deleted = new Set(ids)
+      const removedUnread = items.value.filter(n => deleted.has(n.id) && !n.readAt).length
+      items.value = items.value.filter(n => !deleted.has(n.id))
+      unreadCount.value = Math.max(0, unreadCount.value - removedUnread)
+      if (items.value.length === 0 && pagination.value.page > 1) {
+        await fetchNotifications(pagination.value.page - 1)
+      } else {
+        await fetchNotifications(pagination.value.page)
+      }
+      return response
+    } catch (e) {
+      console.error('Failed to bulk delete notifications:', e)
+      throw e
     }
   }
 
@@ -165,11 +239,17 @@ export const useNotificationStore = defineStore('notification', () => {
     error,
     pagination,
     unreadOnly,
+    searchQuery,
+    statusFilter,
     hasMore,
     fetchNotifications,
     loadMore,
     markAsRead,
+    markAsUnread,
     markAllAsRead,
+    deleteNotification,
+    deleteAllNotifications,
+    bulkDelete,
     addNotification,
     markSeen,
     hasSeen,

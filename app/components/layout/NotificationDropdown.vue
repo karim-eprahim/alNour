@@ -42,7 +42,7 @@ onMounted(() => {
         <Bell class="size-4" />
         <span
           v-if="notificationStore.unreadCount > 0"
-          class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground"
+          class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white"
         >
           {{ notificationStore.unreadCount > 99 ? '99+' : notificationStore.unreadCount }}
         </span>
