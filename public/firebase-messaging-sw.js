@@ -14,17 +14,13 @@ firebase.initializeApp({
 const messaging = firebase.messaging()
 
 messaging.onBackgroundMessage(async (payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message', payload);
-
   const data = payload.data || {}
 
   // ⭐ P1: Safety net - if app window is visible, skip system notification
   // (WebSocket in-app toast already covered this event)
   const windows = await clients.matchAll({ type: 'window', includeUncontrolled: true })
-  console.log('[firebase-messaging-sw.js] Open windows:', windows.length)
   
   if (windows.some((client) => client.visibilityState === 'visible')) {
-    console.log('[firebase-messaging-sw.js] App is visible, skipping system notification')
     return
   }
 
@@ -32,7 +28,6 @@ messaging.onBackgroundMessage(async (payload) => {
   if (data.notificationId) {
     const existingNotifications = await self.registration.getNotifications({ tag: data.notificationId })
     if (existingNotifications.length > 0) {
-      console.log('[firebase-messaging-sw.js] Duplicate notification, skipping:', data.notificationId)
       return
     }
   }

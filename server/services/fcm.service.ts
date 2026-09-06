@@ -103,7 +103,6 @@ export async function sendPushToUser(
     select: { token: true },
   })
   if (tokens.length === 0) {
-    console.log('[FCM] No tokens found for user:', userId)
     return null
   }
 
@@ -113,11 +112,9 @@ export async function sendPushToUser(
       buildMulticastMessage(fcmTokens, payload),
     )
     await pruneInvalidTokens(fcmTokens, response)
-    console.log(`[FCM] Push sent to user ${userId}: ${response.successCount}/${response.responses.length} succeeded`)
     return response
   }
   catch (error) {
-    console.error('[fcm] sendEachForMulticast error:', error)
     return null
   }
 }

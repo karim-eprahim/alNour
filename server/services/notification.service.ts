@@ -28,7 +28,6 @@ export interface NotifyPayload {
  * Creates a single notification record in PostgreSQL and emits realtime events.
  */
 export async function createNotification(input: CreateNotificationInput): Promise<Notification> {
-console.log('[NotificationService] Creating notification for user:', input.userId, 'input:', input)
   const notification = await prisma.notification.create({
     data: {
       userId: input.userId,
@@ -45,12 +44,15 @@ console.log('[NotificationService] Creating notification for user:', input.userI
   }
 
   // ✅ WebSocket: realtime delivery (app is open)
-  // The notification ID is included for dedupe on the client
+  // The notification ID is included for dedupe on the client.
+  // Field names must match the client `Notification` type (message, not body).
   realtime.broadcastToUser(input.userId, 'NOTIFICATION_CREATED', {
     id: notification.id,
+    userId: notification.userId,
     type: notification.type,
     title: notification.title,
-    body: notification.message, // ⭐ Use message for consistency
+    message: notification.message,
+    body: notification.message, // kept for backward compatibility
     data: notification.data as Record<string, any> | null,
     createdAt: notification.createdAt,
     readAt: notification.readAt,
@@ -74,22 +76,7 @@ console.log('[NotificationService] Creating notification for user:', input.userI
   return notification
 }
 
-/**
- * Unified dispatcher: ONE call delivers via WebSocket (if connected) + FCM
- * push (always), and persists the Notification row. Feature code should call
- * this instead of touching WebSocket or FCM directly.
- *
- * Example:
- *   await notifyUser(distributorId, {
- *     type: 'ORDER_ASSIGNED',
- *     title: 'طلب جديد',
- *     body: `تم إنشاء طلب رقم #${order.orderNumber}`,
- *    message: `تم إنشاء طلب رقم #${order.orderNumber}`,
- *     data: { url: `/distributor/orders/${order.id}` },
- *   })
- */
 export async function notifyUser(userId: string, payload: NotifyPayload): Promise<Notification> {
-  console.log('[NotificationService] notifyUser called for user:', userId, 'payload:', payload)
   return createNotification({
     userId,
     type: payload.type as NotificationType,
@@ -135,6 +122,7 @@ export async function createBulkNotifications(inputs: CreateNotificationInput[])
     // ✅ WebSocket: broadcast to each user
     realtime.broadcastToUser(notification.userId, 'NOTIFICATION_CREATED', {
       id: notification.id,
+      userId: notification.userId,
       type: notification.type,
       title: notification.title,
       body: notification.message,

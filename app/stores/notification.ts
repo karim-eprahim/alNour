@@ -108,7 +108,7 @@ export const useNotificationStore = defineStore('notification', () => {
 
   // ⭐ P2: Enhanced addNotification with better dedupe
   function addNotification(notification: Notification) {
-    console.log('[NotificationStore] Adding notification:', notification, notification.title)
+    console.log('[NotificationStore] Adding notification:', notification)
     // Check if notification already exists
     const exists = items.value.some(n => n.id === notification.id)
     if (!exists) {
