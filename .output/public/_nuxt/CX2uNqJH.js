@@ -1,0 +1,1 @@
+const s="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",e='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',n={lat:30.5877,lng:32.2654},a=12;function p(t,o){return`https://www.google.com/maps/dir/?api=1&destination=${t},${o}`}export{s as M,e as a,p as b,n as c,a as d};

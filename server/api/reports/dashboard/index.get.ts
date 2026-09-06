@@ -137,7 +137,7 @@ export default defineEventHandler(async (event) => {
       }),
       prisma.stockMovement.findMany({
         where: movementWhere,
-        take: 10,
+        take: 5,
         orderBy: { createdAt: 'desc' },
         include: {
           product: { select: { id: true, name: true } },

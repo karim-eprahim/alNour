@@ -361,12 +361,12 @@ onMounted(() => {
               :disabled="item.disabled"
             >
               <span>{{ item.label }}</span>
-              <span
+              <!-- <span
                 v-if="item.subtitle"
                 class="text-muted-foreground ml-2 text-xs"
               >
                 {{ item.subtitle }}
-              </span>
+              </span> -->
               <ComboboxItemIndicator>
                 <CheckIcon class="size-4" />
               </ComboboxItemIndicator>
