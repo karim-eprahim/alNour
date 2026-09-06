@@ -19,6 +19,7 @@ export interface CreateNotificationInput {
 export interface NotifyPayload {
   type: NotificationType | string
   title: string
+  message: string
   body: string
   data?: Record<string, any>
 }
@@ -27,6 +28,7 @@ export interface NotifyPayload {
  * Creates a single notification record in PostgreSQL and emits realtime events.
  */
 export async function createNotification(input: CreateNotificationInput): Promise<Notification> {
+console.log('[NotificationService] Creating notification for user:', input.userId, 'input:', input)
   const notification = await prisma.notification.create({
     data: {
       userId: input.userId,
@@ -42,16 +44,28 @@ export async function createNotification(input: CreateNotificationInput): Promis
     data: notification.data as Record<string, any> | null
   }
 
-  realtime.broadcastToUser(input.userId, 'NOTIFICATION_CREATED', payload)
+  // ✅ WebSocket: realtime delivery (app is open)
+  // The notification ID is included for dedupe on the client
+  realtime.broadcastToUser(input.userId, 'NOTIFICATION_CREATED', {
+    id: notification.id,
+    type: notification.type,
+    title: notification.title,
+    body: notification.message, // ⭐ Use message for consistency
+    data: notification.data as Record<string, any> | null,
+    createdAt: notification.createdAt,
+    readAt: notification.readAt,
+  })
 
+  // ✅ FCM: push delivery (app is background/closed)
   if (input.sendPush !== false) {
     sendPushNotification({
       userId: input.userId,
       title: input.title,
       body: input.message,
       data: {
-        notificationId: notification.id,
+        notificationId: notification.id, // ⭐ Critical for dedupe
         type: input.type,
+        url: input.data?.url || '/',
         ...toStringMap(input.data),
       }
     }).catch(console.error)
@@ -70,15 +84,17 @@ export async function createNotification(input: CreateNotificationInput): Promis
  *     type: 'ORDER_ASSIGNED',
  *     title: 'طلب جديد',
  *     body: `تم إنشاء طلب رقم #${order.orderNumber}`,
+ *    message: `تم إنشاء طلب رقم #${order.orderNumber}`,
  *     data: { url: `/distributor/orders/${order.id}` },
  *   })
  */
 export async function notifyUser(userId: string, payload: NotifyPayload): Promise<Notification> {
+  console.log('[NotificationService] notifyUser called for user:', userId, 'payload:', payload)
   return createNotification({
     userId,
     type: payload.type as NotificationType,
     title: payload.title,
-    message: payload.body,
+    message: payload.message,
     data: payload.data ?? {},
     sendPush: true,
   })
@@ -116,21 +132,28 @@ export async function createBulkNotifications(inputs: CreateNotificationInput[])
     const input = inputs.find(i => i.userId === notification.userId)
     if (!input) continue
 
-    const payload = {
-      ...notification,
-      data: notification.data as Record<string, any> | null
-    }
+    // ✅ WebSocket: broadcast to each user
+    realtime.broadcastToUser(notification.userId, 'NOTIFICATION_CREATED', {
+      id: notification.id,
+      type: notification.type,
+      title: notification.title,
+      body: notification.message,
+      message: notification.message,
+      data: notification.data as Record<string, any> | null,
+      createdAt: notification.createdAt,
+      readAt: notification.readAt,
+    })
 
-    realtime.broadcastToUser(notification.userId, 'NOTIFICATION_CREATED', payload)
-
+    // ✅ FCM: send push to each user
     if (input.sendPush !== false) {
       sendPushNotification({
         userId: notification.userId,
         title: input.title,
         body: input.message,
         data: {
-          notificationId: notification.id,
+          notificationId: notification.id, // ⭐ Critical for dedupe
           type: input.type,
+          url: input.data?.url || '/',
           ...toStringMap(input.data),
         }
       }).catch(console.error)

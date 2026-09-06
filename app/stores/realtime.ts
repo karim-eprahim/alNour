@@ -59,6 +59,7 @@ export const useRealtimeStore = defineStore('realtime', () => {
  
     ws.value.onmessage = (event) => {
       try {
+        console.log('WebSocket event received:', event)
         const message = JSON.parse(event.data)
         handleMessage(message)
       } catch (e) {

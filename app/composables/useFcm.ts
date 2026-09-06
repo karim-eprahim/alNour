@@ -1,11 +1,13 @@
 import { ref, onUnmounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/modules/auth/store'
+import { useNotificationStore } from '@/stores/notification'
 
 export const FCM_TOKEN_STORAGE_KEY = 'alnour-fcm-token'
 
 export function useFcm() {
   const authStore = useAuthStore()
+  const notificationStore = useNotificationStore()
   const fcmToken = ref<string | null>(null)
   const permissionGranted = ref(false)
   let messaging: any = null
@@ -92,8 +94,6 @@ export function useFcm() {
     messaging = getMessaging(app)
 
     try {
-      // No onTokenRefresh in the modular SDK — re-fetch on every init and
-      // re-register whenever the token rotated.
       const currentToken = await getToken(messaging, {
         vapidKey: firebaseConfig.vapidKey,
       })
@@ -117,13 +117,31 @@ export function useFcm() {
       unsubscribeForeground()
       unsubscribeForeground = null
     }
+    
+    // ⭐ P0: Foreground handler - WebSocket owns the open-app experience
     unsubscribeForeground = onMessage(messaging, (payload) => {
-      const title = payload.notification?.title || 'Notification'
+      const notificationId = payload.data?.notificationId as string | undefined
+
+      // ✅ If WebSocket already delivered this notification, stay silent
+      if (notificationId && notificationStore.hasSeen(notificationId)) {
+        console.log('[FCM] Duplicate ignored (already seen via WS):', notificationId)
+        return
+      }
+
+      // ⚠️ Fallback: WebSocket missed it (reconnecting/disconnected)
+      // Show toast as last resort
+      const title = payload.notification?.title || 'إشعار'
       const body = payload.notification?.body || ''
 
+      console.log('[FCM] Foreground fallback toast (WS missed it):', { title, body })
+      
       toast(title, {
         description: body,
+        duration: 4000,
+        position: 'top-right',
       })
+      
+      if (notificationId) notificationStore.markSeen(notificationId)
     })
   }
 

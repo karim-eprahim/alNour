@@ -23,19 +23,25 @@ function buildMulticastMessage(tokens: string[], payload: PushPayload): Multicas
   const data = toStringData(payload.data)
   return {
     tokens,
-    notification: {
-      title: payload.title,
-      body: payload.body,
-    },
-    data,
+    // ⭐ P3: Use data-only to prevent automatic notifications when app is open
+    // Remove 'notification' from top level, keep only in webpush
+    data, // ⭐ This is the key - data-only payload
     webpush: {
       notification: {
         title: payload.title,
         body: payload.body,
         icon: '/icons/icon-192x192.png',
+        badge: '/icons/icon-72x72.png',
+        // ⭐ P3: Use tag for collapsing duplicate notifications
+        tag: data.notificationId || 'default',
+        renotify: false,
+        requireInteraction: true,
       },
       fcmOptions: {
         link: data.url || '/',
+      },
+      headers: {
+        'Urgency': 'high',
       },
     },
     apns: {
@@ -70,6 +76,7 @@ async function pruneInvalidTokens(allTokens: string[], response: BatchResponse) 
   })
 
   if (invalidTokens.length > 0) {
+    console.log('[FCM] Removing invalid tokens:', invalidTokens.length)
     await prisma.deviceToken.deleteMany({
       where: { token: { in: invalidTokens } },
     })
@@ -80,6 +87,9 @@ async function pruneInvalidTokens(allTokens: string[], response: BatchResponse) 
  * Spec unified API: send a push to every device registered to a user.
  * Returns the FCM batch response, or null when there is nothing to send
  * (no tokens) or FCM is not configured.
+ * 
+ * ⭐ Uses data-only payload to prevent automatic notifications when app is open.
+ * WebSocket handles the foreground experience.
  */
 export async function sendPushToUser(
   userId: string,
@@ -92,7 +102,10 @@ export async function sendPushToUser(
     where: { userId },
     select: { token: true },
   })
-  if (tokens.length === 0) return null
+  if (tokens.length === 0) {
+    console.log('[FCM] No tokens found for user:', userId)
+    return null
+  }
 
   const fcmTokens = tokens.map(t => t.token)
   try {
@@ -100,6 +113,7 @@ export async function sendPushToUser(
       buildMulticastMessage(fcmTokens, payload),
     )
     await pruneInvalidTokens(fcmTokens, response)
+    console.log(`[FCM] Push sent to user ${userId}: ${response.successCount}/${response.responses.length} succeeded`)
     return response
   }
   catch (error) {
@@ -136,13 +150,37 @@ export async function sendPushToToken(
   const msg = getMessagingInstance()
   if (!msg) return false
 
+  const data = toStringData(payload.data)
   const message: Message = {
     token,
-    notification: {
-      title: payload.title,
-      body: payload.body,
+    // ⭐ Use data-only for single token too
+    data, // ⭐ This is the key
+    webpush: {
+      notification: {
+        title: payload.title,
+        body: payload.body,
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/icon-72x72.png',
+        tag: data.notificationId || 'default',
+        renotify: false,
+        requireInteraction: true,
+      },
+      fcmOptions: {
+        link: data.url || '/',
+      },
     },
-    data: toStringData(payload.data),
+    apns: {
+      payload: {
+        aps: {
+          alert: {
+            title: payload.title,
+            body: payload.body,
+          },
+          badge: 1,
+          sound: 'default',
+        },
+      },
+    },
   }
 
   try {

@@ -64,6 +64,7 @@ export default defineEventHandler(async (event) => {
         type: NotificationType.ORDER_ASSIGNED,
         title: 'New Order Assigned',
         body: `You have been assigned order #${created.orderNumber}`,
+        message: `You have been assigned order #${created.orderNumber}`,
         data: {
           salesOrderId: created.id,
           orderNumber: created.orderNumber,

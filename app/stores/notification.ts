@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { toast } from 'vue-sonner'
 import type { Notification } from '@/types/notification'
+
+// How long a delivered notification id is remembered for cross-channel dedupe
+const SEEN_TTL_MS = 5 * 60 * 1000
 
 export const useNotificationStore = defineStore('notification', () => {
   const items = ref<Notification[]>([])
@@ -14,6 +18,21 @@ export const useNotificationStore = defineStore('notification', () => {
     totalPages: 0,
   })
   const unreadOnly = ref(false)
+
+  // Ids already delivered via WebSocket (in-app toast shown). The FCM
+  // foreground handler consults this set and stays silent on duplicates,
+  // so an open app shows exactly one toast. Not persisted.
+  const seenIds = ref<Set<string>>(new Set())
+
+  function markSeen(id: string) {
+    if (!id || seenIds.value.has(id)) return
+    seenIds.value.add(id)
+    setTimeout(() => { seenIds.value.delete(id) }, SEEN_TTL_MS)
+  }
+
+  function hasSeen(id: string): boolean {
+    return !!id && seenIds.value.has(id)
+  }
 
   const hasMore = computed(() => pagination.value.page < pagination.value.totalPages)
 
@@ -87,16 +106,39 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
+  // ⭐ P2: Enhanced addNotification with better dedupe
   function addNotification(notification: Notification) {
+    console.log('[NotificationStore] Adding notification:', notification, notification.title)
+    // Check if notification already exists
     const exists = items.value.some(n => n.id === notification.id)
     if (!exists) {
       items.value.unshift(notification)
       if (!notification.readAt) {
         unreadCount.value += 1
       }
-      if (items.value.length > pagination.value.limit) {
-        items.value = items.value.slice(0, pagination.value.limit)
+      if (items.value.length > pagination.value.limit * 2) {
+        items.value = items.value.slice(0, pagination.value.limit * 2)
       }
+      
+      // ⭐ WebSocket owns the open-app experience: toast here, once.
+      markSeen(notification.id)
+      
+      // Show toast with notification details
+      toast(notification.title, {
+        description: notification.message,
+        duration: 4000,
+        position: 'top-right',
+        // action: {
+        //   label: 'View',
+        //   onClick: () => {
+        //     if (notification.data?.url) {
+        //       navigateTo(notification.data.url)
+        //     }
+        //   }
+        // }
+      })
+    } else {
+      console.log('[NotificationStore] Duplicate notification ignored:', notification.id)
     }
   }
 
@@ -129,6 +171,8 @@ export const useNotificationStore = defineStore('notification', () => {
     markAsRead,
     markAllAsRead,
     addNotification,
+    markSeen,
+    hasSeen,
     setUnreadCount,
     toggleUnreadFilter,
     clear,
