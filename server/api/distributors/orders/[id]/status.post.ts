@@ -1,3 +1,6 @@
+import { createNotification, emitOrderStatusUpdate } from '../../../../services/notification.service'
+import { NotificationType } from '@prisma/client'
+
 const TRANSITIONS: Record<string, string> = {
   ASSIGNED: 'ACCEPTED',
   ACCEPTED: 'OUT_FOR_DELIVERY',
@@ -27,6 +30,7 @@ export default defineEventHandler(async (event) => {
 
   const order = await prisma.salesOrder.findFirst({
     where: { id, assignedDistributorId: auth.userId, status: { not: 'PENDING' } },
+    include: { createdBy: { select: { id: true, name: true } } },
   })
 
   if (!order) {
@@ -66,7 +70,31 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // Send notification to order creator/admin
+    await createNotification({
+      userId: order.createdById,
+      type: NotificationType.ORDER_STATUS_UPDATED,
+      title: 'Order Status Updated',
+      message: `Order #${order.orderNumber} status changed to ${targetStatus} by ${auth.name || 'Distributor'}`,
+      data: {
+        salesOrderId: updated.id,
+        orderNumber: updated.orderNumber,
+        previousStatus: order.status,
+        newStatus: targetStatus,
+        updatedBy: auth.userId,
+      },
+      sendPush: true,
+    })
+
     return { updated, tracking }
+  })
+
+  // Emit realtime WebSocket event
+  emitOrderStatusUpdate(id, {
+    salesOrderId: result.updated.id,
+    orderNumber: order.orderNumber,
+    status: result.updated.status,
+    updatedBy: auth.userId,
   })
 
   return {

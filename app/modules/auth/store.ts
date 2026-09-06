@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import type { User, LoginPayload } from "./type";
 import { loginApi, logoutApi, fetchMeApi } from "./api";
+import { FCM_TOKEN_STORAGE_KEY } from "@/composables/useFcm";
 
 export const useAuthStore = defineStore(
   "auth",
@@ -46,6 +47,20 @@ export const useAuthStore = defineStore(
 
     async function logout() {
       try {
+        // Best-effort: stop push delivery to this device before ending the session
+        try {
+          const fcmToken = localStorage.getItem(FCM_TOKEN_STORAGE_KEY)
+          if (fcmToken) {
+            await $fetch("/api/notifications/unregister-token", {
+              method: "POST",
+              body: { token: fcmToken },
+            })
+            localStorage.removeItem(FCM_TOKEN_STORAGE_KEY)
+          }
+        }
+        catch {
+          // unregister failure must never block logout
+        }
         await logoutApi();
       } finally {
         user.value = null;

@@ -29,5 +29,26 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     jwtSecret: "",
+    firebaseAdmin: {
+      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY,
+    },    public: {
+      firebase: {
+        apiKey: "",
+        authDomain: "",
+        projectId: "",
+        storageBucket: "",
+        messagingSenderId: "",
+        appId: "",
+        measurementId: "",
+        vapidKey: "",
+      },
+    },
   },
+  nitro: {
+    experimental: {
+      websocket: true
+    }
+  }
 });

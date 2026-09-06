@@ -82,45 +82,45 @@ const kpis = computed<KpiItem[]>(() => {
 
   const items: KpiItem[] = []
 
-  if (canViewFinancial.value && d.financials) {
+  // if (canViewFinancial.value && d.financials) {
     const f = d.financials
     items.push({ label: 'Total Revenue', value: fmtMoney(f.totalRevenue), icon: TrendingUp, hint: 'total invoiced' })
     items.push({ label: 'Net Profit', value: fmtMoney(f.netProfit), icon: Scale, hint: 'after costs & expenses', negative: f.netProfit < 0 })
-  }
+  // }
 
-  if (canViewStock.value && d.inventory) {
+  // if (canViewStock.value && d.inventory) {
     items.push({
       label: 'Stock', value: fmtQty(d.inventory.totalStockQuantity), icon: Package,
       hint: `${d.inventory.warehouseCount || 0} warehouses`,
     })
-  }
+  // }
 
-  if (isStorekeeper.value && d.inventory) {
+  // if (isStorekeeper.value && d.inventory) {
     items.push({
       label: 'Low Stock', value: fmtCount(d.inventory.lowStockAlerts?.count || 0), icon: AlertTriangle,
       hint: 'items to restock', negative: (d.inventory.lowStockAlerts?.count || 0) > 0,
     })
-  }
+  // }
 
-  if (isStorekeeper.value && d.goodsInTransit) {
+  // if (isStorekeeper.value && d.goodsInTransit) {
     items.push({
       label: 'Goods in Transit', value: fmtQty(d.goodsInTransit.totalQuantity), icon: Truck,
       hint: `${d.goodsInTransit.distributorCount || 0} distributors`,
     })
-  }
+  // }
 
-  if (isStorekeeper.value) {
+  // if (isStorekeeper.value) {
     items.push({ label: 'Warehouses', value: fmtCount(d.inventory?.warehouseCount || 0), icon: Warehouse, hint: 'operational sites' })
-  }
+  // }
 
-  if (isAccountant.value && d.financials) {
+  // if (isAccountant.value && d.financials) {
     items.push({ label: 'Cash & Bank', value: fmtMoney(d.financials.companyCash), icon: Wallet, hint: 'money with the company' })
-  }
+  // }
 
-  if (canViewFinancial.value && d.financials) {
+  // if (canViewFinancial.value && d.financials) {
     const outstanding = (d.financials.totalRevenue || 0) - (d.financials.totalCollected || 0)
     items.push({ label: 'Outstanding', value: fmtMoney(outstanding), icon: HandCoins, hint: 'unpaid invoices', negative: outstanding > 0 })
-  }
+  // }
 
   return items
 })

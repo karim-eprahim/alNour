@@ -1,3 +1,6 @@
+import { createNotification, emitOrderStatusUpdate } from '../../../../services/notification.service'
+import { NotificationType } from '@prisma/client'
+
 const DELIVERY_RESULTS = ['FULL', 'PARTIAL', 'FAILED', 'CANCELLED']
 
 function validateResult(result: string) {
@@ -8,7 +11,7 @@ export default defineEventHandler(async (event) => {
   const auth = event.context.auth
   await requirePermission(event, 'SALES', 'UPDATE')
 
-  const id = getRouterParam(event, 'id')
+  const id = getRouterParam(event, 'id')!
   const body = await readBody(event)
   const result = body.result as 'FULL' | 'PARTIAL' | 'FAILED' | 'CANCELLED'
 
@@ -18,7 +21,10 @@ export default defineEventHandler(async (event) => {
 
   const order = await prisma.salesOrder.findFirst({
     where: { id, assignedDistributorId: auth.userId, status: 'OUT_FOR_DELIVERY' },
-    include: { items: true },
+    include: { 
+      items: true,
+      createdBy: { select: { id: true, name: true } },
+    },
   })
 
   if (!order) {
@@ -240,7 +246,35 @@ export default defineEventHandler(async (event) => {
       data: { status: 'COMPLETED', endedAt: new Date(), lastUpdatedAt: new Date() },
     })
 
+    // Send notification to order creator/admin
+    await createNotification({
+      userId: order.createdById,
+      type: NotificationType.ORDER_STATUS_UPDATED,
+      title: `Order Delivered - ${result}`,
+      message: `Order #${order.orderNumber} delivered with result: ${result}. Total: ${totalAmount.toFixed(2)}${paidAmount > 0 ? `, Paid: ${paidAmount.toFixed(2)}` : ''}`,
+      data: {
+        salesOrderId: updated.id,
+        orderNumber: updated.orderNumber,
+        deliveryResult: result,
+        totalAmount,
+        paidAmount,
+        paymentMethod: body.paymentMethod || 'CASH',
+        invoiceNumber: invoice.invoiceNumber,
+      },
+      sendPush: true,
+    })
+
     return { invoice, order: updated }
+  })
+
+  // Emit realtime WebSocket event
+  emitOrderStatusUpdate(id, {
+    salesOrderId: completed.order.id,
+    orderNumber: order.orderNumber,
+    status: completed.order.status,
+    deliveryResult: result,
+    totalAmount,
+    paidAmount,
   })
 
   return {

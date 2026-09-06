@@ -173,8 +173,7 @@ onMounted(() => {
           :columns="productColumns"
           :loading="productsStore.loading"
           :server-total="productsStore.total"
-          show-search
-          search-placeholder="Search..."
+          :show-search="false"
         >
           <template #empty>
             <EmptyState
