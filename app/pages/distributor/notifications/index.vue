@@ -7,8 +7,8 @@ import { getNotificationColumns } from './columns'
 import type { Notification } from '@/types/notification'
 
 definePageMeta({
-  layout: 'dashboard',
-  middleware: 'auth',
+  layout: 'distributor',
+  middleware: 'distributor',
 })
 
 const notificationStore = useNotificationStore()

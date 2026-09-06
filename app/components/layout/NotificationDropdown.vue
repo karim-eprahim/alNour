@@ -5,7 +5,7 @@ import { Bell, X } from '@lucide/vue'
 import { useNotificationStore } from '@/stores/notification'
 
 const notificationStore = useNotificationStore()
-
+const auth = useAuthStore()
 function formatTime(date: string): string {
   const now = new Date()
   const then = new Date(date)
@@ -103,7 +103,7 @@ onMounted(() => {
         </div>
       </div>
       <UiDropdownMenuSeparator />
-      <UiDropdownMenuItem class="justify-center text-xs font-medium text-primary" @click="$router.push('/notifications')">
+      <UiDropdownMenuItem class="justify-center text-xs font-medium text-primary" @click="auth.userRole === 'DISTRIBUTOR' ? $router.push('distributor/notifications') : $router.push('/notifications')">
         View all notifications
       </UiDropdownMenuItem>
     </UiDropdownMenuContent>
